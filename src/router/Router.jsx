@@ -3,10 +3,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPrivate from "../pages/login/LoginPrivate.jsx";
 import { AdminPage } from "../pages/admin/AdminPage.tsx";
 import UserProfile from "../pages/profile/UserProfile.jsx";
-
-function Home() {
-  return <h1 style={{ padding: 24 }}>Test</h1>;
-}
+import Home from "../pages/home/Home.jsx";
+ 
 function NotFound() {
   return <h1 style={{ padding: 24 }}>404</h1>;
 }

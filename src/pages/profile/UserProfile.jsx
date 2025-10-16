@@ -26,9 +26,9 @@ const UserProfile = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 const [consultants] = useState([
-  { id: "c1", name: "Ms. Linh", role: "Tư vấn tuyển sinh", avatar: "https://i.pravatar.cc/100?img=11" },
-  { id: "c2", name: "Mr. Nam", role: "Tư vấn học vụ", avatar: "https://i.pravatar.cc/100?img=12" },
-  { id: "c3", name: "Ms. Hanh", role: "Hướng nghiệp", avatar: "https://i.pravatar.cc/100?img=13" },
+  { id: "c1", name: "Consulant 1", role: "Tư vấn tuyển sinh", avatar: "https://i.pravatar.cc/100?img=11" },
+  { id: "c2", name: "Consulant 2", role: "Tư vấn học vụ", avatar: "https://i.pravatar.cc/100?img=12" },
+  { id: "c3", name: "Consulant 3", role: "Hướng nghiệp", avatar: "https://i.pravatar.cc/100?img=13" },
 ]);
 
 const [selectedConsultant, setSelectedConsultant] = useState(null);
@@ -86,7 +86,7 @@ const handleConsultSend = (e) => {
     phone: "0123456789",
     admissionScore: "25",
     subjects: "Toan, Ly, Hoa",
-    studyField: "Technology",
+    studyField: "Kỹ thuật phần mềm",
   });
 
   useEffect(() => {
