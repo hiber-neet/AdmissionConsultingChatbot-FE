@@ -1,7 +1,7 @@
 // src/router/Router.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPrivate from "../pages/login/LoginPrivate.jsx";
-
+import UserProfile from "../pages/profile/UserProfile.jsx";
 function Home() {
   return <h1 style={{ padding: 24 }}>Test</h1>;
 }
@@ -16,6 +16,7 @@ export default function Router() {
       <Route path="/loginprivate" element={<LoginPrivate />} />
       <Route path="/404" element={<NotFound />} />
       <Route path="*" element={<Navigate to="/404" replace />} />
+      <Route path="/profile" element={<UserProfile />} />
     </Routes>
   );
 }
