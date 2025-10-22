@@ -1,4 +1,3 @@
-// src/components/content/ReviewQueue.tsx
 import { useEffect, useState } from "react";
 import { Check, X, MessageSquare, Edit3 } from "lucide-react";
 
@@ -35,11 +34,11 @@ const items: Item[] = [
 export default function ReviewQueue() {
   const empty = false;
 
-  // NEW: state cho modal "Request Changes"
+  // state cho modal "Request Changes"
   const [openFor, setOpenFor] = useState<Item | null>(null);
   const [feedback, setFeedback] = useState("");
 
-  // NEW: đóng modal bằng phím ESC
+  //   đóng modal  
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenFor(null);
     window.addEventListener("keydown", onKey);
@@ -51,7 +50,7 @@ export default function ReviewQueue() {
       alert("Vui lòng nhập nội dung phản hồi.");
       return;
     }
-    // TODO: gọi API gửi feedback tại đây
+    
     alert(`Đã gửi phản hồi cho: ${openFor?.title}\n\n${feedback}`);
     setFeedback("");
     setOpenFor(null);

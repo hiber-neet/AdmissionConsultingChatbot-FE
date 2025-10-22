@@ -9,6 +9,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/system_users/button";
 
+type Props = {
+  onCreate?: () => void;    
+};
+
 type Stat = {
   label: string;
   value: number | string;
@@ -82,7 +86,11 @@ function StatusPill({ status }: { status: Activity["status"] }) {
   );
 }
 
-export default function ContentManagerDashboard() {
+export default function ContentManagerDashboard({ onCreate }: Props) {
+    const handleCreate = () => {
+    if (onCreate) onCreate();
+    else window.location.assign("/content?tab=editor");
+  };
   return (
     <div className="h-full w-full overflow-auto">
       <div className="mx-auto max-w-7xl px-6 py-6">
@@ -94,7 +102,8 @@ export default function ContentManagerDashboard() {
               Manage your editorial workflow
             </p>
           </div>
-          <Button className="bg-black text-white hover:opacity-90">
+        
+          <Button onClick={handleCreate} className="bg-black text-white hover:opacity-90">
             <Plus className="mr-2 h-4 w-4" />
             Create New Article
           </Button>
@@ -128,7 +137,7 @@ export default function ContentManagerDashboard() {
             Quick Actions
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button
+            <Button  onClick={handleCreate}
               variant="outline"
               className="border-gray-300 hover:bg-gray-100"
             >
