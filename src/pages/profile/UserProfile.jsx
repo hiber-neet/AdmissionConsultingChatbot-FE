@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";  
 import Footer from "@/components/footer/Footer";
 import Header from "@/components/header/Header";
@@ -25,6 +25,15 @@ const UserProfile = () => {
   const [editing, setEditing] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+
+// --- WebSocket states for chatbot ---
+const [isLoading, setIsLoading] = useState(false);
+const [partialResponse, setPartialResponse] = useState("");
+const wsRef = useRef(null);
+const partialRef = useRef("");
+const [wsReady, setWsReady] = useState(false);
+
+
 const [consultants] = useState([
   { id: "c1", name: "Consulant 1", role: "Tư vấn tuyển sinh", avatar: "https://i.pravatar.cc/100?img=11" },
   { id: "c2", name: "Consulant 2", role: "Tư vấn học vụ", avatar: "https://i.pravatar.cc/100?img=12" },
@@ -93,6 +102,68 @@ const handleConsultSend = (e) => {
     fetchProfile();
   }, []);
 
+ useEffect(() => {
+   if (tab !== "chatbot") {
+     // leaving chatbot tab -> cleanup
+     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+       wsRef.current.close();
+     }
+     setWsReady(false);
+     return;
+   }
+
+   // open WS
+   const ws = new WebSocket("ws://localhost:8000/chat/ws/chat");
+   wsRef.current = ws;
+
+   ws.onopen = () => {
+     setWsReady(true);
+     // bạn có thể gửi greeting tùy thích
+     // ws.send(JSON.stringify({ message: "__hello__" }));
+   };
+
+   ws.onmessage = (event) => {
+     try {
+       const data = JSON.parse(event.data);
+       if (data.event === "chunk") {
+         setPartialResponse(prev => {
+           const next = prev + data.content;
+           partialRef.current = next;
+           return next;
+        });
+       } else if (data.event === "done") {
+       const finalText =
+           partialRef.current && partialRef.current.trim() !== ""
+             ? partialRef.current
+             : "(không có phản hồi)";
+
+         setMessages(prev => [...prev, { sender: "bot", text: finalText }]);
+         // reset
+         partialRef.current = "";
+         setPartialResponse("");
+         setIsLoading(false);
+      }
+     } catch (e) {
+       // server có thể gửi logs/plain text -> bỏ qua
+       // console.error("WS parse error:", event.data);
+     }
+   };
+
+   ws.onclose = () => {
+     setWsReady(false);
+   };
+
+   return () => {
+    if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+   };
+ }, [tab]);
+
+
+
+
+
+
+
   const fetchProfile = async () => {
     try {
       const response = await axios.get(`${BASE.BASE_URL}/account/profile`, {
@@ -121,18 +192,20 @@ const handleAdmissionScoreChange = (e) => {
 const handleSend = (e) => {
   e.preventDefault();
   if (!input.trim()) return;
+  const msg = input;
 
-  const userMsg = { sender: "user", text: input };
-  setMessages((prev) => [...prev, userMsg]);
+  // push user message
+  setMessages(prev => [...prev, { sender: "user", text: msg }]);
 
-  // Giả lập phản hồi của chatbot
-  setTimeout(() => {
-    const botReply = {
-      sender: "bot",
-      text: `Cảm ơn bạn đã hỏi: "${input}".`,
-    };
-    setMessages((prev) => [...prev, botReply]);
-  }, 800);
+  // reset streaming
+  setPartialResponse("");
+  partialRef.current = "";
+  setIsLoading(true);
+
+  // send to WS
+  if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    wsRef.current.send(JSON.stringify({ message: msg }));
+  }
 
   setInput("");
 };
@@ -378,6 +451,18 @@ if (
           </div>
         ))
       )}
+
+{/* streaming content */}
+     {isLoading && (
+       <div className="flex justify-start mt-1">
+         <div className="px-4 py-2 max-w-[70%] rounded-xl text-sm bg-gray-200 text-gray-800">
+          {partialResponse}
+           <span className="animate-pulse">▌</span>
+        </div>
+      </div>
+     )}
+
+
     </div>
 
     {/* Input area */}
@@ -392,12 +477,14 @@ if (
         onChange={(e) => setInput(e.target.value)}
         className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
       />
-      <button
-        type="submit"
-        className="px-4 py-2 bg-[#EB5A0D] text-white rounded-md hover:opacity-90 transition"
-      >
-        Gửi
-      </button>
+  <button
+    type="submit"
+    disabled={!wsReady || !input.trim()}
+    className={`px-4 py-2 rounded-md text-white transition
+      ${!wsReady || !input.trim() ? "bg-gray-300 cursor-not-allowed" : "bg-[#EB5A0D] hover:opacity-90"}`}
+  >
+    {wsReady ? "Gửi" : "Đang kết nối..."}
+  </button>
     </form>
   </div>
 )}

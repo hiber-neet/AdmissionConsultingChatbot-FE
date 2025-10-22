@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { FileText, ListChecks, PenSquare, Lightbulb ,Database ,TrendingUp, BarChart3 ,MessageCircle, FileEdit ,LayoutDashboard, MessageSquareText, Users, Shield } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
 import { AdminDashboard } from './AdminDashboard';
@@ -17,10 +17,24 @@ import  ContentManagerDashboard  from '../content/ContentManagerDashboard';
 import  AllArticles  from '../content/AllArticles';
 import  ReviewQueue  from '../content/ReviewQueue';
 import  ArticleEditor  from '../content/ArticleEditor';
+
+import { useAuth } from '@/contexts/Auth';
+import { canAccess} from '@/constants/permissions';
+
 type AdminView = 'dashboard' | 'templates' | 'users' | 'admissions' | 'content' | 'chatbot' | 'consultation' | 'insights' | 'overview' | 'analytics' | 'knowledge' | 'optimization' | "dashboardcontent" | "articles" | "review" | "editor";
 
 export function AdminLayout() {
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
+  const { user, logout } = useAuth();
+  // tab mặc định theo role (nếu chưa đăng nhập, ẩn hết)
+  const defaultView: AdminView | null = useMemo(() => {
+    if (!user) return null;
+    // lấy view đầu tiên trong ROLE_VIEWS cho role đó
+    // (đã import canAccess nên chỉ cần fallback đơn giản)
+    return "dashboard" as AdminView; // hoặc tùy chỉnh theo role
+  }, [user]);
+
+
 
   const navigation = [
     { id: 'dashboard' as AdminView, label: 'Bảng Điều Khiển', icon: LayoutDashboard },
@@ -44,6 +58,24 @@ export function AdminLayout() {
     { id: "editor" as AdminView, label: "New Article", icon: PenSquare },
   ];
 
+ /// Lọc menu theo role  
+const allowedNav = useMemo(
+  () => navigation.filter(n => canAccess(user?.role, n.id)),
+  [user?.role]
+);
+
+// first tab allowed
+useEffect(() => {
+  if (!user) return;
+  const currentAllowed = canAccess(user.role, activeView);
+  if (!currentAllowed) {
+    const fallback = allowedNav[0]?.id;
+    if (fallback && fallback !== activeView) {
+      setActiveView(fallback);
+    }
+  }
+}, [user, activeView, allowedNav]);
+
     const goToEditor = () => setActiveView('editor');
 
   return (
@@ -60,22 +92,51 @@ export function AdminLayout() {
           </div>
         </div>
         
-        <nav className="p-4 space-y-2">
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Button
-                key={item.id}
-                variant={activeView === item.id ? 'default' : 'ghost'}
-                className="w-full justify-start"
-                onClick={() => setActiveView(item.id)}
-              >
-                <Icon className="h-4 w-4 mr-3" />
-                {item.label}
-              </Button>
-            );
-          })}
-        </nav>
+ <nav className="p-4 space-y-2">
+    {navigation.map((item) => {
+      const Icon = item.icon;
+      const isActive = activeView === item.id;
+      const allowed = canAccess(user?.role, item.id); // <- quyền theo role
+
+      return (
+        <Button
+          key={item.id}
+          variant={isActive ? 'default' : 'ghost'}
+          className={`w-full justify-start ${
+            !allowed
+              ? 'opacity-50 cursor-not-allowed text-gray-400 hover:bg-transparent'
+              : ''
+          }`}
+          onClick={() => {
+            if (allowed) setActiveView(item.id); // chặn click nếu không có quyền
+          }}
+          disabled={!allowed}
+          title={!allowed ? 'Bạn không có quyền truy cập mục này' : undefined}
+        >
+          <Icon className="h-4 w-4 mr-3" />
+          {item.label}
+        </Button>
+      );
+    })}
+  </nav>
+
+{/* Logout Button */}
+  <div className="p-4 border-t">
+    <Button
+      variant="outline"
+      className="w-full justify-start text-red-600 hover:bg-red-50"
+      onClick={() => {
+        if (confirm('Bạn có chắc muốn đăng xuất?')) {
+          logout(); 
+        }
+      }}
+    >
+      <Users className="h-4 w-4 mr-3 text-red-500" />
+      Đăng xuất
+    </Button>
+  </div>
+
+  
       </div>
 
       {/* Main Content */}
@@ -98,8 +159,12 @@ export function AdminLayout() {
         {activeView === 'knowledge' && <KnowledgeBaseManagement />}  
         {activeView === 'optimization' && <ContentOptimization />}  
  
-        {activeView === 'dashboardcontent' && <ContentManagerDashboard />}
-        {activeView === 'articles' && <AllArticles />}
+        {activeView === 'dashboardcontent' && (
+    <ContentManagerDashboard onCreate={goToEditor} />
+  )}
+  {activeView === 'articles' && (
+    <AllArticles onCreate={goToEditor} />
+  )}
         {activeView === 'review' && <ReviewQueue />}
         {activeView === 'editor' && <ArticleEditor />}
         
