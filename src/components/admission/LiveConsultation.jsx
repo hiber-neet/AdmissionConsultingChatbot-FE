@@ -20,15 +20,13 @@ import { ScrollArea } from '../ui/system_users/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/system_users/card';
 import { Textarea } from '../ui/system_users/textarea';
 
-interface LiveConsultationProps {
-  isPanel?: boolean;
-}
+import PropTypes from 'prop-types';
 
 const waitingQueue = [
   {
     id: 1,
     name: 'Nguyễn Văn An',
-    type: 'international' as const,
+    type: 'international',
     topic: 'Học bổng',
     waitTime: 2,
     avatar: 'NVA',
@@ -36,7 +34,7 @@ const waitingQueue = [
   {
     id: 2,
     name: 'Trần Thị Bình',
-    type: 'domestic' as const,
+    type: 'domestic',
     topic: 'Visa',
     waitTime: 5,
     avatar: 'TTB',
@@ -44,7 +42,7 @@ const waitingQueue = [
   {
     id: 3,
     name: 'Lê Minh Cường',
-    type: 'domestic' as const,
+    type: 'domestic',
     topic: 'Chương trình MBA',
     waitTime: 8,
     avatar: 'LMC',
@@ -52,7 +50,7 @@ const waitingQueue = [
   {
     id: 4,
     name: 'Phạm Thu Dung',
-    type: 'international' as const,
+    type: 'international',
     topic: 'Yêu cầu tuyển sinh',
     waitTime: 10,
     avatar: 'PTD',
@@ -60,7 +58,7 @@ const waitingQueue = [
   {
     id: 5,
     name: 'Hoàng Văn Em',
-    type: 'domestic' as const,
+    type: 'domestic',
     topic: 'Học phí',
     waitTime: 12,
     avatar: 'HVE',
@@ -71,7 +69,7 @@ const activeChats = [
   {
     id: 1,
     name: 'Vũ Thị Hoa',
-    type: 'international' as const,
+    type: 'international',
     topic: 'Hồ sơ tuyển sinh',
     duration: 15,
     avatar: 'VTH',
@@ -79,7 +77,7 @@ const activeChats = [
   {
     id: 2,
     name: 'Đặng Quốc Khải',
-    type: 'domestic' as const,
+    type: 'domestic',
     topic: 'Chuyển trường',
     duration: 8,
     avatar: 'DQK',
@@ -89,31 +87,31 @@ const activeChats = [
 const messages = [
   {
     id: 1,
-    sender: 'student' as const,
+    sender: 'student',
     content: 'Xin chào! Tôi muốn hỏi về quy trình xin visa du học.',
     timestamp: '14:32',
   },
   {
     id: 2,
-    sender: 'officer' as const,
+    sender: 'officer',
     content: 'Chào bạn! Tôi rất vui được hỗ trợ. Bạn đang quan tâm đến visa F-1 cho sinh viên phải không?',
     timestamp: '14:33',
   },
   {
     id: 3,
-    sender: 'student' as const,
+    sender: 'student',
     content: 'Vâng đúng rồi ạ. Tôi cần chuẩn bị những giấy tờ gì?',
     timestamp: '14:34',
   },
   {
     id: 4,
-    sender: 'officer' as const,
+    sender: 'officer',
     content: 'Để xin visa F-1, bạn cần:\n1. Form I-20 từ trường (chúng tôi sẽ cấp sau khi nhận hồ sơ)\n2. Hộ chiếu còn hạn\n3. Chứng minh tài chính\n4. Bằng cấp học vấn\n\nBạn đã nhận được thư nhận học chưa?',
     timestamp: '14:35',
   },
   {
     id: 5,
-    sender: 'student' as const,
+    sender: 'student',
     content: 'Tôi vừa nhận được thư nhận học tuần trước. Về chứng minh tài chính, cần bao nhiêu tiền ạ?',
     timestamp: '14:36',
   },
@@ -126,8 +124,8 @@ const quickResponses = [
   'Tôi sẽ chuyển bạn đến chuyên gia phụ trách mảng này.',
 ];
 
-export function LiveConsultation({ isPanel = false }: LiveConsultationProps) {
-  const [selectedChat, setSelectedChat] = useState<number | null>(isPanel ? null : 1);
+export function LiveConsultation({ isPanel = false }) {
+  const [selectedChat, setSelectedChat] = useState(isPanel ? null : 1);
   const [messageInput, setMessageInput] = useState('');
 
   if (isPanel) {
@@ -225,7 +223,7 @@ export function LiveConsultation({ isPanel = false }: LiveConsultationProps) {
     );
   }
 
-  return (
+  const renderFullView = () => (
     <div className="h-full flex">
       {/* Sidebar - Queue List */}
       <div className="w-80 border-r flex flex-col">

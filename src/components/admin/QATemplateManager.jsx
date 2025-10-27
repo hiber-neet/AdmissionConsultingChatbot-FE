@@ -11,17 +11,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/system_users/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/system_users/select';
 
-interface QATemplate {
-  id: string;
-  question: string;
-  answer: string;
-  category: string;
-  tags: string[];
-  usageCount: number;
-  lastModified: string;
-}
+import PropTypes from 'prop-types';
 
-const initialTemplates: QATemplate[] = [
+const initialTemplates = [
   {
     id: '1',
     question: 'What are the application deadlines?',
@@ -63,11 +55,11 @@ const initialTemplates: QATemplate[] = [
 const categories = ['All Categories', 'Admissions', 'Financial Aid', 'Campus Life', 'Academics', 'Student Services'];
 
 export function QATemplateManager() {
-  const [templates, setTemplates] = useState<QATemplate[]>(initialTemplates);
+  const [templates, setTemplates] = useState(initialTemplates);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<QATemplate | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState(null);
 
   const [formData, setFormData] = useState({
     question: '',
@@ -104,7 +96,7 @@ export function QATemplateManager() {
       ));
     } else {
       // Create new template
-      const newTemplate: QATemplate = {
+      const newTemplate = {
         id: Date.now().toString(),
         question: formData.question,
         answer: formData.answer,
@@ -122,7 +114,7 @@ export function QATemplateManager() {
     setIsDialogOpen(false);
   };
 
-  const handleEdit = (template: QATemplate) => {
+  const handleEdit = (template) => {
     setEditingTemplate(template);
     setFormData({
       question: template.question,
@@ -133,12 +125,12 @@ export function QATemplateManager() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id) => {
     setTemplates(templates.filter(t => t.id !== id));
   };
 
-  const handleDuplicate = (template: QATemplate) => {
-    const newTemplate: QATemplate = {
+  const handleDuplicate = (template) => {
+    const newTemplate = {
       ...template,
       id: Date.now().toString(),
       question: `${template.question} (Copy)`,
