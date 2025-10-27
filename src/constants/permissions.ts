@@ -2,7 +2,7 @@ import type { Role } from "@/contexts/Auth";
 
 /** Các view đang có trong AdminLayout */
 export type AdminView =
-  | "dashboard" | "templates" | "users"
+  | "dashboard" | "templates" | "users" | "activity_log"
   | "admissions" | "content" | "chatbot" | "consultation" | "insights"
   | "overview" | "analytics" | "knowledge" | "optimization"
   | "dashboardcontent" | "articles" | "review" | "editor";
@@ -10,7 +10,7 @@ export type AdminView =
 /** Role -> danh sách view được phép */
 export const ROLE_VIEWS: Record<Role, AdminView[]> = {
   SYSTEM_ADMIN: [
-    "dashboard","templates","users",
+    "dashboard","templates","users","activity_log",
     "admissions","content","chatbot","consultation","insights",
     "overview","analytics","knowledge","optimization",
     "dashboardcontent","articles","review","editor",

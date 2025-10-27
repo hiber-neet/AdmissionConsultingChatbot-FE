@@ -5,6 +5,7 @@ import { Input } from '../ui/system_users/input';
 import { Label } from '../ui/system_users/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/system_users/card';
 import { Badge } from '../ui/system_users/badge';
+import { Checkbox } from '../ui/system_users/checkbox';
 import { ScrollArea } from '../ui/system_users/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/system_users/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/system_users/select';
@@ -12,22 +13,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback } from '../ui/system_users/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/system_users/table';
 
-interface AppUser {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'content_manager' | 'consultant';
-  status: 'active' | 'inactive';
-  lastActive: string;
-  createdAt: string;
-}
+import PropTypes from 'prop-types';
 
-const initialUsers: AppUser[] = [
+const initialUsers = [
   {
     id: '1',
     name: 'John Anderson',
     email: 'john.anderson@university.edu',
-    role: 'admin',
+    roles: ['admin', 'content_manager'],
     status: 'active',
     lastActive: '5 minutes ago',
     createdAt: '2024-01-15',
@@ -36,7 +29,7 @@ const initialUsers: AppUser[] = [
     id: '2',
     name: 'Sarah Mitchell',
     email: 'sarah.mitchell@university.edu',
-    role: 'content_manager',
+    roles: ['content_manager'],
     status: 'active',
     lastActive: '2 hours ago',
     createdAt: '2024-02-20',
@@ -45,7 +38,7 @@ const initialUsers: AppUser[] = [
     id: '3',
     name: 'Michael Chen',
     email: 'michael.chen@university.edu',
-    role: 'consultant',
+    roles: ['consultant'],
     status: 'active',
     lastActive: '1 day ago',
     createdAt: '2024-03-10',
@@ -54,7 +47,7 @@ const initialUsers: AppUser[] = [
     id: '4',
     name: 'Emily Rodriguez',
     email: 'emily.rodriguez@university.edu',
-    role: 'content_manager',
+    roles: ['content_manager', 'consultant'],
     status: 'active',
     lastActive: '3 hours ago',
     createdAt: '2024-04-05',
@@ -63,7 +56,7 @@ const initialUsers: AppUser[] = [
     id: '5',
     name: 'David Thompson',
     email: 'david.thompson@university.edu',
-    role: 'consultant',
+    roles: ['consultant'],
     status: 'inactive',
     lastActive: '2 weeks ago',
     createdAt: '2024-05-12',
@@ -74,7 +67,7 @@ const roleColors = {
   admin: 'destructive',
   content_manager: 'default',
   consultant: 'secondary',
-} as const;
+};
 
 const roleLabels = {
   admin: 'System Admin',
@@ -83,22 +76,22 @@ const roleLabels = {
 };
 
 export function UserManagement() {
-  const [users, setUsers] = useState<AppUser[]>(initialUsers);
+  const [users, setUsers] = useState(initialUsers);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterRole, setFilterRole] = useState<string>('all');
+  const [filterRole, setFilterRole] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<AppUser | null>(null);
+  const [editingUser, setEditingUser] = useState(null);
 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'content_manager' as AppUser['role'],
+    roles: [],
   });
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = filterRole === 'all' || user.role === filterRole;
+    const matchesRole = filterRole === 'all' || user.roles.includes(filterRole);
     return matchesSearch && matchesRole;
   });
 
@@ -113,17 +106,20 @@ export function UserManagement() {
               ...u,
               name: formData.name,
               email: formData.email,
-              role: formData.role,
+              // Preserve admin role if it exists, can't be added or removed
+              roles: u.roles.includes('admin') 
+                ? ['admin', ...formData.roles.filter(r => r !== 'admin')]
+                : formData.roles.filter(r => r !== 'admin'),
             }
           : u
       ));
     } else {
       // Create new user
-      const newUser: AppUser = {
+      const newUser = {
         id: Date.now().toString(),
         name: formData.name,
         email: formData.email,
-        role: formData.role,
+        roles: formData.roles.filter(r => r !== 'admin'), // Never allow adding admin role to new users
         status: 'active',
         lastActive: 'Just now',
         createdAt: new Date().toISOString().split('T')[0],
@@ -137,29 +133,29 @@ export function UserManagement() {
     setIsDialogOpen(false);
   };
 
-  const handleEdit = (user: AppUser) => {
+  const handleEdit = (user) => {
     setEditingUser(user);
     setFormData({
       name: user.name,
       email: user.email,
-      role: user.role,
+      roles: user.roles || [],
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id) => {
     setUsers(users.filter(u => u.id !== id));
   };
 
-  const handleToggleStatus = (id: string) => {
+  const handleToggleStatus = (id) => {
     setUsers(users.map(u => 
       u.id === id 
-        ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' as const }
+        ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' }
         : u
     ));
   };
 
-  const getRoleIcon = (role: string) => {
+  const getRoleIcon = (role) => {
     switch (role) {
       case 'admin':
         return <Shield className="h-4 w-4" />;
@@ -185,7 +181,7 @@ export function UserManagement() {
             <DialogTrigger asChild>
               <Button onClick={() => {
                 setEditingUser(null);
-                setFormData({ name: '', email: '', role: 'content_manager' });
+                setFormData({ name: '', email: '', roles: [] });
               }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add User
@@ -221,38 +217,86 @@ export function UserManagement() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={formData.role} onValueChange={(value: AppUser['role']) => setFormData({ ...formData, role: value })}>
-                    <SelectTrigger id="role">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">System Admin (Full Access)</SelectItem>
-                      <SelectItem value="content_manager">Content Manager (KB Management)</SelectItem>
-                      <SelectItem value="consultant">Consultant (Analytics Only)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-4">
+                  <Label>Roles</Label>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="role-admin"
+                        checked={formData.roles?.includes('admin')}
+                        disabled={!formData.roles?.includes('admin')}
+                        onCheckedChange={() => {}}
+                      />
+                      <Label 
+                        htmlFor="role-admin" 
+                        className={`font-normal w-full ${!formData.roles?.includes('admin') ? 'text-muted-foreground' : ''}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          System Admin (Full Access)
+                          {!formData.roles?.includes('admin') && (
+                            <span className="text-xs text-muted-foreground ml-2">(Reserved Role)</span>
+                          )}
+                        </div>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="role-content-manager"
+                        checked={formData.roles?.includes('content_manager')}
+                        onCheckedChange={(checked) => {
+                          const newRoles = checked 
+                            ? [...(formData.roles || []), 'content_manager']
+                            : (formData.roles || []).filter(r => r !== 'content_manager');
+                          setFormData({ ...formData, roles: newRoles });
+                        }}
+                      />
+                      <Label htmlFor="role-content-manager" className="font-normal w-full">
+                        <div className="flex items-center gap-2">
+                          <Edit className="h-4 w-4" />
+                          Content Manager (KB Management)
+                        </div>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="role-consultant"
+                        checked={formData.roles?.includes('consultant')}
+                        onCheckedChange={(checked) => {
+                          const newRoles = checked 
+                            ? [...(formData.roles || []), 'consultant']
+                            : (formData.roles || []).filter(r => r !== 'consultant');
+                          setFormData({ ...formData, roles: newRoles });
+                        }}
+                      />
+                      <Label htmlFor="role-consultant" className="font-normal w-full">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          Consultant (Analytics Only)
+                        </div>
+                      </Label>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="rounded-lg bg-muted p-3 text-sm">
-                  <p><strong>Role Permissions:</strong></p>
+                  <p><strong>Selected Role Permissions:</strong></p>
                   <ul className="mt-2 space-y-1 text-muted-foreground list-disc list-inside">
-                    {formData.role === 'admin' && (
+                    {formData.roles?.includes('admin') && (
                       <>
                         <li>Full system control</li>
                         <li>User and role management</li>
                         <li>System configuration</li>
                       </>
                     )}
-                    {formData.role === 'content_manager' && (
+                    {formData.roles?.includes('content_manager') && (
                       <>
                         <li>Knowledge base management</li>
                         <li>Content approval workflow</li>
                         <li>Q&A template editing</li>
                       </>
                     )}
-                    {formData.role === 'consultant' && (
+                    {formData.roles?.includes('consultant') && (
                       <>
                         <li>View analytics dashboard</li>
                         <li>Generate reports</li>
@@ -363,10 +407,14 @@ export function UserManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={roleColors[user.role]} className="gap-1">
-                        {getRoleIcon(user.role)}
-                        {roleLabels[user.role]}
-                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {user.roles.map(role => (
+                          <Badge key={role} variant={roleColors[role]} className="gap-1">
+                            {getRoleIcon(role)}
+                            {roleLabels[role]}
+                          </Badge>
+                        ))}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>

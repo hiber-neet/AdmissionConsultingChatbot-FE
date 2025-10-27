@@ -2,6 +2,7 @@ import { Activity, Users, MessageSquare, Database, TrendingUp, AlertCircle, Cloc
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/system_users/card';
 import { Progress } from '../ui/system_users/progress';
 import { Badge } from '../ui/system_users/badge';
+import { Button } from '../ui/system_users/button';
 import { ScrollArea } from '../ui/system_users/scroll-area';
 import {
   LineChart,
@@ -43,7 +44,7 @@ const recentActivity = [
   { id: 5, type: 'conversation', user: 'Emily Rodriguez', action: 'Inquired about scholarships', time: '1 hour ago', status: 'resolved' },
 ];
 
-export function AdminDashboard() {
+export function AdminDashboard({ setActiveView }) {
   return (
     <ScrollArea className="h-full">
       <div className="p-6 pb-8 space-y-6">
@@ -78,7 +79,7 @@ export function AdminDashboard() {
               <p className="text-xs text-muted-foreground">
                 <span className="text-green-600">-0.3s</span> from yesterday
               </p>
-              <Progress value={80} className="mt-2 h-2" />
+              <Progress value={80} className="mt-2 h-2 bg-[#3B82F6]/20" />
             </CardContent>
           </Card>
 
@@ -125,8 +126,8 @@ export function AdminDashboard() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="conversations" fill="hsl(var(--primary))" name="Total" />
-                  <Bar dataKey="resolved" fill="hsl(var(--chart-2))" name="Resolved" />
+                  <Bar dataKey="conversations" fill="#3B82F6" name="Total" />
+                  <Bar dataKey="resolved" fill="#10B981" name="Resolved" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -147,7 +148,7 @@ export function AdminDashboard() {
                   <Line 
                     type="monotone" 
                     dataKey="avgResponse" 
-                    stroke="hsl(var(--chart-1))" 
+                    stroke="#8B5CF6" 
                     strokeWidth={2}
                     name="Avg Response (s)"
                   />
@@ -170,7 +171,7 @@ export function AdminDashboard() {
                   <span>RAG Model Performance</span>
                   <Badge variant="default">Excellent</Badge>
                 </div>
-                <Progress value={96} className="h-2" />
+                <Progress value={96} className="h-2 bg-[#3B82F6]/20" />
               </div>
 
               <div className="space-y-2">
@@ -178,7 +179,7 @@ export function AdminDashboard() {
                   <span>Database Query Speed</span>
                   <Badge variant="default">Good</Badge>
                 </div>
-                <Progress value={87} className="h-2" />
+                <Progress value={87} className="h-2 bg-[#10B981]/20" />
               </div>
 
               <div className="space-y-2">
@@ -186,7 +187,7 @@ export function AdminDashboard() {
                   <span>API Response Rate</span>
                   <Badge variant="default">Excellent</Badge>
                 </div>
-                <Progress value={99} className="h-2" />
+                <Progress value={99} className="h-2 bg-[#8B5CF6]/20" />
               </div>
 
               <div className="space-y-2">
@@ -194,7 +195,7 @@ export function AdminDashboard() {
                   <span>Knowledge Base Coverage</span>
                   <Badge variant="outline">Moderate</Badge>
                 </div>
-                <Progress value={72} className="h-2" />
+                <Progress value={72} className="h-2 bg-[#F59E0B]/20" />
               </div>
 
               <div className="space-y-2">
@@ -202,15 +203,22 @@ export function AdminDashboard() {
                   <span>Concurrent Users</span>
                   <span className="text-muted-foreground">24 / 100</span>
                 </div>
-                <Progress value={24} className="h-2" />
+                <Progress value={24} className="h-2 bg-[#EF4444]/20" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Latest system events and user interactions</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Recent Activity</CardTitle>
+                  <CardDescription>Latest system events and user interactions</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setActiveView('activity_log')}>
+                  View All
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

@@ -9,7 +9,7 @@ import { AdmissionPage } from "../pages/admission/AdmissionPage.tsx";
 import { ContentManagerPage } from "../pages/contentManager/ContentManagerPage.tsx";
 import LoginPage from "../pages/loginForAd/LoginPage.tsx";
 import ProtectedRoute from "../components/auth/ProtectedRoute.tsx";
-import { AdminLayout } from "../components/admin/AdminLayout.tsx";
+import { AdminLayout } from "../components/admin/AdminLayout.jsx";
 function NotFound() {
   return <h1 style={{ padding: 24 }}>404</h1>;
 }
