@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { type User as AuthUser } from '../../contexts/Auth';
 import { 
   LayoutDashboard, 
   TrendingUp, 
@@ -6,38 +7,66 @@ import {
   Lightbulb, 
   Menu,
   User,
-  ChevronLeft
+  ChevronLeft,
+  MessageSquare,
+  FileText
 } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
 import { Avatar, AvatarFallback } from '../ui/system_users/avatar';
 import { DashboardOverview } from './DashboardOverview';
 import { AnalyticsStatistics } from './AnalyticsStatistics';
-import { KnowledgeBaseManagement } from './KnowledgeBaseManagement';
+import { QATemplateManagement } from './QATemplateManagement';
+import { DocumentManagement } from './DocumentManagement';
 import { ContentOptimization } from './ContentOptimization';
+import { LeaderKnowledgeBase } from './consultantLeader/leaderKnowledgeBase';
 
-type ConsultantPage = 'overview' | 'analytics' | 'knowledge' | 'optimization';
+type ConsultantPage = 'overview' | 'analytics' | 'qaTemplates' | 'documents' | 'optimization' | 'leaderReview';
 
 export function ConsultantLayout() {
   const [currentPage, setCurrentPage] = useState<ConsultantPage>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // TESTING: Toggle between consultant and leader roles
+  const [isTestingLeader, setIsTestingLeader] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  
+  useEffect(() => {
+    // Get user data from sessionStorage
+    const userData = sessionStorage.getItem("demo_user");
+    if (userData) {
+      setCurrentUser(JSON.parse(userData));
+    }
+  }, []);
+
+  // Toggle button will appear in the sidebar footer for testing
+  const toggleRole = () => {
+    setIsTestingLeader(!isTestingLeader);
+  };
+
+  // Use the toggle for testing, remove isTestingLeader for production
+  const isConsultantLeader = isTestingLeader;
+
   const navigation = [
     { id: 'overview' as ConsultantPage, label: 'Dashboard Home', icon: LayoutDashboard },
     { id: 'analytics' as ConsultantPage, label: 'Analytics & Statistics', icon: TrendingUp },
-    { id: 'knowledge' as ConsultantPage, label: 'Knowledge Base', icon: Database },
+    { id: 'qaTemplates' as ConsultantPage, label: 'Q&A Templates', icon: MessageSquare },
+    { id: 'documents' as ConsultantPage, label: 'Documents', icon: FileText },
     { id: 'optimization' as ConsultantPage, label: 'Content Optimization', icon: Lightbulb },
+    ...(isConsultantLeader ? [
+      { id: 'leaderReview' as ConsultantPage, label: 'Knowledge Base Review', icon: Database },
+    ] : []),
   ];
 
   return (
     <div className="h-full flex bg-[#F8FAFC]">
       {/* Sidebar */}
       <aside 
-        className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${
+        className={`bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300 ${
           sidebarCollapsed ? 'w-16' : 'w-64'
         }`}
       >
         {/* Logo and Brand */}
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
           {!sidebarCollapsed && (
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 bg-[#3B82F6] rounded-lg flex items-center justify-center">
@@ -60,7 +89,7 @@ export function ConsultantLayout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-2 space-y-1">
+        <nav className="flex-grow overflow-y-auto p-2 space-y-1">
           {navigation.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
@@ -84,7 +113,7 @@ export function ConsultantLayout() {
         </nav>
 
         {/* User Profile */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="mt-auto p-4 border-t border-gray-200 flex-shrink-0">
           <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
             <Avatar className="h-9 w-9">
               <AvatarFallback className="bg-[#3B82F6] text-white">
@@ -94,10 +123,21 @@ export function ConsultantLayout() {
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
                 <div className="text-sm truncate">Sarah Chen</div>
-                <div className="text-xs text-muted-foreground truncate">Consultant</div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {isTestingLeader ? 'Consultant Leader' : 'Consultant'}
+                </div>
               </div>
             )}
           </div>
+          {/* TESTING: Role toggle button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleRole}
+            className="mt-2 w-full text-xs"
+          >
+            Toggle Role (Testing)
+          </Button>
         </div>
       </aside>
 
@@ -105,8 +145,10 @@ export function ConsultantLayout() {
       <main className="flex-1 overflow-hidden">
         {currentPage === 'overview' && <DashboardOverview />}
         {currentPage === 'analytics' && <AnalyticsStatistics />}
-        {currentPage === 'knowledge' && <KnowledgeBaseManagement />}
+        {currentPage === 'qaTemplates' && <QATemplateManagement />}
+        {currentPage === 'documents' && <DocumentManagement />}
         {currentPage === 'optimization' && <ContentOptimization />}
+        {currentPage === 'leaderReview' && isConsultantLeader && <LeaderKnowledgeBase />}
       </main>
     </div>
   );

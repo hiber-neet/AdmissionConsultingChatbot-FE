@@ -111,7 +111,7 @@ const trendingTopics = [
 
 export function ContentOptimization() {
   return (
-    <ScrollArea className="h-full">
+    <ScrollArea className="min-h-screen h-full">
       <div className="p-6 pb-8 space-y-6">
         {/* Page Header */}
         <div>
