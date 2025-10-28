@@ -40,12 +40,12 @@ export function AdmissionOfficerLayout() {
     <div className="h-full flex bg-[#F8FAFC]">
       {/* Sidebar */}
       <aside 
-        className={`bg-white border-r flex flex-col transition-all duration-300 ${
+        className={`bg-white border-r flex flex-col h-screen transition-all duration-300 ${
           sidebarCollapsed ? 'w-16' : 'w-64'
         }`}
       >
         {/* Logo and Brand */}
-        <div className="p-4 border-b flex items-center justify-between">
+        <div className="p-4 border-b flex items-center justify-between flex-shrink-0">
           {!sidebarCollapsed && (
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 bg-[#3B82F6] rounded-lg flex items-center justify-center">
@@ -68,7 +68,7 @@ export function AdmissionOfficerLayout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-2 space-y-1">
+        <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {navigation.map((item) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
@@ -102,7 +102,7 @@ export function AdmissionOfficerLayout() {
         </nav>
 
         {/* User Profile */}
-        <div className="p-4 border-t">
+        <div className="p-4 border-t mt-auto flex-shrink-0">
           <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
             <Avatar className="h-9 w-9">
               <AvatarFallback className="bg-[#3B82F6] text-white">

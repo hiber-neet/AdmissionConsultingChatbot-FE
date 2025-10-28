@@ -86,8 +86,8 @@ export function AdminLayout() {
   return (
     <div className="flex h-full bg-[#F8FAFC]">
       {/* Sidebar */}
-      <div className="w-64 border-r bg-white">
-        <div className="p-6 border-b">
+      <div className="w-64 border-r bg-white flex flex-col h-full">
+        <div className="p-6 border-b flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 bg-[#3B82F6] rounded-lg flex items-center justify-center">
               <Shield className="h-5 w-5 text-white" />
@@ -99,7 +99,7 @@ export function AdminLayout() {
           </div>
         </div>
         
-        <nav className="p-4 space-y-2">
+        <nav className="p-4 space-y-2 flex-grow overflow-y-auto">
           {navigation.map((item) => {
             const Icon = item.icon;
             const isActive = activeView === item.id;
@@ -129,7 +129,7 @@ export function AdminLayout() {
         </nav>
 
         {/* Logout Button */}
-        <div className="p-4 border-t mt-auto">
+        <div className="p-4 border-t flex-shrink-0">
           <button
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-red-600 hover:bg-red-50"
             onClick={() => {

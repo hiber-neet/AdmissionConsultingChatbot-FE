@@ -73,7 +73,7 @@ export default function ContentManagerPage() {
      <div className="min-h-screen flex bg-[#F8FAFC]">
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${
+        className={`bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300 ${
           sidebarCollapsed ? "w-16" : "w-64"
         }`}
       >
@@ -127,7 +127,7 @@ export default function ContentManagerPage() {
         </nav>
 
         {/* User */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="mt-auto p-4 border-t border-gray-200 flex-shrink-0">
           <div
             className={`flex items-center gap-3 ${
               sidebarCollapsed ? "justify-center" : ""
