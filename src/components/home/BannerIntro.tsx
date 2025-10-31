@@ -1,6 +1,8 @@
 import { ChevronRight, TrendingUp, Users, Award } from 'lucide-react';
-
+import { useNavigate } from 'react-router-dom';
 export default function BannerIntro() {
+
+    const navigate = useNavigate();
   const scrollToAdmissions = () => {
     const element = document.getElementById('admissions');
     if (element) {
@@ -44,10 +46,10 @@ export default function BannerIntro() {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <button
-              onClick={scrollToAdmissions}
+              onClick={() => { navigate('/riasec'); }}
               className="group bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center space-x-2"
             >
-              <span>Đăng ký tuyển sinh</span>
+              <span>khảo sát ngay!</span>
               <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button

@@ -6,7 +6,7 @@ import swal from "sweetalert";
 import "./LoginPrivate.css";
 import { getRoleFromToken } from "./jwtHelper";
 import imgLogin from "/src/assets/images/login-private.jpg";
-
+import { useLocation, Link  } from "react-router-dom";
 // import { login } from "../../api/auth";
 
 const TEST_SITE_KEY = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";  
@@ -172,6 +172,14 @@ const LoginPrivate = () => {
               )}
             </div>
 
+<div className="text-center text-sm">
+  <span>Chưa có tài khoản? <Link
+    to="/#admissions"
+    className="text-[#EB5A0D] hover:underline font-medium"
+  >
+     Đăng ký ngay
+  </Link> </span>
+</div>
             <input
               className="button-login"
               type="submit"

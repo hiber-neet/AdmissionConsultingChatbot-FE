@@ -10,6 +10,7 @@ import { ContentManagerPage } from "../pages/contentManager/ContentManagerPage.t
 import LoginPage from "../pages/loginForAd/LoginPage.tsx";
 import ProtectedRoute from "../components/auth/ProtectedRoute.tsx";
 import { AdminLayout } from "../components/admin/AdminLayout.jsx";
+import RiasecPage from "../pages/riasec/RiasecPage.jsx";
 function NotFound() {
   return <h1 style={{ padding: 24 }}>404</h1>;
 }
@@ -27,6 +28,7 @@ export default function Router() {
       <Route path="/admission" element={<AdmissionPage />} />
       <Route path="/content" element={<ContentManagerPage />} />
       <Route path="/loginforad" element={<LoginPage />} />
+      <Route path="/riasec" element={<RiasecPage />} />
       <Route
         path="/admin"
         element={
