@@ -28,7 +28,12 @@ export default function Router() {
       <Route path="/admission" element={<AdmissionPage />} />
       <Route path="/content" element={<ContentManagerPage />} />
       <Route path="/loginforad" element={<LoginPage />} />
-      <Route path="/riasec" element={<RiasecPage />} />
+
+      
+ 
+<Route path="/riasec" element={<RiasecPage />} />
+ 
+      
       <Route
         path="/admin"
         element={

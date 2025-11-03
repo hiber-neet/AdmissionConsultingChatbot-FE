@@ -20,20 +20,6 @@ const SidebarItem = ({ active, icon, label, onClick }) => (
   </button>
 );
 
-const GENDERS = [
-  { value: "male", label: "Nam" },
-  { value: "female", label: "Nữ" },
-  { value: "other", label: "Khác" },
-];
-
-const GRADES = [
-  "10",
-  "11",
-  "12",
-  "Đã tốt nghiệp",
-];
-
-
 const UserProfile = () => {
   const [tab, setTab] = useState("profile");
   const [editing, setEditing] = useState(false);

@@ -18,7 +18,6 @@ const SidebarItem = ({ active, icon, label, onClick }) => (
   </button>
 );
 
-/* ---------- Constants (JS, không dùng TypeScript) ---------- */
 const GENDERS = [
   { value: "male", label: "Nam" },
   { value: "female", label: "Nữ" },
@@ -36,6 +35,79 @@ const UserProfile = () => {
   const [tab, setTab] = useState("profile");
   const [editing, setEditing] = useState(false);
 
+//hoc ba
+const [files, setFiles] = useState([]);        // File[] chờ upload
+const [uploading, setUploading] = useState(false);
+const [uploaded, setUploaded] = useState([]);  // danh sách đã upload (mock)
+
+const ACCEPTED = ["application/pdf", "image/jpeg", "image/png"];
+const MAX_MB = 10;
+
+// chọn file
+const onPickFiles = (e) => {
+  const picked = Array.from(e.target.files || []);
+  const valid = [];
+  const errors = [];
+
+  picked.forEach((file) => {
+    if (!ACCEPTED.includes(file.type)) {
+      errors.push(`File ${file.name} định dạng không hỗ trợ (PDF/JPG/PNG).`);
+      return;
+    }
+    if (file.size > MAX_MB * 1024 * 1024) {
+      errors.push(`File ${file.name}: vượt quá ${MAX_MB}MB.`);
+      return;
+    }
+    valid.push(file);
+  });
+
+  if (errors.length) alert(errors.join("\n"));
+  if (valid.length) setFiles((prev) => [...prev, ...valid]);
+
+  // cho phép chọn lại cùng file
+  e.target.value = "";
+};
+
+// xóa file khỏi hàng chờ
+const removeFile = (index) => {
+  setFiles((prev) => prev.filter((_, i) => i !== index));
+};
+
+// upload (mock). TODO: thay bằng gọi API backend với FormData nếu có.
+const uploadTranscript = async () => {
+  if (!files.length) {
+    alert("Vui lòng chọn tối thiểu 1 file.");
+    return;
+  }
+  try {
+    setUploading(true);
+    const results = files.map((f) => ({
+      name: f.name,
+      size: f.size,
+      type: f.type,
+      preview: f.type.startsWith("image/") ? URL.createObjectURL(f) : null,
+    }));
+    setUploaded((prev) => [...prev, ...results]);
+    setFiles([]);
+    alert("Tải lên học bạ thành công!");
+  } catch (e) {
+    console.error(e);
+    alert("Tải lên thất bại, thử lại sau.");
+  } finally {
+    setUploading(false);
+  }
+};
+
+// dọn URL tạm để tránh leak khi rời trang
+useEffect(() => {
+  return () => {
+    uploaded.forEach((u) => u.preview && URL.revokeObjectURL(u.preview));
+  };
+}, [uploaded]);
+
+  
+
+
   // Chatbot states
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -45,7 +117,7 @@ const UserProfile = () => {
   const partialRef = useRef("");
   const [wsReady, setWsReady] = useState(false);
 
-  // Consultant demo
+  
   const [consultants] = useState([
     { id: "c1", name: "Consultant 1", role: "Tư vấn tuyển sinh", avatar: "https://i.pravatar.cc/100?img=11" },
     { id: "c2", name: "Consultant 2", role: "Tư vấn học vụ", avatar: "https://i.pravatar.cc/100?img=12" },
@@ -67,6 +139,16 @@ const UserProfile = () => {
       };
     });
   };
+
+const deleteUploaded = (index) => {
+  setUploaded((prev) => {
+    const next = [...prev];
+    const [removed] = next.splice(index, 1);
+    if (removed?.preview) URL.revokeObjectURL(removed.preview);
+    return next;
+  });
+};
+
 
   const handleConsultSend = (e) => {
     e.preventDefault();
@@ -91,7 +173,7 @@ const UserProfile = () => {
     }, 700);
   };
 
-  // --------- Profile form (bám ERD) ----------
+ 
   const [form, setForm] = useState({
     fullName: "Nguyễn Thanh Đạt",
     gender: "male",
@@ -104,7 +186,7 @@ const UserProfile = () => {
     admissionScore: "25",
     subjects: "Toán, Lý, Hóa",
     preferredMajor: "Kỹ thuật phần mềm",
-    riasecCode: "RIA", // có thể cập nhật từ bài test
+    riasecCode: "RIA",  
   });
 
   useEffect(() => {
@@ -278,6 +360,8 @@ const UserProfile = () => {
                 label="Consultant"
                 onClick={() => setTab("consultant")}
               />
+               <SidebarItem active={tab === "transcript"} icon="📄" label="School records
+" onClick={() => setTab("transcript")} />
               <div className="mt-6 text-xs text-gray-400 px-2">Help</div>
             </div>
           </aside>
@@ -626,6 +710,108 @@ const UserProfile = () => {
                     </button>
                   </form>
                 </section>
+              </div>
+            )}
+
+            {tab === "transcript" && (
+              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+                <h2 className="text-xl font-semibold mb-1">Tải lên học bạ</h2>
+                <p className="text-sm text-gray-500 mb-4">
+                  Chấp nhận: PDF, JPG, PNG (tối đa {MAX_MB}MB mỗi file). Bạn có thể tải lên nhiều trang.
+                </p>
+
+                <div className="grid gap-4">
+<div className="flex items-center gap-3 flex-wrap md:flex-nowrap">
+  {/* Ẩn input thật, dùng label làm nút */}
+  <input
+    id="transcriptFiles"
+    type="file"
+    multiple
+    accept=".pdf,image/png,image/jpeg"
+    onChange={onPickFiles}
+    className="hidden"
+  />
+  <label
+    htmlFor="transcriptFiles"
+    className="inline-flex items-center px-4 py-2 rounded-md bg-[#EB5A0D] text-white cursor-pointer hover:opacity-90"
+  >
+    Chọn file
+  </label>
+
+  {/* Thông tin ngắn gọn thay cho “No file chosen” */}
+  <span className="text-sm text-gray-600">
+    {files.length ? `${files.length} file đã chọn` : "Chưa chọn file"}
+  </span>
+
+  {/* Nút tải lên dạt phải nhưng vẫn cùng một hàng */}
+  <div className="ml-auto">
+    <button
+      type="button"
+      onClick={uploadTranscript}
+      disabled={!files.length || uploading}
+      className={`px-4 py-2 rounded-md text-white ${
+        !files.length || uploading
+          ? "bg-gray-300 cursor-not-allowed"
+          : "bg-[#EB5A0D] hover:opacity-90"
+      }`}
+    >
+      {uploading ? "Đang tải..." : "Tải lên"}
+    </button>
+  </div>
+</div>
+
+                  {/* Danh sách file đang chờ upload */}
+                  {files.length > 0 && (
+                    <div className="border rounded-lg p-3">
+                      <div className="font-medium mb-2">Hàng chờ ({files.length})</div>
+                      <ul className="space-y-2">
+                        {files.map((f, i) => (
+                          <li key={i} className="flex items-center justify-between text-sm">
+                            <span className="truncate">
+                              {f.name} <span className="text-gray-500">({(f.size / (1024 * 1024)).toFixed(2)}MB)</span>
+                            </span>
+                            <button onClick={() => removeFile(i)} className="text-red-600 hover:underline">
+                              Xóa
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Danh sách đã upload */}
+{uploaded.length > 0 && (
+  <div className="border rounded-lg p-3">
+    <div className="font-medium mb-3">Đã tải lên ({uploaded.length})</div>
+    <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+      {uploaded.map((u, idx) => (
+        <div key={idx} className="relative border rounded-md p-2 text-sm">
+          {/* Nút Xóa ở góc phải trên */}
+          <button
+            type="button"
+            onClick={() => deleteUploaded(idx)}
+            className="absolute top-2 right-2 rounded-md px-2 py-1 text-xs bg-red-100 text-red-600 hover:bg-red-200"
+            title="Xóa file này"
+          >
+            Xóa
+          </button>
+
+          <div className="font-medium truncate pr-10 mb-1">{u.name}</div>
+          <div className="text-gray-500 mb-2">{(u.size / (1024 * 1024)).toFixed(2)}MB</div>
+
+          {u.preview ? (
+            <img src={u.preview} alt={u.name} className="w-full h-32 object-cover rounded" />
+          ) : (
+            <div className="h-32 flex items-center justify-center bg-gray-50 rounded">
+              <span className="text-gray-400">PDF</span>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+                </div>
               </div>
             )}
           </section>
