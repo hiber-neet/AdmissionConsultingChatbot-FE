@@ -4,6 +4,7 @@ import axios from "axios";
 import Footer from "@/components/footer/Footer";
 import Header from "@/components/header/Header";
 import banner from "@/assets/images/login-private.jpg";
+import { Link } from "react-router-dom";
 // import { BASE } from "@/configs/base";
 
 const SidebarItem = ({ active, icon, label, onClick }) => (
@@ -105,8 +106,24 @@ useEffect(() => {
   };
 }, [uploaded]);
 
-  
+  const LS_KEY = "chat_conversations_v1";
+const newConv = () => ({
+  id: crypto.randomUUID(),
+  title: "Cuộc trò chuyện mới",
+  messages: [],
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+});
 
+const [convs, setConvs] = useState(() => {
+  const raw = localStorage.getItem(LS_KEY);
+  if (raw) {
+    try { return JSON.parse(raw); } catch {}
+  }
+  return [newConv()];
+});
+
+const [activeId, setActiveId] = useState(convs[0]?.id || null);
 
   // Chatbot states
   const [messages, setMessages] = useState([]);
@@ -116,6 +133,57 @@ useEffect(() => {
   const wsRef = useRef(null);
   const partialRef = useRef("");
   const [wsReady, setWsReady] = useState(false);
+
+
+// load messages khi đổi phiên
+useEffect(() => {
+  const c = convs.find(c => c.id === activeId);
+  setMessages(c ? c.messages : []);
+}, [activeId, convs]);
+
+const persistConvs = (next) => {
+  setConvs(next);
+  localStorage.setItem(LS_KEY, JSON.stringify(next));
+};
+
+const createConversation = () => {
+  const c = newConv();
+  const next = [c, ...convs];
+  persistConvs(next);
+  setActiveId(c.id);
+};
+
+const selectConversation = (id) => setActiveId(id);
+
+const renameConversation = (id) => {
+  const title = prompt("Đặt tên phiên chat:");
+  if (!title) return;
+  const next = convs.map(c => c.id === id ? { ...c, title } : c);
+  persistConvs(next);
+};
+
+const deleteConversation = (id) => {
+  if (!confirm("Xoá phiên chat này?")) return;
+  const next = convs.filter(c => c.id !== id);
+  persistConvs(next);
+  if (activeId === id) setActiveId(next[0]?.id || null);
+};
+
+// cập nhật phiên hiện tại khi có tin nhắn mới
+const pushToActive = (msg) => {
+  const next = convs.map(c => {
+    if (c.id !== activeId) return c;
+    return {
+      ...c,
+      messages: [...c.messages, msg],
+      updatedAt: Date.now(),
+    };
+  });
+  persistConvs(next);
+};
+
+
+
 
   
   const [consultants] = useState([
@@ -235,6 +303,7 @@ const deleteUploaded = (index) => {
               : "(không có phản hồi)";
 
           setMessages((prev) => [...prev, { sender: "bot", text: finalText }]);
+          pushToActive({ sender: "bot", text: finalText });
           partialRef.current = "";
           setPartialResponse("");
           setIsLoading(false);
@@ -253,9 +322,10 @@ const deleteUploaded = (index) => {
 
   const handleSend = (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
-    const msg = input;
-    setMessages((prev) => [...prev, { sender: "user", text: msg }]);
+    if (!input.trim() || !activeId) return;
+    const msg = { sender: "user", text: input };
+     setMessages(prev => [...prev, msg]);
+  pushToActive(msg);  
     setPartialResponse("");
     partialRef.current = "";
     setIsLoading(true);
@@ -377,7 +447,19 @@ const deleteUploaded = (index) => {
                     <div className="pb-1">
                       <div className="font-semibold">{form.fullName}</div>
                       <div className="text-sm text-gray-500">{form.email}</div>
+                      
                     </div>
+ <div className="pb-1 flex-1 flex justify-end">
+                    <Link
+    to="/riasec"
+    className="shrink-0 whitespace-nowrap inline-flex items-center gap-2
+               px-3 py-1.5 rounded-md text-xs bg-[#EB5A0D] text-white hover:opacity-90"
+    title="Làm bài trắc nghiệm RIASEC"
+  >
+    RIASEC
+  </Link>
+ </div>
+
                   </div>
 
                   <form onSubmit={onSave} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -580,63 +662,116 @@ const deleteUploaded = (index) => {
               </div>
             )}
 
-            {tab === "chatbot" && (
-              <div className="rounded-2xl border border-gray-200 bg-white flex flex-col h-[600px]">
-                <div className="bg-[#EB5A0D] flex justify-center text-white px-6 py-3 text-lg font-semibold rounded-t-2xl">
-                  ChatBotFPT
-                </div>
+{tab === "chatbot" && (
+  <div className="rounded-2xl border border-gray-200 bg-white grid grid-cols-12 overflow-hidden min-h-[600px]">
+    {/* LEFT: danh sách phiên */}
+    <aside className="col-span-12 md:col-span-4 border-r border-gray-100 flex flex-col">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#FFF3ED]">
+        <div className="font-semibold text-[#EB5A0D]">Đoạn chat</div>
+        <button
+          onClick={createConversation}
+          className="px-3 py-1 rounded-md bg-[#EB5A0D] text-white text-sm hover:opacity-90"
+        >
+          + Phiên mới
+        </button>
+      </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
-                  {messages.length === 0 ? (
-                    <p className="text-gray-400 text-center mt-10">
-                      Hello, welcome to ChatBotFPT! How can I assist you today?
-                    </p>
-                  ) : (
-                    messages.map((m, i) => (
-                      <div key={i} className={`flex ${m.sender === "user" ? "justify-end" : "justify-start"}`}>
-                        <div
-                          className={`px-4 py-2 max-w-[70%] rounded-xl text-sm ${
-                            m.sender === "user" ? "bg-[#EB5A0D] text-white" : "bg-gray-200 text-gray-800"
-                          }`}
-                        >
-                          {m.text}
-                        </div>
-                      </div>
-                    ))
-                  )}
-
-                  {isLoading && (
-                    <div className="flex justify-start mt-1">
-                      <div className="px-4 py-2 max-w-[70%] rounded-xl text-sm bg-gray-200 text-gray-800">
-                        {partialResponse}
-                        <span className="animate-pulse">▌</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <form onSubmit={handleSend} className="flex items-center gap-3 border-t border-gray-200 p-4">
-                  <input
-                    type="text"
-                    placeholder="Nhập tin nhắn..."
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
-                  />
+      <div className="flex-1 overflow-y-auto">
+        <ul className="divide-y divide-gray-100">
+          {convs.map(c => (
+            <li
+              key={c.id}
+              className={`px-4 py-3 cursor-pointer hover:bg-gray-50 ${
+                c.id === activeId ? "bg-orange-50" : ""
+              }`}
+              onClick={() => selectConversation(c.id)}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="truncate font-medium">{c.title}</div>
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <button
-                    type="submit"
-                    disabled={!wsReady || !input.trim()}
-                    className={`px-4 py-2 rounded-md text-white transition ${
-                      !wsReady || !input.trim()
-                        ? "bg-gray-300 cursor-not-allowed"
-                        : "bg-[#EB5A0D] hover:opacity-90"
-                    }`}
+                    onClick={(e) => { e.stopPropagation(); renameConversation(c.id); }}
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                    title="Đổi tên"
                   >
-                    {wsReady ? "Gửi" : "Đang kết nối..."}
+                    Sửa
                   </button>
-                </form>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deleteConversation(c.id); }}
+                    className="text-xs text-red-600 hover:text-red-700"
+                    title="Xoá"
+                  >
+                    Xoá
+                  </button>
+                </div>
               </div>
-            )}
+              <div className="text-xs text-gray-400 mt-1">
+                {new Date(c.updatedAt).toLocaleString()}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </aside>
+
+    {/* RIGHT: khung chat của phiên đang chọn */}
+    <section className="col-span-12 md:col-span-8 flex flex-col">
+      <div className="bg-[#EB5A0D] text-white px-6 py-3 text-lg font-semibold text-center">
+        ChatBotFPT
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+        {!messages.length ? (
+          <p className="text-gray-400 text-center mt-10">
+            Hãy bắt đầu trò chuyện…
+          </p>
+        ) : (
+          messages.map((m, i) => (
+            <div key={i} className={`flex ${m.sender === "user" ? "justify-end" : "justify-start"}`}>
+              <div
+                className={`px-4 py-2 max-w-[70%] rounded-xl text-sm ${
+                  m.sender === "user" ? "bg-[#EB5A0D] text-white" : "bg-gray-200 text-gray-800"
+                }`}
+              >
+                {m.text}
+              </div>
+            </div>
+          ))
+        )}
+
+        {isLoading && (
+          <div className="flex justify-start mt-1">
+            <div className="px-4 py-2 max-w-[70%] rounded-xl text-sm bg-gray-200 text-gray-800">
+              {partialResponse}
+              <span className="animate-pulse">▌</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <form onSubmit={handleSend} className="flex items-center gap-3 border-t border-gray-200 p-4">
+        <input
+          type="text"
+          placeholder="Nhập tin nhắn..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
+        />
+        <button
+          type="submit"
+          disabled={!wsReady || !input.trim() || !activeId}
+          className={`px-4 py-2 rounded-md text-white ${
+            !wsReady || !input.trim() || !activeId
+              ? "bg-gray-300 cursor-not-allowed"
+              : "bg-[#EB5A0D] hover:opacity-90"
+          }`}
+        >
+          {wsReady ? "Gửi" : "Đang kết nối..."}
+        </button>
+      </form>
+    </section>
+  </div>
+)}
 
             {tab === "consultant" && (
               <div className="rounded-2xl border border-gray-200 bg-white grid grid-cols-12 overflow-hidden min-h-[600px]">

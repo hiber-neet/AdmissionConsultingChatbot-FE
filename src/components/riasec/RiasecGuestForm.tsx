@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/Auth"; // dùng để biết user đã đăng nhập chưa
+import { useAuth } from "@/contexts/Auth";
 
 type Trait = "R" | "I" | "A" | "S" | "E" | "C";
 
@@ -9,6 +9,7 @@ type Question = {
   trait: Trait;
   text: string;
 };
+
 
 const TRAIT_LABEL: Record<Trait, string> = {
   R: "Realistic (Thực tế)",
@@ -75,11 +76,38 @@ const QUESTIONS: Question[] = [
 ];
 
 export default function RiasecGuestForm() {
+  const CHATBOT_PREFILL_KEY = "chatbot_prefill_message";
+ 
+
   const { user } = useAuth();
   const navigate = useNavigate();
+    // ---- NEW: key lưu theo user
+  const SAVE_KEY = user ? `riasec_result_${user.id}` : null;
 
+    // ---- state
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [loadedAt, setLoadedAt] = useState<string | null>(null)
+
+   useEffect(() => {
+    if (!user || !SAVE_KEY) return;
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+
+    try {
+      const data: {
+        answers: Record<string, number>;
+        savedAt: string;
+      } = JSON.parse(raw);
+      if (data?.answers) {
+        setAnswers(data.answers);
+        setSubmitted(true);
+        setLoadedAt(new Date(data.savedAt).toLocaleString());
+      }
+    } catch {
+      // ignore
+    }
+  }, [user, SAVE_KEY]);
 
   const allAnswered = Object.keys(answers).length === QUESTIONS.length;
 
@@ -92,13 +120,23 @@ export default function RiasecGuestForm() {
     return init;
   }, [answers]);
 
-  const ranking = useMemo(() => {
-    return (Object.keys(scores) as Trait[])
-      .map((t) => ({ trait: t, score: scores[t] }))
-      .sort((a, b) => b.score - a.score);
-  }, [scores]);
+  const ranking = useMemo(
+    () =>
+      (Object.keys(scores) as Trait[])
+        .map((t) => ({ trait: t, score: scores[t] }))
+        .sort((a, b) => b.score - a.score),
+    [scores]
+  );
 
   const top3 = ranking.slice(0, 3).map((r) => r.trait).join("");
+
+  const buildChatMessage = () => {
+    const parts = (["R", "I", "A", "S", "E", "C"] as Trait[])
+      .map((t) => `${t}:${scores[t]}/15`)
+      .join(", ");
+    return `Mã RIASEC của tôi: ${top3}. Điểm chi tiết: ${parts}.
+Bạn hãy phân tích điểm mạnh theo RIASEC và gợi ý ngành/chuyên ngành phù hợp (+ lộ trình học) cho tôi nhé.`;
+  };
 
   const handleChange = (qid: string, value: number) => {
     setAnswers((prev) => ({ ...prev, [qid]: value }));
@@ -111,8 +149,40 @@ export default function RiasecGuestForm() {
       return;
     }
     setSubmitted(true);
-    
+    setLoadedAt(null); 
   };
+
+  // ---- NEW: lưu kết quả
+  const handleSave = () => {
+    if (!user || !SAVE_KEY) {
+      alert("Bạn cần đăng nhập để lưu kết quả.");
+      return;
+    }
+    if (!submitted) {
+      alert("Hãy hoàn thành bài test rồi hãy lưu.");
+      return;
+    }
+    const existing = localStorage.getItem(SAVE_KEY);
+    if (existing && !confirm("Bạn đã lưu trước đó. Ghi đè kết quả?")) return;
+
+    const payload = {
+      answers,                 // lưu từng câu để lần sau khôi phục đầy đủ
+      scores,                  // tiện để tham khảo nhanh
+      top3,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+    alert("Đã lưu kết quả RIASEC!");
+  };
+
+  // ---- (tùy chọn) xóa kết quả đã lưu
+  const handleClearSaved = () => {
+    if (!user || !SAVE_KEY) return;
+    if (!confirm("Xóa kết quả đã lưu?")) return;
+    localStorage.removeItem(SAVE_KEY);
+    alert("Đã xóa kết quả đã lưu.");
+  };
+
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -222,7 +292,6 @@ export default function RiasecGuestForm() {
                 <button
                   className="px-4 py-2 rounded-md border hover:bg-gray-50"
                   onClick={() => {
-                    // quay lại chỉnh câu trả lời
                     setSubmitted(false);
                   }}
                 >
@@ -232,29 +301,36 @@ export default function RiasecGuestForm() {
             </section>
           )}
 
-          {/* Nếu đã đăng nhập, hiển thị gợi ý ngành chi tiết */}
           {user && (
-            <section className="rounded-xl border bg-white p-5">
-              <h3 className="font-semibold mb-4">Gợi ý ngành học theo điểm mạnh của bạn</h3>
+<section className="rounded-xl border bg-white p-5">
+    <h3 className="font-semibold mb-4">Gợi ý ngành học theo điểm mạnh của bạn</h3>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                {ranking.map(({ trait }) => (
-                  <div key={trait} className="p-4 rounded-lg border">
-                    <div className="font-medium mb-1">{TRAIT_LABEL[trait]}</div>
-                    <ul className="list-disc list-inside text-sm text-gray-700">
-                      {TRAIT_MAJORS[trait].map((m) => (
-                        <li key={m}>{m}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
+    <div className="mt-6 flex gap-3">
+      <button
+        className="px-4 py-2 rounded-md bg-[#EB5A0D] text-white hover:opacity-90"
+        onClick={() => {
+          const text = buildChatMessage();
+          localStorage.setItem(CHATBOT_PREFILL_KEY, JSON.stringify({ text }));
+          navigate("/profile");  
+        }}
+      >
+        Đưa kết quả cho Chatbot
+      </button>
+                <button
+                  className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
+                  onClick={handleSave}
+                >
+                  Save kết quả
+                </button>
 
-              <div className="mt-4 text-sm text-gray-500">
-                Gợi ý được sắp theo mức điểm từ cao xuống thấp. Bạn có thể kết hợp Top-2/Top-3
-                (ví dụ {top3}) để chọn chuyên ngành phù hợp nhất.
-              </div>
-            </section>
+      <button
+        className="px-4 py-2 rounded-md border hover:bg-gray-50"
+        onClick={() => setSubmitted(false)}
+      >
+        Làm lại bài
+      </button>
+    </div>
+  </section>
           )}
         </div>
       )}
