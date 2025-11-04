@@ -1,5 +1,5 @@
 // src/pages/contentManager/ContentManagerPage.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   FileText,
@@ -18,7 +18,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/system_users/avatar";
 import AllArticles from "@/components/content/AllArticles";
 import ReviewQueue from "@/components/content/ReviewQueue";
 import ArticleEditor from "@/components/content/ArticleEditor";
-import  ContentManagerDashboard  from "@/components/content/ContentManagerDashboard";
+import ContentManagerDashboard from "@/components/content/ContentManagerDashboard";
+import { RiasecManagement } from "@/components/content/RiasecManagement";
 
 // ---- Tiny dashboard section (placeholder). Replace with a real component if you add one.
 function ContentDashboard() {
@@ -56,17 +57,39 @@ function ContentDashboard() {
 }
 
 // ---- Page type
-type ContentPage = "dashboard" | "articles" | "review" | "editor";
+type ContentPage = "dashboard" | "articles" | "review" | "editor" | "riasec";
 
 export default function ContentManagerPage() {
   const [currentPage, setCurrentPage] = useState<ContentPage>("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isTestingLeader, setIsTestingLeader] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
+  
+  useEffect(() => {
+    // Get user data from sessionStorage
+    const userData = sessionStorage.getItem("demo_user");
+    if (userData) {
+      setCurrentUser(JSON.parse(userData));
+    }
+  }, []);
+
+  // Toggle button will appear in the sidebar footer for testing
+  const toggleRole = () => {
+    setIsTestingLeader(!isTestingLeader);
+  };
+
+  const isContentManagerLeader = isTestingLeader;
 
   const navigation = [
     { id: "dashboard" as ContentPage, label: "Dashboard", icon: LayoutDashboard },
     { id: "articles" as ContentPage, label: "All Articles", icon: FileText },
-    { id: "review" as ContentPage, label: "Review Queue", icon: ListChecks },
+    ...(isContentManagerLeader ? [
+      { id: "review" as ContentPage, label: "Review Queue", icon: ListChecks }
+    ] : []),
     { id: "editor" as ContentPage, label: "New Article", icon: PenSquare },
+    ...(isContentManagerLeader ? [
+      { id: "riasec" as ContentPage, label: "RIASEC Management", icon: Database }
+    ] : []),
   ];
 
   return (
@@ -141,10 +164,21 @@ export default function ContentManagerPage() {
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
                 <div className="text-sm truncate">Sarah Chen</div>
-                <div className="text-xs text-gray-500 truncate">Content Manager</div>
+                <div className="text-xs text-gray-500 truncate">
+                  {isContentManagerLeader ? 'Content Manager Leader' : 'Content Manager'}
+                </div>
               </div>
             )}
           </div>
+          {/* TESTING: Role toggle button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleRole}
+            className="mt-2 w-full text-xs"
+          >
+            Toggle Role (Testing)
+          </Button>
         </div>
       </aside>
 
@@ -152,8 +186,9 @@ export default function ContentManagerPage() {
       <main className="flex-1 overflow-auto">
         {currentPage === 'dashboard' && <ContentManagerDashboard />}
         {currentPage === "articles" && <AllArticles />}
-        {currentPage === "review" && <ReviewQueue />}
+        {currentPage === "review" && isContentManagerLeader && <ReviewQueue />}
         {currentPage === "editor" && <ArticleEditor />}
+        {currentPage === "riasec" && isContentManagerLeader && <RiasecManagement />}
       </main>
     </div>
   );
