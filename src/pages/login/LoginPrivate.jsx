@@ -154,28 +154,12 @@ const LoginPrivate = () => {
               />
             </div>
 
-            <div className="Recapcha">
-              {siteKey ? (
-                <ReCAPTCHA
-                  sitekey={siteKey}
-                  onChange={(val) => setCaptchaValue(val)}
-                  onErrored={() =>
-                    toast.error(
-                      "Không thể tải reCAPTCHA. Kiểm tra lại domain/site key."
-                    )
-                  }
-                />
-              ) : (
-                <div className="text-sm text-red-500">
-                  reCAPTCHA chưa được cấu hình cho domain này.
-                </div>
-              )}
-            </div>
+ 
 
-<div className="text-center text-sm">
+<div className="text-center text-sm mt-4">
   <span>Chưa có tài khoản? <Link
     to="/#admissions"
-    className="text-[#EB5A0D] hover:underline font-medium"
+    className="text-[#EB5A0D] hover:underline font-medium ml-1"
   >
      Đăng ký ngay
   </Link> </span>

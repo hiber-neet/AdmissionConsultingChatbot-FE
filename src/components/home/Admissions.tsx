@@ -31,12 +31,13 @@ export default function Admissions() {
     password: '',
     phone: '',
     program: '',
+    person: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     alert('Cảm ơn bạn đã đăng ký! Chúng tôi sẽ liên hệ trong thời gian sớm nhất.');
-    setFormData({ name: '', email: '', password: '', phone: '', program: '' });
+    setFormData({ name: '', email: '', password: '', phone: '', program: '', person: '' });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -221,6 +222,23 @@ export default function Admissions() {
                   <option value="security">An ninh mạng</option>
                   <option value="business">Kinh doanh số</option>
                   <option value="game">Thiết kế trò chơi</option>
+                </select>
+              </div>
+
+              <div>
+                 <label htmlFor="person" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Bạn là? <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="person"
+                  name="person"
+                  value={formData.person}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all appearance-none bg-white"
+                >
+                  <option value="parent">Phụ huynh</option>
+                  <option value="student">Học sinh</option>
                 </select>
               </div>
 

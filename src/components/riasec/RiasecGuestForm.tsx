@@ -40,11 +40,9 @@ const TRAIT_MAJORS: Record<Trait, string[]> = {
 };
 
 const LIKERT = [
-  { value: 1, label: "Rất không đồng ý" },
+  { value: 1, label: "Đồng ý" },
   { value: 2, label: "Không đồng ý" },
-  { value: 3, label: "Trung lập" },
-  { value: 4, label: "Đồng ý" },
-  { value: 5, label: "Rất đồng ý" },
+
 ];
 
 // 18 câu – 3 câu cho mỗi nhóm (gọn mà vẫn đủ tín hiệu)
@@ -132,7 +130,7 @@ export default function RiasecGuestForm() {
 
   const buildChatMessage = () => {
     const parts = (["R", "I", "A", "S", "E", "C"] as Trait[])
-      .map((t) => `${t}:${scores[t]}/15`)
+      .map((t) => `${t}:${scores[t]}/3`)
       .join(", ");
     return `Mã RIASEC của tôi: ${top3}. Điểm chi tiết: ${parts}.
 Bạn hãy phân tích điểm mạnh theo RIASEC và gợi ý ngành/chuyên ngành phù hợp (+ lộ trình học) cho tôi nhé.`;
@@ -204,25 +202,25 @@ Bạn hãy phân tích điểm mạnh theo RIASEC và gợi ý ngành/chuyên ng
                 <span className="text-xs text-gray-500">{TRAIT_LABEL[q.trait]}</span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                {LIKERT.map((opt) => (
-                  <label
-                    key={opt.value}
-                    className={`flex items-center gap-2 rounded-lg border p-2 cursor-pointer hover:bg-gray-50 ${
-                      answers[q.id] === opt.value ? "border-[#EB5A0D]" : "border-gray-200"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={q.id}
-                      className="accent-[#EB5A0D]"
-                      checked={answers[q.id] === opt.value}
-                      onChange={() => handleChange(q.id, opt.value)}
-                    />
-                    <span className="text-sm">{opt.label}</span>
-                  </label>
-                ))}
-              </div>
+<div className="grid grid-cols-2 gap-2">
+  {LIKERT.map((opt) => (
+    <label
+      key={opt.value}
+      className={`flex items-center gap-2 rounded-lg border p-2 cursor-pointer hover:bg-gray-50 ${
+        answers[q.id] === opt.value ? "border-[#EB5A0D]" : "border-gray-200"
+      }`}
+    >
+      <input
+        type="radio"
+        name={q.id}
+        className="accent-[#EB5A0D]"
+        checked={answers[q.id] === opt.value}
+        onChange={() => handleChange(q.id, opt.value)}
+      />
+      <span className="text-sm">{opt.label}</span>
+    </label>
+  ))}
+</div>
             </div>
           ))}
 
@@ -246,48 +244,21 @@ Bạn hãy phân tích điểm mạnh theo RIASEC và gợi ý ngành/chuyên ng
       {submitted && (
         <div className="space-y-6">
           {/* Tóm tắt điểm */}
-          <section className="rounded-xl border bg-white p-5">
-            <h2 className="text-lg font-semibold mb-2">Kết quả tóm tắt</h2>
-            <p className="text-gray-600 mb-4">
-              Bộ 3 nổi trội: <b>{top3}</b>
-            </p>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              {(Object.keys(scores) as Trait[]).map((t) => {
-                // scale max = 3 câu * 5 điểm = 15
-                const percent = Math.round((scores[t] / 15) * 100);
-                return (
-                  <div key={t} className="p-3 rounded-lg border">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="font-medium">{TRAIT_LABEL[t]}</div>
-                      <div className="text-sm text-gray-500">{scores[t]} / 15</div>
-                    </div>
-                    <div className="h-2 bg-gray-100 rounded">
-                      <div
-                        className="h-2 bg-[#EB5A0D] rounded"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                    <p className="text-sm text-gray-600 mt-2">{TRAIT_SUMMARY[t]}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+ 
 
           {/* Chặn chi tiết khi chưa đăng nhập */}
           {!user && (
             <section className="rounded-xl border bg-white p-5">
               <h3 className="font-semibold mb-2">Gợi ý ngành phù hợp (đầy đủ)</h3>
               <p className="text-gray-600">
-                Để xem **ngành học phù hợp** theo từng nhóm RIASEC và lộ trình chi tiết, vui lòng đăng nhập.
+                Kết quả là {top3} - {ranking[0].score} điểm, {ranking[1].trait} - {ranking[1].score} điểm, {ranking[2].trait} - {ranking[2].score} điểm.
               </p>
               <div className="mt-4 flex gap-3">
                 <button
                   className="px-4 py-2 rounded-md bg-black text-white hover:opacity-90"
-                  onClick={() => navigate("/loginprivate")}
+                  onClick={() => navigate("/chatbot")}
                 >
-                  Đăng nhập để xem chi tiết
+                  Đưa kết quả cho chatbot
                 </button>
                 <button
                   className="px-4 py-2 rounded-md border hover:bg-gray-50"
