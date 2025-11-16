@@ -25,6 +25,8 @@ type ConsultantPage = 'overview' | 'analytics' | 'qaTemplates' | 'documents' | '
 export function ConsultantLayout() {
   const [currentPage, setCurrentPage] = useState<ConsultantPage>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [prefilledQuestion, setPrefilledQuestion] = useState<string | null>(null);
+  const [templateAction, setTemplateAction] = useState<'edit' | 'add' | 'view' | null>(null);
 
   // TESTING: Toggle between consultant and leader roles
   const [isTestingLeader, setIsTestingLeader] = useState(false);
@@ -45,6 +47,33 @@ export function ConsultantLayout() {
 
   // Use the toggle for testing, remove isTestingLeader for production
   const isConsultantLeader = isTestingLeader;
+
+  // Handle navigation to QA Templates with pre-filled question
+  const handleNavigateToKnowledgeBase = (question: string) => {
+    setPrefilledQuestion(question);
+    setTemplateAction('add');
+    setCurrentPage('qaTemplates');
+  };
+
+  // Handle navigation from Analytics to Templates
+  const handleNavigateToTemplates = (question?: string, action?: 'edit' | 'add' | 'view') => {
+    setPrefilledQuestion(question || null);
+    setTemplateAction(action || null);
+    setCurrentPage('qaTemplates');
+  };
+
+  // Handle navigation from Dashboard to Templates (always 'add' action)
+  const handleDashboardNavigateToTemplates = (question: string, action: 'add') => {
+    setPrefilledQuestion(question);
+    setTemplateAction(action);
+    setCurrentPage('qaTemplates');
+  };
+
+  // Reset template state when question is used
+  const handleQuestionUsed = () => {
+    setPrefilledQuestion(null);
+    setTemplateAction(null);
+  };
 
   const navigation = [
     { id: 'overview' as ConsultantPage, label: 'Dashboard Home', icon: LayoutDashboard },
@@ -143,11 +172,11 @@ export function ConsultantLayout() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-hidden">
-        {currentPage === 'overview' && <DashboardOverview />}
-        {currentPage === 'analytics' && <AnalyticsStatistics />}
-        {currentPage === 'qaTemplates' && <QATemplateManagement />}
+        {currentPage === 'overview' && <DashboardOverview onNavigateToTemplates={handleDashboardNavigateToTemplates} />}
+        {currentPage === 'analytics' && <AnalyticsStatistics onNavigateToTemplates={handleNavigateToTemplates} />}
+        {currentPage === 'qaTemplates' && <QATemplateManagement prefilledQuestion={prefilledQuestion} onQuestionUsed={handleQuestionUsed} templateAction={templateAction} />}
         {currentPage === 'documents' && <DocumentManagement />}
-        {currentPage === 'optimization' && <ContentOptimization />}
+        {currentPage === 'optimization' && <ContentOptimization onNavigateToKnowledgeBase={handleNavigateToKnowledgeBase} />}
         {currentPage === 'leaderReview' && isConsultantLeader && <LeaderKnowledgeBase />}
       </main>
     </div>

@@ -109,7 +109,7 @@ const trendingTopics = [
   },
 ];
 
-export function ContentOptimization() {
+export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateToKnowledgeBase?: (question: string) => void }) {
   return (
     <ScrollArea className="min-h-screen h-full">
       <div className="p-6 pb-8 space-y-6">
@@ -205,23 +205,14 @@ export function ContentOptimization() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-md mb-3">
-                    <div className="h-5 w-5 rounded-full bg-[#3B82F6] flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <CheckCircle className="h-3 w-3 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-foreground">
-                        <strong>Suggested Action:</strong> {gap.suggestedAction}
-                      </p>
-                    </div>
-                  </div>
                   <div className="flex gap-2">
-                    <Button size="sm" className="bg-[#3B82F6] hover:bg-[#2563EB]">
+                    <Button 
+                      size="sm" 
+                      className="bg-[#3B82F6] hover:bg-[#2563EB]"
+                      onClick={() => onNavigateToKnowledgeBase?.(gap.question)}
+                    >
                       <Plus className="h-4 w-4 mr-1" />
                       Add to Knowledge Base
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      View Details
                     </Button>
                   </div>
                 </div>

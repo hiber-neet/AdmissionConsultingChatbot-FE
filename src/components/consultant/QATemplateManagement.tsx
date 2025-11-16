@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, MessageCircle, Trash2, Edit } from 'lucide-react';
 import { ScrollArea } from '../ui/system_users/scroll-area';
 import { Input } from '../ui/system_users/input';
@@ -59,7 +59,13 @@ const categories = [
 // Temporary role check - replace with actual role check from your auth system
 const isConsultantLeader = false; // Set to true to test leader functionality
 
-export function QATemplateManagement() {
+interface QATemplateManagementProps {
+  prefilledQuestion?: string | null;
+  onQuestionUsed?: () => void;
+  templateAction?: 'edit' | 'add' | 'view' | null;
+}
+
+export function QATemplateManagement({ prefilledQuestion, onQuestionUsed, templateAction }: QATemplateManagementProps = {}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedQA, setSelectedQA] = useState<QAPair | null>(qaPairs[0]);
@@ -70,6 +76,37 @@ export function QATemplateManagement() {
   const [editedAnswer, setEditedAnswer] = useState('');
   const [editedCategory, setEditedCategory] = useState('');
   const [showDraftConfirmation, setShowDraftConfirmation] = useState(false);
+
+  // Handle prefilled question from content optimization or analytics
+  useEffect(() => {
+    if (prefilledQuestion && templateAction) {
+      if (templateAction === 'add') {
+        // Add new Q&A with prefilled question
+        setEditedQuestion(prefilledQuestion);
+        setEditedAnswer('');
+        setEditedCategory('');
+        setShowAddDialog(true);
+      } else if (templateAction === 'edit') {
+        // Find and edit existing Q&A
+        const existingQA = qaPairs.find(qa => qa.question === prefilledQuestion);
+        if (existingQA) {
+          setSelectedQA(existingQA);
+          setEditedQuestion(existingQA.question);
+          setEditedAnswer(existingQA.answer);
+          setEditedCategory(existingQA.category);
+          setIsEditing(true);
+        }
+      } else if (templateAction === 'view') {
+        // Find and view existing Q&A
+        const existingQA = qaPairs.find(qa => qa.question === prefilledQuestion);
+        if (existingQA) {
+          setSelectedQA(existingQA);
+          setIsEditing(false);
+        }
+      }
+      onQuestionUsed?.();
+    }
+  }, [prefilledQuestion, onQuestionUsed, templateAction]);
 
   const filteredQAPairs = qaPairs.filter(qa => {
     const matchesSearch = qa.question.toLowerCase().includes(searchQuery.toLowerCase()) ||

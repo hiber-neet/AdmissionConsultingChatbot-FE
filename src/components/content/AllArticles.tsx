@@ -1,5 +1,13 @@
-import { Search, ChevronDown, Eye, MoreHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Search, ChevronDown, Eye, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { Button } from '../ui/system_users/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../ui/system_users/dropdown-menu';
 
 type Row = {
   title: string;
@@ -53,13 +61,48 @@ const DATA: Row[] = [
   },
 ];
 
-export default function AllArticles({ onCreate }: { onCreate?: () => void }) {
+export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateToEditorWithData }: { 
+  onCreate?: () => void; 
+  onNavigateToEditor?: () => void;
+  onNavigateToEditorWithData?: (articleData: { title: string }) => void;
+}) {
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("All Status");
+  const [categoryFilter, setCategoryFilter] = useState<string>("All Categories");
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowStatusDropdown(false);
+        setShowCategoryDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const filtered = useMemo(
-    () => DATA.filter((r) => r.title.toLowerCase().includes(q.toLowerCase())),
-    [q]
+    () => DATA.filter((r) => {
+      const matchesSearch = r.title.toLowerCase().includes(q.toLowerCase());
+      const matchesStatus = statusFilter === "All Status" || 
+        (statusFilter === "Drafted" && r.status === "draft") ||
+        (statusFilter === "Rejected" && r.status === "archived") ||
+        (statusFilter === "Published" && r.status === "published");
+      const matchesCategory = categoryFilter === "All Categories" || 
+        (categoryFilter === "Admission Requirements" && r.category === "MIT") ||
+        (categoryFilter === "Financial Aid" && r.category === "Financial Aid") ||
+        (categoryFilter === "Tuition Fees" && r.category === "International");
+      return matchesSearch && matchesStatus && matchesCategory;
+    }),
+    [q, statusFilter, categoryFilter]
   );
 
   const toggleSelect = (title: string) => {
@@ -93,6 +136,13 @@ export default function AllArticles({ onCreate }: { onCreate?: () => void }) {
           >
             + Create Article
           </button>
+        ) : onNavigateToEditor ? (
+          <button
+            onClick={onNavigateToEditor}
+            className="px-3 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
+          >
+            + Create Article
+          </button>
         ) : (
           <a
             href="/content?tab=editor"
@@ -104,7 +154,7 @@ export default function AllArticles({ onCreate }: { onCreate?: () => void }) {
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white border rounded-xl p-3 mb-4 flex flex-wrap items-center gap-3">
+      <div ref={dropdownRef} className="bg-white border rounded-xl p-3 mb-4 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 px-3 py-2 border rounded-md w-full max-w-md">
           <Search size={16} className="text-gray-400" />
           <input
@@ -114,12 +164,60 @@ export default function AllArticles({ onCreate }: { onCreate?: () => void }) {
             className="outline-none text-sm w-full"
           />
         </div>
-        <button className="flex items-center gap-1 px-3 py-2 border rounded-md text-sm">
-          All Status <ChevronDown size={14} />
-        </button>
-        <button className="flex items-center gap-1 px-3 py-2 border rounded-md text-sm">
-          All Categories <ChevronDown size={14} />
-        </button>
+        <div className="relative">
+          <button 
+            onClick={() => {
+              setShowStatusDropdown(!showStatusDropdown);
+              setShowCategoryDropdown(false);
+            }}
+            className="flex items-center gap-1 px-3 py-2 border rounded-md text-sm hover:bg-gray-50"
+          >
+            {statusFilter} <ChevronDown size={14} />
+          </button>
+          {showStatusDropdown && (
+            <div className="absolute top-full left-0 mt-1 w-40 bg-white border rounded-md shadow-lg z-10">
+              {["All Status", "Drafted", "Rejected", "Published"].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => {
+                    setStatusFilter(status);
+                    setShowStatusDropdown(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md last:rounded-b-md"
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="relative">
+          <button 
+            onClick={() => {
+              setShowCategoryDropdown(!showCategoryDropdown);
+              setShowStatusDropdown(false);
+            }}
+            className="flex items-center gap-1 px-3 py-2 border rounded-md text-sm hover:bg-gray-50"
+          >
+            {categoryFilter} <ChevronDown size={14} />
+          </button>
+          {showCategoryDropdown && (
+            <div className="absolute top-full left-0 mt-1 w-48 bg-white border rounded-md shadow-lg z-10">
+              {["All Categories", "Admission Requirements", "Financial Aid", "Tuition Fees"].map((category) => (
+                <button
+                  key={category}
+                  onClick={() => {
+                    setCategoryFilter(category);
+                    setShowCategoryDropdown(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md last:rounded-b-md"
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Action bar */}
@@ -200,9 +298,30 @@ export default function AllArticles({ onCreate }: { onCreate?: () => void }) {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button className="p-1 rounded hover:bg-gray-100">
-                      <MoreHorizontal size={16} className="text-gray-500" />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            if (onNavigateToEditorWithData) {
+                              onNavigateToEditorWithData({ title: r.title });
+                            }
+                          }}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive">
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               );

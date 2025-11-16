@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 interface Document {
   id: number;
   title: string;
-  category: string;
   content: string;
   lastUpdated: string;
   fileType: 'pdf' | 'doc' | 'txt';
@@ -21,7 +20,6 @@ const documents: Document[] = [
   {
     id: 1,
     title: 'Admission Requirements Guide 2025',
-    category: 'Admission Requirements',
     content: 'Comprehensive guide to admission requirements...',
     lastUpdated: '2024-10-15',
     fileType: 'pdf',
@@ -31,7 +29,6 @@ const documents: Document[] = [
   {
     id: 2,
     title: 'Financial Aid Handbook',
-    category: 'Financial Aid',
     content: 'Complete information about financial aid options...',
     lastUpdated: '2024-10-10',
     fileType: 'pdf',
@@ -41,7 +38,6 @@ const documents: Document[] = [
   {
     id: 3,
     title: 'International Student Guide',
-    category: 'International',
     content: 'Information for international applicants...',
     lastUpdated: '2024-09-28',
     fileType: 'pdf',
@@ -50,34 +46,24 @@ const documents: Document[] = [
   }
 ];
 
-const categories = [
-  'All Categories',
-  'Admission Requirements',
-  'Financial Aid',
-  'International',
-  'Programs',
-  'Campus Life',
-];
+
 
 // Temporary role check - replace with actual role check from your auth system
 const isConsultantLeader = false; // Set to true to test leader functionality
 
 export function DocumentManagement() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(documents[0]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDraftConfirmation, setShowDraftConfirmation] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
-  const [editedCategory, setEditedCategory] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All Categories' || doc.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    return matchesSearch;
   });
 
   return (
@@ -94,7 +80,6 @@ export function DocumentManagement() {
               className="gap-2"
               onClick={() => {
                 setEditedTitle('');
-                setEditedCategory('');
                 setUploadedFile(null);
                 setShowUploadDialog(true);
               }}
@@ -113,17 +98,6 @@ export function DocumentManagement() {
               className="pl-10"
             />
           </div>
-
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map(category => (
-                <SelectItem key={category} value={category}>{category}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
           <div className="text-sm text-muted-foreground">
             {filteredDocuments.length} documents found
@@ -173,7 +147,6 @@ export function DocumentManagement() {
                     onClick={() => {
                       if (selectedDoc) {
                         setEditedTitle(selectedDoc.title);
-                        setEditedCategory(selectedDoc.category);
                         setShowEditDialog(true);
                       }
                     }}
@@ -198,10 +171,6 @@ export function DocumentManagement() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Category</div>
-                  <div>{selectedDoc.category}</div>
-                </div>
                 <div className="space-y-1">
                   <div className="text-sm text-muted-foreground">Last Updated</div>
                   <div>{selectedDoc.lastUpdated}</div>
@@ -283,20 +252,6 @@ export function DocumentManagement() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Category</label>
-              <Select value={editedCategory} onValueChange={setEditedCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.slice(1).map(category => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
               <label className="text-sm font-medium">Document File</label>
               <div className="flex items-center gap-4">
                 <Input
@@ -325,7 +280,6 @@ export function DocumentManagement() {
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setEditedTitle('');
-              setEditedCategory('');
               setUploadedFile(null);
               setShowUploadDialog(false);
             }}>
@@ -336,7 +290,7 @@ export function DocumentManagement() {
                 // Upload logic would go here
                 setShowUploadDialog(false);
               }}
-              disabled={!editedTitle || !editedCategory || !uploadedFile}
+              disabled={!editedTitle || !uploadedFile}
             >
               Upload Document
             </Button>
@@ -362,20 +316,6 @@ export function DocumentManagement() {
                 onChange={(e) => setEditedTitle(e.target.value)}
                 placeholder="Enter document title..."
               />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Category</label>
-              <Select value={editedCategory} onValueChange={setEditedCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.slice(1).map(category => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="space-y-2">
@@ -413,7 +353,7 @@ export function DocumentManagement() {
                 // Edit logic would go here
                 setShowEditDialog(false);
               }}
-              disabled={!editedTitle || !editedCategory}
+              disabled={!editedTitle}
             >
               Save Changes
             </Button>
