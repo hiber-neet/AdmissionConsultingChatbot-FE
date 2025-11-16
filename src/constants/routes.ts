@@ -7,5 +7,6 @@ export const ROUTES = {
   NEWS: '/news',
   CONTACT: '/contact',
   ADMIN: '/admin',
-    CONTENT: '/content',
+  CONTENT: '/content',
+  ADMISSION: '/admission',
 } as const;

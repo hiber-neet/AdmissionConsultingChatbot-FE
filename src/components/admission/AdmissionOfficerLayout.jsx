@@ -20,6 +20,8 @@ import { ContentManagement } from './ContentManagement';
 import { ChatbotAnalytics } from './ChatbotAnalytics';
 import { LiveChatView } from './chat/LiveChatView';
 import { StudentInsights } from './StudentInsights';
+import { StudentList } from './StudentList';
+import { StudentProfile } from './StudentProfiles';
 
 import PropTypes from 'prop-types';
 
@@ -27,14 +29,26 @@ export function AdmissionOfficerLayout() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showLiveChat, setShowLiveChat] = useState(true);
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   const navigation = [
     { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard },
     { id: 'content', label: 'Quản Lý Nội Dung', icon: FileEdit, badge: 3 },
     { id: 'chatbot', label: 'Phân Tích Chatbot', icon: BarChart3 },
     { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5 },
+    { id: 'students', label: 'Danh Sách Học Sinh', icon: Users },
     { id: 'insights', label: 'Thông Tin Học Sinh', icon: Users },
   ];
+
+  const handleSelectStudent = (studentId) => {
+    setSelectedStudent(studentId);
+    setCurrentView('student-profile');
+  };
+
+  const handleBackToStudents = () => {
+    setSelectedStudent(null);
+    setCurrentView('students');
+  };
 
   return (
     <div className="h-full flex bg-[#F8FAFC]">
@@ -160,6 +174,13 @@ export function AdmissionOfficerLayout() {
             {currentView === 'content' && <ContentManagement />}
             {currentView === 'chatbot' && <ChatbotAnalytics />}
             {currentView === 'consultation' && <LiveChatView />}
+            {currentView === 'students' && <StudentList onSelectStudent={handleSelectStudent} />}
+            {currentView === 'student-profile' && selectedStudent && (
+              <StudentProfile 
+                studentId={selectedStudent} 
+                onBack={handleBackToStudents} 
+              />
+            )}
             {currentView === 'insights' && <StudentInsights />}
           </div>
 

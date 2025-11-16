@@ -20,7 +20,7 @@ import AllArticles from "@/components/content/AllArticles";
 import ReviewQueue from "@/components/content/ReviewQueue";
 import ArticleEditor from "@/components/content/ArticleEditor";
 import ContentManagerDashboard from "@/components/content/ContentManagerDashboard";
-import { RiasecManagement } from "@/components/content/RiasecManagement";
+import RiasecManagement from "@/components/content/PersonalityTest/RiasecManagement";
 
 // ---- Tiny dashboard section (placeholder). Replace with a real component if you add one.
 function ContentDashboard() {
