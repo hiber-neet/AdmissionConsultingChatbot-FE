@@ -288,34 +288,6 @@ export function AdmissionDashboard() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Hành Động Nhanh</CardTitle>
-            <CardDescription>Các tác vụ thường dùng</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Button variant="outline" className="h-auto flex-col gap-2 py-4">
-                <FileText className="h-5 w-5" />
-                <span className="text-sm">Tạo Bài Viết Mới</span>
-              </Button>
-              <Button variant="outline" className="h-auto flex-col gap-2 py-4">
-                <Calendar className="h-5 w-5" />
-                <span className="text-sm">Lịch Xuất Bản</span>
-              </Button>
-              <Button variant="outline" className="h-auto flex-col gap-2 py-4">
-                <BarChart3 className="h-5 w-5" />
-                <span className="text-sm">Báo Cáo Chi Tiết</span>
-              </Button>
-              <Button variant="outline" className="h-auto flex-col gap-2 py-4">
-                <MessageSquare className="h-5 w-5" />
-                <span className="text-sm">Bắt Đầu Tư Vấn</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </ScrollArea>
   );
