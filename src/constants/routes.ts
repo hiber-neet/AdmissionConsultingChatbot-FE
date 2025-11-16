@@ -9,4 +9,6 @@ export const ROUTES = {
   ADMIN: '/admin',
   CONTENT: '/content',
   ADMISSION: '/admission',
+  KNOWLEDGE_BASE: '/admission/knowledge-base',
+  REQUEST_QUEUE: '/admission/request-queue',
 } as const;

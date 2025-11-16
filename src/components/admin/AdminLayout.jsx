@@ -21,8 +21,6 @@ import { QATemplateManager } from './QATemplateManager';
 import { UserManagement } from './UserManagement';
 import { ActivityLog } from './ActivityLog';
 import { AdmissionDashboard } from '../admission/AdmissionDashboard';
-import { ContentManagement } from '../admission/ContentManagement';
-import { ChatbotAnalytics } from '../admission/ChatbotAnalytics';
 import { LiveChatView } from '../admission/chat/LiveChatView';
 import { StudentInsights } from '../admission/StudentInsights';
 import { DashboardOverview } from '../consultant/DashboardOverview';

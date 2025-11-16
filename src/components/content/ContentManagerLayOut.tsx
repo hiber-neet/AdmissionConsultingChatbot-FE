@@ -1,6 +1,6 @@
-// src/pages/contentManager/ContentManagerPage.tsx
+// src/components/content/ContentManagerLayOut.tsx
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   FileText,
@@ -15,61 +15,38 @@ import {
 import { Button } from "@/components/ui/system_users/button";
 import { Avatar, AvatarFallback } from "@/components/ui/system_users/avatar";
 
-// Content Manager screens
-import AllArticles from "@/components/content/AllArticles";
-import ReviewQueue from "@/components/content/ReviewQueue";
-import ArticleEditor from "@/components/content/ArticleEditor";
-import ContentManagerDashboard from "@/components/content/ContentManagerDashboard";
-import RiasecManagement from "@/components/content/PersonalityTest/RiasecManagement";
-
-// ---- Tiny dashboard section (placeholder). Replace with a real component if you add one.
-function ContentDashboard() {
-  return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold">Content Overview</h1>
-        <p className="text-sm text-gray-500">Manage your editorial workflow</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="rounded-xl border bg-white p-4">
-          <div className="text-sm text-gray-600">Total Published</div>
-          <div className="mt-2 text-2xl font-semibold">2</div>
-          <div className="text-xs text-gray-400">Live on portal</div>
-        </div>
-        <div className="rounded-xl border bg-white p-4">
-          <div className="text-sm text-gray-600">Needs Review</div>
-          <div className="mt-2 text-2xl font-semibold">2</div>
-          <div className="text-xs text-gray-400">Awaiting approval</div>
-        </div>
-        <div className="rounded-xl border bg-white p-4">
-          <div className="text-sm text-gray-600">My Drafts</div>
-          <div className="mt-2 text-2xl font-semibold">1</div>
-          <div className="text-xs text-gray-400">In progress</div>
-        </div>
-        <div className="rounded-xl border bg-white p-4">
-          <div className="text-sm text-gray-600">Most Viewed</div>
-          <div className="mt-2 text-2xl font-semibold">1247</div>
-          <div className="text-xs text-gray-400">Top article this week</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---- Page type
+// Page type
 type ContentPage = "dashboard" | "articles" | "review" | "editor" | "riasec";
 
-export default function ContentManagerPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+export default function ContentManagerLayOut() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isTestingLeader, setIsTestingLeader] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
-  const [editingArticleData, setEditingArticleData] = useState<{ title: string } | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
   
-  // Get current page from URL params, default to 'dashboard'
-  const currentPage = (searchParams.get('page') as ContentPage) || 'dashboard';
-  
+  // Get current route for active state
+  const getCurrentRoute = (): ContentPage => {
+    const path = location.pathname.split('/').pop();
+    return (path as ContentPage) || 'dashboard';
+  };
+  // Navigation function that updates URL
+  const navigateToPage = (page: ContentPage) => {
+    navigate(`/content/${page}`);
+  };
+
+  const isContentManagerLeader = isTestingLeader;
+
+  const navigation = [
+    { id: "dashboard" as ContentPage, label: "Dashboard", icon: LayoutDashboard, path: "/content/dashboard" },
+    { id: "articles" as ContentPage, label: "Article List", icon: FileText, path: "/content/articles" },
+    { id: "editor" as ContentPage, label: "Article Details", icon: PenSquare, path: "/content/editor" },
+    ...(isContentManagerLeader ? [
+      { id: "review" as ContentPage, label: "Review Queue", icon: ListChecks, path: "/content/review" },
+      { id: "riasec" as ContentPage, label: "RIASEC Management", icon: Database, path: "/content/riasec" }
+    ] : []),
+  ];
+
   useEffect(() => {
     // Get user data from sessionStorage
     const userData = sessionStorage.getItem("demo_user");
@@ -78,39 +55,10 @@ export default function ContentManagerPage() {
     }
   }, []);
 
-  // Navigation function that updates URL
-  const navigateToPage = (page: ContentPage) => {
-    setSearchParams({ page });
-    // Clear editing data when navigating away from editor
-    if (page !== 'editor') {
-      setEditingArticleData(null);
-    }
-  };
-
-  // Navigate to editor with article data
-  const navigateToEditorWithData = (articleData: { title: string }) => {
-    setEditingArticleData(articleData);
-    setSearchParams({ page: 'editor' });
-  };
-
   // Toggle button will appear in the sidebar footer for testing
   const toggleRole = () => {
     setIsTestingLeader(!isTestingLeader);
   };
-
-  const isContentManagerLeader = isTestingLeader;
-
-  const navigation = [
-    { id: "dashboard" as ContentPage, label: "Dashboard", icon: LayoutDashboard },
-    { id: "articles" as ContentPage, label: "Article List", icon: FileText },
-    ...(isContentManagerLeader ? [
-      { id: "review" as ContentPage, label: "Review Queue", icon: ListChecks }
-    ] : []),
-    { id: "editor" as ContentPage, label: "Article Details", icon: PenSquare },
-    ...(isContentManagerLeader ? [
-      { id: "riasec" as ContentPage, label: "RIASEC Management", icon: Database }
-    ] : []),
-  ];
 
   return (
      <div className="min-h-screen flex bg-[#F8FAFC]">
@@ -151,11 +99,11 @@ export default function ContentManagerPage() {
         <nav className="flex-1 p-2 space-y-1">
           {navigation.map((item) => {
             const Icon = item.icon;
-            const isActive = currentPage === item.id;
+            const isActive = getCurrentRoute() === item.id;
             return (
               <button
                 key={item.id}
-                onClick={() => navigateToPage(item.id)}
+                onClick={() => navigate(item.path)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                   isActive
                     ? "bg-[#3B82F6] text-white"
@@ -204,11 +152,7 @@ export default function ContentManagerPage() {
 
       {/* Main */}
       <main className="flex-1 overflow-auto">
-        {currentPage === 'dashboard' && <ContentManagerDashboard onNavigateToEditor={() => navigateToPage('editor')} onNavigateToArticles={() => navigateToPage('articles')} />}
-        {currentPage === "articles" && <AllArticles onNavigateToEditor={() => navigateToPage('editor')} onNavigateToEditorWithData={navigateToEditorWithData} />}
-        {currentPage === "review" && isContentManagerLeader && <ReviewQueue />}
-        {currentPage === "editor" && <ArticleEditor initialData={editingArticleData} />}
-        {currentPage === "riasec" && isContentManagerLeader && <RiasecManagement />}
+        <Outlet />
       </main>
     </div>
   );
