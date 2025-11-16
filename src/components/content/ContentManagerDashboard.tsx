@@ -6,11 +6,14 @@ import {
   PencilLine,
   Clock3,
   Loader2,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/system_users/button";
 
 type Props = {
   onCreate?: () => void;    
+  onNavigateToEditor?: () => void;
+  onNavigateToArticles?: () => void;
 };
 
 type Stat = {
@@ -86,10 +89,15 @@ function StatusPill({ status }: { status: Activity["status"] }) {
   );
 }
 
-export default function ContentManagerDashboard({ onCreate }: Props) {
+export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, onNavigateToArticles }: Props) {
     const handleCreate = () => {
     if (onCreate) onCreate();
+    else if (onNavigateToEditor) onNavigateToEditor();
     else window.location.assign("/content?tab=editor");
+  };
+  
+  const handleViewArticles = () => {
+    if (onNavigateToArticles) onNavigateToArticles();
   };
   return (
     <div className="h-full w-full overflow-auto">
@@ -145,11 +153,12 @@ export default function ContentManagerDashboard({ onCreate }: Props) {
               New Article
             </Button>
             <Button
+              onClick={handleViewArticles}
               variant="outline"
               className="border-gray-300 hover:bg-gray-100"
             >
-              <CalendarDays className="mr-2 h-4 w-4" />
-              View Calendar
+              <FileText className="mr-2 h-4 w-4" />
+              View All Articles
             </Button>
           </div>
         </div>

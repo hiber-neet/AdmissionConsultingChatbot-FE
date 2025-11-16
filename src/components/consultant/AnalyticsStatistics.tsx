@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { 
   Search, 
-  Filter,
-  TrendingUp,
-  TrendingDown,
-  ArrowUpDown,
-  BarChart3,
-  Table as TableIcon
+  ArrowUpDown
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/system_users/card';
 import { Input } from '../ui/system_users/input';
@@ -22,16 +17,13 @@ import {
   TableHeader,
   TableRow,
 } from '../ui/system_users/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/system_users/tabs';
 
 interface QuestionData {
   id: number;
   question: string;
   category: string;
   timesAsked: number;
-  satisfaction: number | null;
-  trending: 'up' | 'down' | 'stable';
-  trendPercentage: number;
+  status: 'answered' | 'unanswered';
 }
 
 const questionData: QuestionData[] = [
@@ -40,100 +32,71 @@ const questionData: QuestionData[] = [
     question: 'What are the application deadlines for Fall 2025?',
     category: 'Admission Requirements',
     timesAsked: 342,
-    satisfaction: 4.5,
-    trending: 'up',
-    trendPercentage: 15,
+    status: 'answered',
   },
   {
     id: 2,
     question: 'How do I apply for financial aid?',
     category: 'Financial Aid',
     timesAsked: 289,
-    satisfaction: 4.3,
-    trending: 'up',
-    trendPercentage: 22,
+    status: 'answered',
   },
   {
     id: 3,
     question: 'What GPA do I need for admission?',
     category: 'Admission Requirements',
     timesAsked: 256,
-    satisfaction: 3.8,
-    trending: 'down',
-    trendPercentage: -5,
+    status: 'answered',
   },
   {
     id: 4,
     question: 'Can I schedule a campus tour?',
     category: 'Campus Life',
     timesAsked: 201,
-    satisfaction: 4.7,
-    trending: 'up',
-    trendPercentage: 8,
+    status: 'unanswered',
   },
   {
     id: 5,
     question: 'What scholarships are available?',
     category: 'Financial Aid',
     timesAsked: 187,
-    satisfaction: 4.1,
-    trending: 'up',
-    trendPercentage: 12,
+    status: 'answered',
   },
   {
     id: 6,
     question: 'What majors does the university offer?',
     category: 'Programs',
     timesAsked: 165,
-    satisfaction: 4.6,
-    trending: 'stable',
-    trendPercentage: 0,
+    status: 'answered',
   },
   {
     id: 7,
     question: 'How long does the application review take?',
     category: 'Admission Requirements',
     timesAsked: 143,
-    satisfaction: 3.9,
-    trending: 'down',
-    trendPercentage: -3,
+    status: 'unanswered',
   },
   {
     id: 8,
     question: 'What is the tuition cost?',
     category: 'Tuition Fees',
     timesAsked: 128,
-    satisfaction: 4.4,
-    trending: 'up',
-    trendPercentage: 18,
+    status: 'answered',
   },
 ];
 
-const keywords = [
-  { word: 'deadline', size: 48 },
-  { word: 'financial aid', size: 42 },
-  { word: 'tuition', size: 38 },
-  { word: 'GPA', size: 36 },
-  { word: 'scholarships', size: 34 },
-  { word: 'admission', size: 32 },
-  { word: 'requirements', size: 30 },
-  { word: 'campus tour', size: 28 },
-  { word: 'application', size: 26 },
-  { word: 'programs', size: 24 },
-  { word: 'majors', size: 22 },
-  { word: 'housing', size: 20 },
-  { word: 'international', size: 18 },
-  { word: 'transfer', size: 16 },
-  { word: 'transcript', size: 14 },
-];
+interface AnalyticsStatisticsProps {
+  onNavigateToTemplates?: (question?: string, action?: 'edit' | 'add' | 'view') => void;
+}
 
-export function AnalyticsStatistics() {
+export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisticsProps = {}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [dateRange, setDateRange] = useState('Last 30 Days');
-  const [viewMode, setViewMode] = useState<'table' | 'wordcloud'>('table');
   const [sortField, setSortField] = useState<keyof QuestionData>('timesAsked');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [categorySortField, setCategorySortField] = useState<'category' | 'totalQuestions'>('totalQuestions');
+  const [categorySortDirection, setCategorySortDirection] = useState<'asc' | 'desc'>('desc');
 
   const filteredData = questionData
     .filter(item => {
@@ -152,12 +115,56 @@ export function AnalyticsStatistics() {
       return 0;
     });
 
+  // Calculate category statistics
+  const categoryStats = questionData.reduce((acc, item) => {
+    if (!acc[item.category]) {
+      acc[item.category] = {
+        category: item.category,
+        totalQuestions: 0,
+        totalTimesAsked: 0,
+      };
+    }
+    
+    acc[item.category].totalQuestions += 1;
+    acc[item.category].totalTimesAsked += item.timesAsked;
+    
+    return acc;
+  }, {} as Record<string, {
+    category: string;
+    totalQuestions: number;
+    totalTimesAsked: number;
+  }>);
+
+  const categoryData = Object.values(categoryStats).sort((a, b) => {
+    const aVal = a[categorySortField];
+    const bVal = b[categorySortField];
+    
+    if (typeof aVal === 'number' && typeof bVal === 'number') {
+      return categorySortDirection === 'desc' ? bVal - aVal : aVal - bVal;
+    }
+    
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      return categorySortDirection === 'desc' ? bVal.localeCompare(aVal) : aVal.localeCompare(bVal);
+    }
+    
+    return 0;
+  });
+
   const handleSort = (field: keyof QuestionData) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
       setSortDirection('desc');
+    }
+  };
+
+  const handleCategorySort = (field: 'category' | 'totalQuestions') => {
+    if (categorySortField === field) {
+      setCategorySortDirection(categorySortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setCategorySortField(field);
+      setCategorySortDirection('desc');
     }
   };
 
@@ -216,109 +223,157 @@ export function AnalyticsStatistics() {
           </CardContent>
         </Card>
 
-        {/* View Toggle */}
+        {/* Category Interest Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Category Interest</CardTitle>
+            <CardDescription>
+              Overview of question distribution across categories
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="h-12">
+                  <TableHead className="py-3">
+                    <button
+                      onClick={() => handleCategorySort('category')}
+                      className="flex items-center gap-1 hover:text-foreground font-medium"
+                    >
+                      Category
+                      <ArrowUpDown className="h-3.5 w-3.5" />
+                    </button>
+                  </TableHead>
+                  <TableHead className="text-right py-3">
+                    <button
+                      onClick={() => handleCategorySort('totalQuestions')}
+                      className="flex items-center gap-1 hover:text-foreground ml-auto font-medium"
+                    >
+                      Total Questions
+                      <ArrowUpDown className="h-3.5 w-3.5" />
+                    </button>
+                  </TableHead>
+                  <TableHead className="text-right py-3">
+                    <span className="font-medium">Total Times Asked</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {categoryData.map((category) => (
+                  <TableRow key={category.category} className="h-14">
+                    <TableCell className="py-3">
+                      <Badge variant="outline" className="text-sm px-2.5 py-1">{category.category}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right py-3 text-base font-medium">
+                      {category.totalQuestions}
+                    </TableCell>
+                    <TableCell className="text-right py-3 text-base">
+                      {category.totalTimesAsked}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Results Count */}
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
             Showing <span className="font-semibold text-foreground">{filteredData.length}</span> questions
           </div>
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'table' | 'wordcloud')}>
-            <TabsList>
-              <TabsTrigger value="table" className="gap-2">
-                <TableIcon className="h-4 w-4" />
-                Table View
-              </TabsTrigger>
-              <TabsTrigger value="wordcloud" className="gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Word Cloud
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
 
         {/* Content Area */}
-        {viewMode === 'table' ? (
-          <Card>
-            <CardContent className="p-0">
-              <Table>
+        <Card>
+          <CardHeader>
+            <CardTitle>Questions Detail</CardTitle>
+            <CardDescription>
+              Individual questions with their performance metrics
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[40%]">
+                  <TableRow className="h-12">
+                    <TableHead className="w-[40%] py-3">
                       <button
                         onClick={() => handleSort('question')}
-                        className="flex items-center gap-1 hover:text-foreground"
+                        className="flex items-center gap-1 hover:text-foreground font-medium"
                       >
                         Question Text
-                        <ArrowUpDown className="h-3 w-3" />
+                        <ArrowUpDown className="h-3.5 w-3.5" />
                       </button>
                     </TableHead>
-                    <TableHead>
+                    <TableHead className="py-3">
                       <button
                         onClick={() => handleSort('category')}
-                        className="flex items-center gap-1 hover:text-foreground"
+                        className="flex items-center gap-1 hover:text-foreground font-medium"
                       >
                         Category
-                        <ArrowUpDown className="h-3 w-3" />
+                        <ArrowUpDown className="h-3.5 w-3.5" />
                       </button>
                     </TableHead>
-                    <TableHead className="text-right">
+                    <TableHead className="text-right py-3">
                       <button
                         onClick={() => handleSort('timesAsked')}
-                        className="flex items-center gap-1 hover:text-foreground ml-auto"
+                        className="flex items-center gap-1 hover:text-foreground ml-auto font-medium"
                       >
                         Times Asked
-                        <ArrowUpDown className="h-3 w-3" />
+                        <ArrowUpDown className="h-3.5 w-3.5" />
                       </button>
                     </TableHead>
-                    <TableHead className="text-right">
+                    <TableHead className="text-center py-3">
                       <button
-                        onClick={() => handleSort('satisfaction')}
-                        className="flex items-center gap-1 hover:text-foreground ml-auto"
+                        onClick={() => handleSort('status')}
+                        className="flex items-center gap-1 hover:text-foreground mx-auto font-medium"
                       >
-                        Satisfaction
-                        <ArrowUpDown className="h-3 w-3" />
+                        Status
+                        <ArrowUpDown className="h-3.5 w-3.5" />
                       </button>
                     </TableHead>
-                    <TableHead className="text-center">Trending</TableHead>
+                    <TableHead className="text-center py-3">
+                      <span className="font-medium">Action</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredData.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.question}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{item.category}</Badge>
+                    <TableRow key={item.id} className="h-16">
+                      <TableCell className="font-medium py-4 text-base">{item.question}</TableCell>
+                      <TableCell className="py-4">
+                        <Badge variant="outline" className="text-sm px-2.5 py-1">{item.category}</Badge>
                       </TableCell>
-                      <TableCell className="text-right">{item.timesAsked}</TableCell>
-                      <TableCell className="text-right">
-                        {item.satisfaction ? (
-                          <div className="flex items-center justify-end gap-1">
-                            <div className="h-2 w-12 bg-gray-200 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-[#3B82F6]"
-                                style={{ width: `${(item.satisfaction / 5) * 100}%` }}
-                              />
-                            </div>
-                            <span className="text-sm">{item.satisfaction.toFixed(1)}</span>
-                          </div>
+                      <TableCell className="text-right py-4 text-base">{item.timesAsked}</TableCell>
+                      <TableCell className="text-center py-4">
+                        <Badge 
+                          className={`text-sm px-2.5 py-1 ${
+                            item.status === 'answered' 
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                              : 'bg-red-100 text-red-800 hover:bg-red-200'
+                          }`}
+                        >
+                          {item.status === 'answered' ? 'Answered' : 'Unanswered'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center py-4">
+                        {item.status === 'answered' ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 px-3 text-xs"
+                            onClick={() => onNavigateToTemplates?.(item.question, 'view')}
+                          >
+                            View Details
+                          </Button>
                         ) : (
-                          <span className="text-muted-foreground">N/A</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {item.trending === 'up' && (
-                          <Badge className="gap-1 bg-[#10B981] hover:bg-[#059669]">
-                            <TrendingUp className="h-3 w-3" />
-                            +{item.trendPercentage}%
-                          </Badge>
-                        )}
-                        {item.trending === 'down' && (
-                          <Badge variant="destructive" className="gap-1">
-                            <TrendingDown className="h-3 w-3" />
-                            {item.trendPercentage}%
-                          </Badge>
-                        )}
-                        {item.trending === 'stable' && (
-                          <Badge variant="outline">Stable</Badge>
+                          <Button
+                            size="sm"
+                            className="h-8 px-3 text-xs bg-blue-600 hover:bg-blue-700"
+                            onClick={() => onNavigateToTemplates?.(item.question, 'add')}
+                          >
+                            Add to KB
+                          </Button>
                         )}
                       </TableCell>
                     </TableRow>
@@ -327,33 +382,6 @@ export function AnalyticsStatistics() {
               </Table>
             </CardContent>
           </Card>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Most Frequent Keywords</CardTitle>
-              <CardDescription>
-                Visualization of common terms in user questions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap items-center justify-center gap-4 p-8 min-h-[400px]">
-                {keywords.map((keyword, index) => (
-                  <div
-                    key={index}
-                    className="cursor-pointer hover:opacity-70 transition-opacity"
-                    style={{
-                      fontSize: `${keyword.size}px`,
-                      color: `hsl(${(index * 360) / keywords.length}, 70%, 50%)`,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {keyword.word}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </ScrollArea>
   );

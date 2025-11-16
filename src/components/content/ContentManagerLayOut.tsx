@@ -1,5 +1,6 @@
 // src/pages/contentManager/ContentManagerPage.tsx
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   LayoutDashboard,
   FileText,
@@ -60,10 +61,14 @@ function ContentDashboard() {
 type ContentPage = "dashboard" | "articles" | "review" | "editor" | "riasec";
 
 export default function ContentManagerPage() {
-  const [currentPage, setCurrentPage] = useState<ContentPage>("dashboard");
+  const [searchParams, setSearchParams] = useSearchParams();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isTestingLeader, setIsTestingLeader] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
+  const [editingArticleData, setEditingArticleData] = useState<{ title: string } | null>(null);
+  
+  // Get current page from URL params, default to 'dashboard'
+  const currentPage = (searchParams.get('page') as ContentPage) || 'dashboard';
   
   useEffect(() => {
     // Get user data from sessionStorage
@@ -72,6 +77,21 @@ export default function ContentManagerPage() {
       setCurrentUser(JSON.parse(userData));
     }
   }, []);
+
+  // Navigation function that updates URL
+  const navigateToPage = (page: ContentPage) => {
+    setSearchParams({ page });
+    // Clear editing data when navigating away from editor
+    if (page !== 'editor') {
+      setEditingArticleData(null);
+    }
+  };
+
+  // Navigate to editor with article data
+  const navigateToEditorWithData = (articleData: { title: string }) => {
+    setEditingArticleData(articleData);
+    setSearchParams({ page: 'editor' });
+  };
 
   // Toggle button will appear in the sidebar footer for testing
   const toggleRole = () => {
@@ -82,11 +102,11 @@ export default function ContentManagerPage() {
 
   const navigation = [
     { id: "dashboard" as ContentPage, label: "Dashboard", icon: LayoutDashboard },
-    { id: "articles" as ContentPage, label: "All Articles", icon: FileText },
+    { id: "articles" as ContentPage, label: "Article List", icon: FileText },
     ...(isContentManagerLeader ? [
       { id: "review" as ContentPage, label: "Review Queue", icon: ListChecks }
     ] : []),
-    { id: "editor" as ContentPage, label: "New Article", icon: PenSquare },
+    { id: "editor" as ContentPage, label: "Article Details", icon: PenSquare },
     ...(isContentManagerLeader ? [
       { id: "riasec" as ContentPage, label: "RIASEC Management", icon: Database }
     ] : []),
@@ -135,7 +155,7 @@ export default function ContentManagerPage() {
             return (
               <button
                 key={item.id}
-                onClick={() => setCurrentPage(item.id)}
+                onClick={() => navigateToPage(item.id)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                   isActive
                     ? "bg-[#3B82F6] text-white"
@@ -184,10 +204,10 @@ export default function ContentManagerPage() {
 
       {/* Main */}
       <main className="flex-1 overflow-auto">
-        {currentPage === 'dashboard' && <ContentManagerDashboard />}
-        {currentPage === "articles" && <AllArticles />}
+        {currentPage === 'dashboard' && <ContentManagerDashboard onNavigateToEditor={() => navigateToPage('editor')} onNavigateToArticles={() => navigateToPage('articles')} />}
+        {currentPage === "articles" && <AllArticles onNavigateToEditor={() => navigateToPage('editor')} onNavigateToEditorWithData={navigateToEditorWithData} />}
         {currentPage === "review" && isContentManagerLeader && <ReviewQueue />}
-        {currentPage === "editor" && <ArticleEditor />}
+        {currentPage === "editor" && <ArticleEditor initialData={editingArticleData} />}
         {currentPage === "riasec" && isContentManagerLeader && <RiasecManagement />}
       </main>
     </div>

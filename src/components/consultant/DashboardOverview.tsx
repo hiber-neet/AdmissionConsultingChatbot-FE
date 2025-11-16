@@ -78,7 +78,11 @@ const unansweredQuestions = [
   },
 ];
 
-export function DashboardOverview() {
+interface DashboardOverviewProps {
+  onNavigateToTemplates?: (question: string, action: 'add') => void;
+}
+
+export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewProps = {}) {
   const [timeRange, setTimeRange] = useState<'today' | 'week'>('week');
 
   return (
@@ -272,7 +276,11 @@ export function DashboardOverview() {
                     </div>
                     <p className="text-sm text-muted-foreground">{item.timestamp}</p>
                   </div>
-                  <Button size="sm" className="bg-[#3B82F6] hover:bg-[#2563EB] flex-shrink-0">
+                  <Button 
+                    size="sm" 
+                    className="bg-[#3B82F6] hover:bg-[#2563EB] flex-shrink-0"
+                    onClick={() => onNavigateToTemplates?.(item.question, 'add')}
+                  >
                     <Plus className="h-4 w-4 mr-1" />
                     Add to KB
                   </Button>
