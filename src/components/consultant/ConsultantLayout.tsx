@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { type User as AuthUser } from '../../contexts/Auth';
+import { useAuth } from '../../contexts/Auth';
 import { 
   LayoutDashboard, 
   TrendingUp, 
@@ -27,26 +27,12 @@ export function ConsultantLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [prefilledQuestion, setPrefilledQuestion] = useState<string | null>(null);
   const [templateAction, setTemplateAction] = useState<'edit' | 'add' | 'view' | null>(null);
-
-  // TESTING: Toggle between consultant and leader roles
-  const [isTestingLeader, setIsTestingLeader] = useState(false);
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
-  
-  useEffect(() => {
-    // Get user data from sessionStorage
-    const userData = sessionStorage.getItem("demo_user");
-    if (userData) {
-      setCurrentUser(JSON.parse(userData));
-    }
-  }, []);
+  const { user, hasPermission, setUserLeadership } = useAuth();
 
   // Toggle button will appear in the sidebar footer for testing
   const toggleRole = () => {
-    setIsTestingLeader(!isTestingLeader);
+    setUserLeadership(!(user?.isLeader));
   };
-
-  // Use the toggle for testing, remove isTestingLeader for production
-  const isConsultantLeader = isTestingLeader;
 
   // Handle navigation to QA Templates with pre-filled question
   const handleNavigateToKnowledgeBase = (question: string) => {
@@ -81,7 +67,7 @@ export function ConsultantLayout() {
     { id: 'qaTemplates' as ConsultantPage, label: 'Q&A Templates', icon: MessageSquare },
     { id: 'documents' as ConsultantPage, label: 'Documents', icon: FileText },
     { id: 'optimization' as ConsultantPage, label: 'Content Optimization', icon: Lightbulb },
-    ...(isConsultantLeader ? [
+    ...(hasPermission("OPTIMIZE_CONTENT") ? [
       { id: 'leaderReview' as ConsultantPage, label: 'Knowledge Base Review', icon: Database },
     ] : []),
   ];
@@ -151,9 +137,9 @@ export function ConsultantLayout() {
             </Avatar>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <div className="text-sm truncate">Sarah Chen</div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {isTestingLeader ? 'Consultant Leader' : 'Consultant'}
+                <div className="text-sm truncate">{user?.name || 'Consultant'}</div>
+                <div className="text-xs text-gray-500 truncate">
+                  {user?.isLeader ? 'Consultant Leader' : 'Consultant'}
                 </div>
               </div>
             )}
@@ -176,8 +162,8 @@ export function ConsultantLayout() {
         {currentPage === 'analytics' && <AnalyticsStatistics onNavigateToTemplates={handleNavigateToTemplates} />}
         {currentPage === 'qaTemplates' && <QATemplateManagement prefilledQuestion={prefilledQuestion} onQuestionUsed={handleQuestionUsed} templateAction={templateAction} />}
         {currentPage === 'documents' && <DocumentManagement />}
-        {currentPage === 'optimization' && <ContentOptimization onNavigateToKnowledgeBase={handleNavigateToKnowledgeBase} />}
-        {currentPage === 'leaderReview' && isConsultantLeader && <LeaderKnowledgeBase />}
+        {currentPage === 'optimization' && hasPermission("OPTIMIZE_CONTENT") && <ContentOptimization onNavigateToKnowledgeBase={handleNavigateToKnowledgeBase} />}
+        {currentPage === 'leaderReview' && hasPermission("OPTIMIZE_CONTENT") && <LeaderKnowledgeBase />}
       </main>
     </div>
   );

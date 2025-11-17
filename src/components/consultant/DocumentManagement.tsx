@@ -49,6 +49,8 @@ const documents: Document[] = [
 
 
 // Temporary role check - replace with actual role check from your auth system
+import { useAuth } from '../../contexts/Auth';
+
 const isConsultantLeader = false; // Set to true to test leader functionality
 
 export function DocumentManagement() {

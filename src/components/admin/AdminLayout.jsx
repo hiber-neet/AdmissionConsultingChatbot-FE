@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { 
   FileText, 
   ListChecks, 
@@ -16,49 +17,40 @@ import {
   Activity 
 } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
-import { AdminDashboard } from './AdminDashboard';
-import { QATemplateManager } from './QATemplateManager';
-import { UserManagement } from './UserManagement';
-import { ActivityLog } from './ActivityLog';
-import { AdmissionDashboard } from '../admission/AdmissionDashboard';
-import { LiveChatView } from '../admission/chat/LiveChatView';
-import { StudentInsights } from '../admission/StudentInsights';
-import { DashboardOverview } from '../consultant/DashboardOverview';
-import { AnalyticsStatistics } from '../consultant/AnalyticsStatistics';
-import { KnowledgeBaseManagement } from '../consultant/KnowledgeBaseManagement';
-import { ContentOptimization } from '../consultant/ContentOptimization';
-import ContentManagerDashboard from '../content/ContentManagerDashboard';
-import AllArticles from '../content/AllArticles';
-import ReviewQueue from '../content/ReviewQueue';
-import ArticleEditor from '../content/ArticleEditor';
 import { useAuth } from '../../contexts/Auth';
 import { canAccess } from '../../constants/permissions';
 
 export function AdminLayout() {
-  const [activeView, setActiveView] = useState('dashboard');
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get current route for active state
+  const getCurrentRoute = () => {
+    const path = location.pathname.split('/').pop();
+    return path || 'dashboard';
+  };
 
   const navigation = [
-    { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard },
-    { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText },
-    { id: 'users', label: 'Quản Lý Người Dùng', icon: Users },
-    { id: 'activity_log', label: 'Nhật Ký Hoạt Động', icon: Activity },
+    { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
+    { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
+    { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
+    { id: 'activity', label: 'Nhật Ký Hoạt Động', icon: Activity, path: '/admin/activity' },
     // admission section
-    { id: 'admissions', label: 'Tổng quan admission', icon: LayoutDashboard },
-    { id: 'content', label: 'Quản Lý Nội Dung', icon: FileEdit, badge: 3 },
-    { id: 'chatbot', label: 'Phân Tích Chatbot', icon: BarChart3 },
-    { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5 },
-    { id: 'insights', label: 'Thông Tin Học Sinh', icon: Users },
+    { id: 'admissions', label: 'Tổng quan admission', icon: LayoutDashboard, path: '/admin/admissions' },
+    { id: 'content', label: 'Quản Lý Nội Dung', icon: FileEdit, badge: 3, path: '/admin/content' },
+    { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admin/consultation' },
+    { id: 'insights', label: 'Thông Tin Học Sinh', icon: Users, path: '/admin/insights' },
     // consultant section
-    { id: 'overview', label: 'Tổng quan consultant', icon: LayoutDashboard },
-    { id: 'analytics', label: 'Analytics & Statistics', icon: TrendingUp },
-    { id: 'knowledge', label: 'Knowledge Base', icon: Database },
-    { id: 'optimization', label: 'Content Optimization', icon: Lightbulb },
+    { id: 'overview', label: 'Tổng quan consultant', icon: LayoutDashboard, path: '/admin/overview' },
+    { id: 'analytics', label: 'Analytics & Statistics', icon: TrendingUp, path: '/admin/analytics' },
+    { id: 'knowledge', label: 'Knowledge Base', icon: Database, path: '/admin/knowledge' },
+    { id: 'optimization', label: 'Content Optimization', icon: Lightbulb, path: '/admin/optimization' },
     // content section
-    { id: "dashboardcontent", label: "Tổng quan content", icon: LayoutDashboard },
-    { id: "articles", label: "All Articles", icon: FileText },
-    { id: "review", label: "Review Queue", icon: ListChecks },
-    { id: "editor", label: "New Article", icon: PenSquare },
+    { id: "dashboardcontent", label: "Tổng quan content", icon: LayoutDashboard, path: '/admin/dashboardcontent' },
+    { id: "articles", label: "All Articles", icon: FileText, path: '/admin/articles' },
+    { id: "review", label: "Review Queue", icon: ListChecks, path: '/admin/review' },
+    { id: "editor", label: "New Article", icon: PenSquare, path: '/admin/editor' },
   ];
 
   // Filter navigation based on user role
@@ -67,19 +59,18 @@ export function AdminLayout() {
     [user?.role]
   );
 
-  // Set first allowed tab as default
+  // Redirect to first allowed route if current route is not accessible
   useEffect(() => {
     if (!user) return;
-    const currentAllowed = canAccess(user.role, activeView);
-    if (!currentAllowed) {
-      const fallback = allowedNav[0]?.id;
-      if (fallback && fallback !== activeView) {
-        setActiveView(fallback);
+    const currentRoute = getCurrentRoute();
+    const currentAllowed = canAccess(user.role, currentRoute);
+    if (!currentAllowed && allowedNav.length > 0) {
+      const fallback = allowedNav[0]?.path;
+      if (fallback) {
+        navigate(fallback, { replace: true });
       }
     }
-  }, [user, activeView, allowedNav]);
-
-  const goToEditor = () => setActiveView('editor');
+  }, [user, location.pathname, allowedNav, navigate]);
 
   return (
     <div className="flex h-full bg-[#F8FAFC]">
@@ -100,13 +91,13 @@ export function AdminLayout() {
         <nav className="p-4 space-y-2 flex-grow overflow-y-auto">
           {navigation.map((item) => {
             const Icon = item.icon;
-            const isActive = activeView === item.id;
+            const isActive = getCurrentRoute() === item.id;
             const allowed = canAccess(user?.role, item.id);
 
             return (
               <button
                 key={item.id}
-                onClick={() => allowed && setActiveView(item.id)}
+                onClick={() => allowed && navigate(item.path)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                   isActive
                     ? 'bg-[#3B82F6] text-white'
@@ -144,33 +135,7 @@ export function AdminLayout() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
-        {activeView === 'dashboard' && <AdminDashboard setActiveView={setActiveView} />}
-        {activeView === 'templates' && <QATemplateManager />}
-        {activeView === 'users' && <UserManagement />}
-        {activeView === 'activity_log' && <ActivityLog />}
-
-        {/* Admission Section */}
-        {activeView === 'admissions' && <AdmissionDashboard />}
-        {activeView === 'content' && <ContentManagement />}
-        {activeView === 'chatbot' && <ChatbotAnalytics />}
-        {activeView === 'consultation' && <LiveChatView />}
-        {activeView === 'insights' && <StudentInsights />}
-
-        {/* Consultant Section */}
-        {activeView === 'overview' && <DashboardOverview />}
-        {activeView === 'analytics' && <AnalyticsStatistics />}
-        {activeView === 'knowledge' && <KnowledgeBaseManagement />}
-        {activeView === 'optimization' && <ContentOptimization />}
-
-        {/* Content Section */}
-        {activeView === 'dashboardcontent' && (
-          <ContentManagerDashboard onCreate={goToEditor} />
-        )}
-        {activeView === 'articles' && (
-          <AllArticles onCreate={goToEditor} />
-        )}
-        {activeView === 'review' && <ReviewQueue />}
-        {activeView === 'editor' && <ArticleEditor />}
+        <Outlet />
       </div>
     </div>
   );

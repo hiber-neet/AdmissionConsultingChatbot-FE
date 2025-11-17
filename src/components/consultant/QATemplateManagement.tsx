@@ -57,6 +57,8 @@ const categories = [
 ];
 
 // Temporary role check - replace with actual role check from your auth system
+import { useAuth } from '../../contexts/Auth';
+
 const isConsultantLeader = false; // Set to true to test leader functionality
 
 interface QATemplateManagementProps {
@@ -65,7 +67,8 @@ interface QATemplateManagementProps {
   templateAction?: 'edit' | 'add' | 'view' | null;
 }
 
-export function QATemplateManagement({ prefilledQuestion, onQuestionUsed, templateAction }: QATemplateManagementProps = {}) {
+export function QATemplateManagement({ prefilledQuestion, onQuestionUsed, templateAction }: QATemplateManagementProps) {
+  const { hasPermission } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedQA, setSelectedQA] = useState<QAPair | null>(qaPairs[0]);
@@ -422,7 +425,7 @@ export function QATemplateManagement({ prefilledQuestion, onQuestionUsed, templa
               Cancel
             </Button>
             <Button onClick={() => {
-              if (isConsultantLeader) {
+              if (hasPermission("APPROVE_QA_TEMPLATE")) {
                 // Add logic for direct template creation
                 setShowAddDialog(false);
               } else {
@@ -431,7 +434,7 @@ export function QATemplateManagement({ prefilledQuestion, onQuestionUsed, templa
                 setShowDraftConfirmation(true);
               }
             }}>
-              {isConsultantLeader ? "Create Template" : "Submit for Review"}
+              {hasPermission("APPROVE_QA_TEMPLATE") ? "Create Template" : "Submit for Review"}
             </Button>
           </DialogFooter>
         </DialogContent>

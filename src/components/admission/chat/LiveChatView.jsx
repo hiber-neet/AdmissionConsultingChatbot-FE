@@ -6,13 +6,21 @@ import {
   Send,
   Smile,
   Paperclip,
-  MoreVertical
+  MoreVertical,
+  Trash2
 } from 'lucide-react';
 import { ScrollArea } from '../../ui/system_users/scroll-area';
 import { Input } from '../../ui/system_users/input';
 import { Button } from '../../ui/system_users/button';
 import { Avatar, AvatarFallback } from '../../ui/system_users/avatar';
 import { Badge } from '../../ui/system_users/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../../ui/system_users/dropdown-menu';
 
 const users = [
   {
@@ -79,6 +87,18 @@ export function LiveChatView() {
   const [selectedUser, setSelectedUser] = useState(users[0]);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleDeleteConversation = () => {
+    if (window.confirm(`Are you sure you want to delete the conversation with ${selectedUser.name}? This action cannot be undone.`)) {
+      // Here you would implement the actual delete logic
+      // For now, we'll just show an alert
+      alert(`Conversation with ${selectedUser.name} has been deleted.`);
+      // In a real implementation, you might:
+      // - Remove the user from the users list
+      // - Clear the messages
+      // - Select a different user if available
+    }
+  };
 
   return (
     <div className="flex h-full">
@@ -155,9 +175,22 @@ export function LiveChatView() {
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="icon">
-            <MoreVertical className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={handleDeleteConversation}
+                className="text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Conversation
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Messages Area */}

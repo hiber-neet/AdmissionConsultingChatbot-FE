@@ -13,6 +13,8 @@ import { Badge } from '../ui/system_users/badge';
 import { Progress } from '../ui/system_users/progress';
 import { ScrollArea } from '../ui/system_users/scroll-area';
 import { Button } from '../ui/system_users/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/system_users/tabs';
+import { StudentInsights } from './StudentInsights';
 import {
   LineChart,
   Line,
@@ -71,6 +73,15 @@ export function AdmissionDashboard() {
             Theo dõi hiệu suất và tương tác của sinh viên
           </p>
         </div>
+
+        {/* Tabs for Dashboard and Student Insights */}
+        <Tabs defaultValue="dashboard" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="dashboard">Tổng Quan</TabsTrigger>
+            <TabsTrigger value="insights">Thông Tin Học Sinh</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard" className="space-y-6">
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -288,6 +299,12 @@ export function AdmissionDashboard() {
             </CardContent>
           </Card>
         </div>
+          </TabsContent>
+
+          <TabsContent value="insights">
+            <StudentInsights />
+          </TabsContent>
+        </Tabs>
       </div>
     </ScrollArea>
   );

@@ -4,6 +4,7 @@ import { Progress } from '../ui/system_users/progress';
 import { Badge } from '../ui/system_users/badge';
 import { Button } from '../ui/system_users/button';
 import { ScrollArea } from '../ui/system_users/scroll-area';
+import { useNavigate } from 'react-router-dom';
 import {
   LineChart,
   Line,
@@ -44,7 +45,8 @@ const recentActivity = [
   { id: 5, type: 'conversation', user: 'Emily Rodriguez', action: 'Inquired about scholarships', time: '1 hour ago', status: 'resolved' },
 ];
 
-export function AdminDashboard({ setActiveView }) {
+export function AdminDashboard() {
+  const navigate = useNavigate();
   return (
     <ScrollArea className="h-full">
       <div className="p-6 pb-8 space-y-6">
@@ -215,7 +217,7 @@ export function AdminDashboard({ setActiveView }) {
                   <CardTitle>Recent Activity</CardTitle>
                   <CardDescription>Latest system events and user interactions</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => setActiveView('activity_log')}>
+                <Button variant="outline" size="sm" onClick={() => navigate('/admin/activity')}>
                   View All
                 </Button>
               </div>

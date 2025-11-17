@@ -10,6 +10,21 @@ import { ContentManagerPage } from "../pages/contentManager/ContentManagerPage.t
 import LoginPage from "../pages/loginForAd/LoginPage.tsx";
 import ProtectedRoute from "../components/auth/ProtectedRoute.tsx";
 import { AdminLayout } from "../components/admin/AdminLayout.jsx";
+import { AdminDashboardPage } from "../pages/admin/AdminDashboardPage.tsx";
+import { QATemplateManagerPage } from "../pages/admin/QATemplateManagerPage.tsx";
+import { UserManagementPage } from "../pages/admin/UserManagementPage.tsx";
+import { ActivityLogPage } from "../pages/admin/ActivityLogPage.tsx";
+import { AdminAdmissionDashboardPage } from "../pages/admin/AdminAdmissionDashboardPage.tsx";
+import { AdminConsultationPage } from "../pages/admin/AdminConsultationPage.tsx";
+import { AdminStudentInsightsPage } from "../pages/admin/AdminStudentInsightsPage.tsx";
+import { AdminConsultantDashboardPage } from "../pages/admin/AdminConsultantDashboardPage.tsx";
+import { AdminAnalyticsPage } from "../pages/admin/AdminAnalyticsPage.tsx";
+import { AdminKnowledgeBasePage } from "../pages/admin/AdminKnowledgeBasePage.tsx";
+import { AdminContentOptimizationPage } from "../pages/admin/AdminContentOptimizationPage.tsx";
+import { AdminContentManagerDashboardPage } from "../pages/admin/AdminContentManagerDashboardPage.tsx";
+import { AdminAllArticlesPage } from "../pages/admin/AdminAllArticlesPage.tsx";
+import { AdminReviewQueuePage } from "../pages/admin/AdminReviewQueuePage.tsx";
+import { AdminArticleEditorPage } from "../pages/admin/AdminArticleEditorPage.tsx";
 import RiasecPage from "../pages/riasec/RiasecPage.jsx";
 import ChatGuestPage from "../pages/chatbot/ChatGuestPage.jsx";
 import { AdmissionOfficerLayout } from "../components/admission/AdmissionOfficerLayout.jsx";
@@ -73,7 +88,29 @@ export default function Router() {
             <AdminLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<Navigate to="dashboard" replace />} />
+        {/* Core Admin Routes */}
+        <Route path="dashboard" element={<AdminDashboardPage />} />
+        <Route path="templates" element={<QATemplateManagerPage />} />
+        <Route path="users" element={<UserManagementPage />} />
+        <Route path="activity" element={<ActivityLogPage />} />
+        {/* Admission Management Routes */}
+        <Route path="admissions" element={<AdminAdmissionDashboardPage />} />
+        <Route path="content" element={<AdminContentManagerDashboardPage />} />
+        <Route path="consultation" element={<AdminConsultationPage />} />
+        <Route path="insights" element={<AdminStudentInsightsPage />} />
+        {/* Consultant Management Routes */}
+        <Route path="overview" element={<AdminConsultantDashboardPage />} />
+        <Route path="analytics" element={<AdminAnalyticsPage />} />
+        <Route path="knowledge" element={<AdminKnowledgeBasePage />} />
+        <Route path="optimization" element={<AdminContentOptimizationPage />} />
+        {/* Content Management Routes */}
+        <Route path="dashboardcontent" element={<AdminContentManagerDashboardPage />} />
+        <Route path="articles" element={<AdminAllArticlesPage />} />
+        <Route path="review" element={<AdminReviewQueuePage />} />
+        <Route path="editor" element={<AdminArticleEditorPage />} />
+      </Route>
       <Route path="*" element={<Navigate to="/loginforad" replace />} />
 
     </Routes>
