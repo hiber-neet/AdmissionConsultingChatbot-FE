@@ -14,50 +14,43 @@ import {
 
 import { Button } from "@/components/ui/system_users/button";
 import { Avatar, AvatarFallback } from "@/components/ui/system_users/avatar";
+import { useAuth } from "@/contexts/Auth";
 
 // Page type
 type ContentPage = "dashboard" | "articles" | "review" | "editor" | "riasec";
 
 export default function ContentManagerLayOut() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isTestingLeader, setIsTestingLeader] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, hasPermission, setUserLeadership } = useAuth();
   
   // Get current route for active state
   const getCurrentRoute = (): ContentPage => {
     const path = location.pathname.split('/').pop();
     return (path as ContentPage) || 'dashboard';
   };
+  
   // Navigation function that updates URL
   const navigateToPage = (page: ContentPage) => {
     navigate(`/content/${page}`);
   };
 
-  const isContentManagerLeader = isTestingLeader;
-
   const navigation = [
-    { id: "dashboard" as ContentPage, label: "Dashboard", icon: LayoutDashboard, path: "/content/dashboard" },
-    { id: "articles" as ContentPage, label: "Article List", icon: FileText, path: "/content/articles" },
-    { id: "editor" as ContentPage, label: "Article Details", icon: PenSquare, path: "/content/editor" },
-    ...(isContentManagerLeader ? [
-      { id: "review" as ContentPage, label: "Review Queue", icon: ListChecks, path: "/content/review" },
-      { id: "riasec" as ContentPage, label: "RIASEC Management", icon: Database, path: "/content/riasec" }
+    { id: "dashboard" as ContentPage, label: "Dashboard", icon: LayoutDashboard, path: "/content/dashboard", permission: "VIEW_CONTENT_DASHBOARD" },
+    { id: "articles" as ContentPage, label: "Article List", icon: FileText, path: "/content/articles", permission: "MANAGE_ARTICLES" },
+    { id: "editor" as ContentPage, label: "Article Details", icon: PenSquare, path: "/content/editor", permission: "CREATE_ARTICLE" },
+    ...(hasPermission("REVIEW_CONTENT") ? [
+      { id: "review" as ContentPage, label: "Review Queue", icon: ListChecks, path: "/content/review", permission: "REVIEW_CONTENT" }
+    ] : []),
+    ...(hasPermission("MANAGE_RIASEC") ? [
+      { id: "riasec" as ContentPage, label: "RIASEC Management", icon: Database, path: "/content/riasec", permission: "MANAGE_RIASEC" }
     ] : []),
   ];
 
-  useEffect(() => {
-    // Get user data from sessionStorage
-    const userData = sessionStorage.getItem("demo_user");
-    if (userData) {
-      setCurrentUser(JSON.parse(userData));
-    }
-  }, []);
-
   // Toggle button will appear in the sidebar footer for testing
   const toggleRole = () => {
-    setIsTestingLeader(!isTestingLeader);
+    setUserLeadership(!(user?.isLeader));
   };
 
   return (
@@ -131,9 +124,9 @@ export default function ContentManagerLayOut() {
             </Avatar>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <div className="text-sm truncate">Sarah Chen</div>
+                <div className="text-sm truncate">{user?.name || 'User'}</div>
                 <div className="text-xs text-gray-500 truncate">
-                  {isContentManagerLeader ? 'Content Manager Leader' : 'Content Manager'}
+                  {user?.isLeader ? 'Content Manager Leader' : 'Content Manager'}
                 </div>
               </div>
             )}

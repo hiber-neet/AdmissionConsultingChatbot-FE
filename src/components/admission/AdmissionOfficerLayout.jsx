@@ -38,7 +38,6 @@ export function AdmissionOfficerLayout() {
     { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admission/consultation' },
     { id: 'knowledge-base', label: 'Cơ Sở Tri Thức', icon: BookOpen, path: '/admission/knowledge-base' },
     { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
-    { id: 'insights', label: 'Thông Tin Học Sinh', icon: Users, path: '/admission/insights' },
   ];
 
   return (

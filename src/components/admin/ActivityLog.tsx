@@ -19,7 +19,60 @@ import { Select } from '../ui/system_users/select';
 import { Badge } from '../ui/system_users/badge';
 import { ScrollArea } from '../ui/system_users/scroll-area';
 import { ActivityFilters, SystemActivity, ActivityType } from '../../types/activity.types';
-import { activityAPI } from '../../utils/templateAPI';
+// import { activityAPI } from '../../utils/templateAPI'; // TODO: Uncomment when backend is ready
+
+// Mock data for development - remove when backend is ready
+const mockActivities: SystemActivity[] = [
+  {
+    id: '1',
+    type: 'login' as ActivityType,
+    action: 'User logged in successfully',
+    user: 'admin@example.com',
+    time: new Date().toLocaleTimeString(),
+    timestamp: new Date().toISOString(),
+    status: 'completed',
+    metadata: {
+      ip: '192.168.1.1',
+      location: 'Ho Chi Minh City, Vietnam'
+    }
+  },
+  {
+    id: '2',
+    type: 'kb_update' as ActivityType,
+    action: 'Knowledge base article updated',
+    user: 'content@example.com',
+    time: new Date(Date.now() - 3600000).toLocaleTimeString(),
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    status: 'completed',
+    metadata: {
+      severity: 'low'
+    }
+  },
+  {
+    id: '3',
+    type: 'conversation' as ActivityType,
+    action: 'New student consultation started',
+    user: 'admission@example.com',
+    time: new Date(Date.now() - 7200000).toLocaleTimeString(),
+    timestamp: new Date(Date.now() - 7200000).toISOString(),
+    status: 'active',
+    metadata: {
+      ip: '192.168.1.2'
+    }
+  },
+  {
+    id: '4',
+    type: 'error' as ActivityType,
+    action: 'Failed to load student profile',
+    user: 'system',
+    time: new Date(Date.now() - 10800000).toLocaleTimeString(),
+    timestamp: new Date(Date.now() - 10800000).toISOString(),
+    status: 'error',
+    metadata: {
+      severity: 'high'
+    }
+  }
+];
 
 const ITEMS_PER_PAGE = 20;
 
@@ -53,24 +106,44 @@ export function ActivityLog() {
 
   // Load activities
   useEffect(() => {
-    loadActivities();
+    // loadActivities(); // TODO: Uncomment when backend is ready
+    // Mock data loading for development
+    setLoading(true);
+    setTimeout(() => {
+      setActivities(mockActivities);
+      setTotal(mockActivities.length);
+      setHasMore(false);
+      setLoading(false);
+    }, 500);
   }, [page, filters]);
 
-  const loadActivities = async () => {
-    try {
-      setLoading(true);
-      const response = await activityAPI.getActivities(page, ITEMS_PER_PAGE, {
-        ...filters,
-        searchQuery
-      });
-      setActivities(response.items);
-      setTotal(response.total);
-      setHasMore(response.hasMore);
-    } catch (error) {
-      console.error('Error loading activities:', error);
-    } finally {
+  // TODO: Uncomment when backend is ready
+  // const loadActivities = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const response = await activityAPI.getActivities(page, ITEMS_PER_PAGE, {
+  //       ...filters,
+  //       searchQuery
+  //     });
+  //     setActivities(response.items);
+  //     setTotal(response.total);
+  //     setHasMore(response.hasMore);
+  //   } catch (error) {
+  //     console.error('Error loading activities:', error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const loadActivities = () => {
+    // Mock refresh for development
+    setLoading(true);
+    setTimeout(() => {
+      setActivities(mockActivities);
+      setTotal(mockActivities.length);
+      setHasMore(false);
       setLoading(false);
-    }
+    }, 500);
   };
 
   const handleSearch = (query: string) => {
