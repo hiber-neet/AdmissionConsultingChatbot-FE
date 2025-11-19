@@ -8,58 +8,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/system_users/dropdown-menu';
-
-type Row = {
-  title: string;
-  category: string;
-  status: "draft" | "review" | "published" | "archived";
-  author: string;
-  modified: string;
-  views: number;
-};
-
-const DATA: Row[] = [
-  {
-    title: "MIT Engineering Programs – Admission Requirements",
-    category: "MIT",
-    status: "draft",
-    author: "Sarah Chen",
-    modified: "10/24/2024",
-    views: 0,
-  },
-  {
-    title: "Financial Aid Checklist – Complete FAFSA Guide",
-    category: "Financial Aid",
-    status: "published",
-    author: "Michael Torres",
-    modified: "10/23/2024",
-    views: 0,
-  },
-  {
-    title: "International Student Visa Guide – F-1 Process",
-    category: "International",
-    status: "archived",
-    author: "Michael Torres",
-    modified: "10/22/2024",
-    views: 0,
-  },
-  {
-    title: "University of California Berkeley – Complete Admission Guide 2025",
-    category: "UC Berkeley",
-    status: "published",
-    author: "Sarah Chen",
-    modified: "10/01/2024",
-    views: 1247,
-  },
-  {
-    title: "Stanford MBA Program Overview 2025",
-    category: "Stanford",
-    status: "published",
-    author: "Sarah Chen",
-    modified: "09/25/2024",
-    views: 892,
-  },
-];
+import { fastAPIArticles } from '../../services/fastapi';
+import { Article } from '../../utils/fastapi-client';
 
 export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateToEditorWithData }: { 
   onCreate?: () => void; 
@@ -72,7 +22,29 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   const [categoryFilter, setCategoryFilter] = useState<string>("All Categories");
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch articles from FastAPI
+  useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fastAPIArticles.getAll();
+        setArticles(data);
+      } catch (err) {
+        setError('Failed to load articles. Please try again.');
+        console.error('Error fetching articles:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArticles();
+  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -90,19 +62,17 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   }, []);
 
   const filtered = useMemo(
-    () => DATA.filter((r) => {
-      const matchesSearch = r.title.toLowerCase().includes(q.toLowerCase());
+    () => articles.filter((article) => {
+      const matchesSearch = article.title.toLowerCase().includes(q.toLowerCase());
       const matchesStatus = statusFilter === "All Status" || 
-        (statusFilter === "Drafted" && r.status === "draft") ||
-        (statusFilter === "Rejected" && r.status === "archived") ||
-        (statusFilter === "Published" && r.status === "published");
+        (statusFilter === "Drafted" && article.status === "draft") ||
+        (statusFilter === "Rejected" && article.status === "rejected") ||
+        (statusFilter === "Published" && article.status === "published");
       const matchesCategory = categoryFilter === "All Categories" || 
-        (categoryFilter === "Admission Requirements" && r.category === "MIT") ||
-        (categoryFilter === "Financial Aid" && r.category === "Financial Aid") ||
-        (categoryFilter === "Tuition Fees" && r.category === "International");
+        article.major_name.toLowerCase().includes(categoryFilter.toLowerCase());
       return matchesSearch && matchesStatus && matchesCategory;
     }),
-    [q, statusFilter, categoryFilter]
+    [articles, q, statusFilter, categoryFilter]
   );
 
   const toggleSelect = (title: string) => {
@@ -116,7 +86,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   const allSelected = filtered.length > 0 && selected.length === filtered.length;
 
   const toggleAll = () => {
-    setSelected(allSelected ? [] : filtered.map((r) => r.title));
+    setSelected(allSelected ? [] : filtered.map((article) => article.title));
   };
 
   return (
@@ -234,110 +204,113 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
 
       {/* Table */}
       <div className="bg-white border rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-500">
-            <tr>
-              <th className="px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  onChange={toggleAll}
-                  className="h-4 w-4 rounded border-gray-300 accent-blue-500"
-                />
-              </th>
-              <th className="text-left px-2 py-3">Title</th>
-              <th className="text-left px-2 py-3">Category</th>
-              <th className="text-left px-2 py-3">Status</th>
-              <th className="text-left px-2 py-3">Author</th>
-              <th className="text-left px-2 py-3">Last Modified</th>
-              <th className="text-left px-2 py-3">Views</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {filtered.map((r, i) => {
-              const isSelected = selected.includes(r.title);
-              return (
-                <tr
-                  key={i}
-                  className={`hover:bg-gray-50 ${
-                    isSelected ? "bg-blue-50/30" : ""
-                  }`}
-                >
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleSelect(r.title)}
-                      className="h-4 w-4 rounded border-gray-300 accent-blue-500"
-                    />
-                  </td>
-                  <td className="px-2 py-3">{r.title}</td>
-                  <td className="px-2 py-3">{r.category}</td>
-                  <td className="px-2 py-3">
-                    <span
-                      className={`px-2 py-0.5 rounded-full capitalize text-xs ${
-                        r.status === "published"
-                          ? "bg-green-100 text-green-700"
-                          : r.status === "review"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : r.status === "archived"
-                          ? "bg-gray-200 text-gray-700"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {r.status}
-                    </span>
-                  </td>
-                  <td className="px-2 py-3">{r.author}</td>
-                  <td className="px-2 py-3">{r.modified}</td>
-                  <td className="px-2 py-3">
-                    <div className="inline-flex items-center gap-1">
-                      <Eye size={14} className="text-gray-400" />
-                      {r.views}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => {
-                            if (onNavigateToEditorWithData) {
-                              onNavigateToEditorWithData({ title: r.title });
-                            }
-                          }}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+        {loading ? (
+          <div className="p-8 text-center text-gray-500">
+            Loading articles...
+          </div>
+        ) : error ? (
+          <div className="p-8 text-center text-red-500">
+            {error}
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-gray-500">
+              <tr>
+                <th className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    className="h-4 w-4 rounded border-gray-300 accent-blue-500"
+                  />
+                </th>
+                <th className="text-left px-2 py-3">Title</th>
+                <th className="text-left px-2 py-3">Major</th>
+                <th className="text-left px-2 py-3">Status</th>
+                <th className="text-left px-2 py-3">Author</th>
+                <th className="text-left px-2 py-3">Created At</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {filtered.map((article, i) => {
+                const isSelected = selected.includes(article.title);
+                return (
+                  <tr
+                    key={article.article_id}
+                    className={`hover:bg-gray-50 ${
+                      isSelected ? "bg-blue-50/30" : ""
+                    }`}
+                  >
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(article.title)}
+                        className="h-4 w-4 rounded border-gray-300 accent-blue-500"
+                      />
+                    </td>
+                    <td className="px-2 py-3">{article.title}</td>
+                    <td className="px-2 py-3">{article.major_name}</td>
+                    <td className="px-2 py-3">
+                      <span
+                        className={`px-2 py-0.5 rounded-full capitalize text-xs ${
+                          article.status === "published"
+                            ? "bg-green-100 text-green-700"
+                            : article.status === "review"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : article.status === "archived"
+                            ? "bg-gray-200 text-gray-700"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {article.status}
+                      </span>
+                    </td>
+                    <td className="px-2 py-3">{article.author_name}</td>
+                    <td className="px-2 py-3">{article.create_at}</td>
+                    <td className="px-4 py-3 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              if (onNavigateToEditorWithData) {
+                                onNavigateToEditorWithData({ title: article.title });
+                              }
+                            }}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive">
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && !loading && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-4 py-10 text-center text-gray-400"
+                  >
+                    No results
                   </td>
                 </tr>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={8}
-                  className="px-4 py-10 text-center text-gray-400"
-                >
-                  No results
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

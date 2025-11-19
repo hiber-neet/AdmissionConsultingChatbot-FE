@@ -1,6 +1,136 @@
 import { supabase } from '../lib/supabase';
 import type { AdmissionInfo, Program, NewsArticle, ContactMessage } from '../types';
 
+// FastAPI Base URL - should be moved to environment variables
+const FASTAPI_BASE_URL = 'http://localhost:8000';
+
+// Article type based on the API response
+export interface Article {
+  article_id: number;
+  title: string;
+  description: string;
+  url: string;
+  status: string;
+  create_at: string;
+  created_by: number;
+  major_id: number;
+  specialization_id: number;
+  author_name: string;
+  major_name: string;
+  specialization_name: string;
+}
+
+// FastAPI Articles API
+export const articlesApi = {
+  getAll: async (): Promise<Article[]> => {
+    try {
+      const response = await fetch(`${FASTAPI_BASE_URL}/articles`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data as Article[];
+    } catch (error) {
+      console.error('Error fetching articles:', error);
+      throw error;
+    }
+  },
+
+  getById: async (id: number): Promise<Article> => {
+    try {
+      const response = await fetch(`${FASTAPI_BASE_URL}/articles/${id}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data as Article;
+    } catch (error) {
+      console.error('Error fetching article:', error);
+      throw error;
+    }
+  },
+
+  create: async (articleData: Partial<Article>): Promise<Article> => {
+    try {
+      const response = await fetch(`${FASTAPI_BASE_URL}/articles`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(articleData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data as Article;
+    } catch (error) {
+      console.error('Error creating article:', error);
+      throw error;
+    }
+  },
+
+  update: async (id: number, articleData: Partial<Article>): Promise<Article> => {
+    try {
+      const response = await fetch(`${FASTAPI_BASE_URL}/articles/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(articleData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data as Article;
+    } catch (error) {
+      console.error('Error updating article:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id: number): Promise<void> => {
+    try {
+      const response = await fetch(`${FASTAPI_BASE_URL}/articles/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error deleting article:', error);
+      throw error;
+    }
+  },
+};
+
 export const admissionsApi = {
   getAll: async () => {
     const { data, error } = await supabase
