@@ -40,7 +40,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // khôi phục từ sessionStorage cho demo
   useEffect(() => {
     const raw = sessionStorage.getItem("demo_user");
-    if (raw) setUser(JSON.parse(raw));
+    if (raw) {
+      const storedUser = JSON.parse(raw);
+      console.log('Loading user from sessionStorage:', storedUser);
+      setUser(storedUser);
+    }
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -51,7 +55,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!acc) return { ok: false, message: "Email không tồn tại." };
     if (acc.password !== password) return { ok: false, message: "Mật khẩu không đúng." };
 
-    const userPermissions = getRolePermissions(acc.role, acc.isLeader);
+    let userPermissions: Permission[];
+    if (acc.role === 'CONSULTANT') {
+      if (acc.isLeader) {
+        userPermissions = [
+          "VIEW_CONSULTANT_OVERVIEW",
+          "VIEW_ANALYTICS", 
+          "MANAGE_KNOWLEDGE_BASE",
+          "CREATE_QA_TEMPLATE",
+          "EDIT_QA_TEMPLATE",
+          "DELETE_QA_TEMPLATE",
+          "APPROVE_QA_TEMPLATE",
+          "MANAGE_DOCUMENTS",
+          "OPTIMIZE_CONTENT"
+        ];
+      } else {
+        userPermissions = [
+          "VIEW_CONSULTANT_OVERVIEW",
+          "VIEW_ANALYTICS",
+          "MANAGE_KNOWLEDGE_BASE", 
+          "CREATE_QA_TEMPLATE",
+          "EDIT_QA_TEMPLATE",
+          "MANAGE_DOCUMENTS",
+          "OPTIMIZE_CONTENT"
+        ];
+      }
+    } else if (acc.role === 'CONTENT_MANAGER') {
+      if (acc.isLeader) {
+        userPermissions = [
+          "VIEW_CONTENT_DASHBOARD",
+          "MANAGE_ARTICLES",
+          "CREATE_ARTICLE", 
+          "EDIT_ARTICLE",
+          "DELETE_ARTICLE",
+          "PUBLISH_ARTICLE",
+          "REVIEW_CONTENT",
+          "MANAGE_RIASEC",
+          "VIEW_ARTICLE_ANALYTICS"
+        ];
+      } else {
+        userPermissions = [
+          "VIEW_CONTENT_DASHBOARD",
+          "MANAGE_ARTICLES",
+          "CREATE_ARTICLE",
+          "EDIT_ARTICLE", 
+          "VIEW_ARTICLE_ANALYTICS"
+        ];
+      }
+    } else {
+      userPermissions = getRolePermissions(acc.role, acc.isLeader);
+    }
+    
     const u: User = { 
       id: crypto.randomUUID(), 
       name: acc.name, 
@@ -69,7 +123,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Giữ lại tiện ích "loginAs(role)" để test nhanh
   const loginAs = (role: Role) => {
     const acc = ACCOUNTS.find((a) => a.role === role)!;
-    const userPermissions = getRolePermissions(acc.role, acc.isLeader);
+    
+    let userPermissions: Permission[];
+    if (acc.role === 'CONSULTANT') {
+      if (acc.isLeader) {
+        userPermissions = [
+          "VIEW_CONSULTANT_OVERVIEW",
+          "VIEW_ANALYTICS", 
+          "MANAGE_KNOWLEDGE_BASE",
+          "CREATE_QA_TEMPLATE",
+          "EDIT_QA_TEMPLATE",
+          "DELETE_QA_TEMPLATE",
+          "APPROVE_QA_TEMPLATE",
+          "MANAGE_DOCUMENTS",
+          "OPTIMIZE_CONTENT"
+        ];
+      } else {
+        userPermissions = [
+          "VIEW_CONSULTANT_OVERVIEW",
+          "VIEW_ANALYTICS",
+          "MANAGE_KNOWLEDGE_BASE", 
+          "CREATE_QA_TEMPLATE",
+          "EDIT_QA_TEMPLATE",
+          "MANAGE_DOCUMENTS",
+          "OPTIMIZE_CONTENT"
+        ];
+      }
+    } else if (acc.role === 'CONTENT_MANAGER') {
+      if (acc.isLeader) {
+        userPermissions = [
+          "VIEW_CONTENT_DASHBOARD",
+          "MANAGE_ARTICLES",
+          "CREATE_ARTICLE",
+          "EDIT_ARTICLE",
+          "DELETE_ARTICLE",
+          "PUBLISH_ARTICLE",
+          "REVIEW_CONTENT",
+          "MANAGE_RIASEC",
+          "VIEW_ARTICLE_ANALYTICS"
+        ];
+      } else {
+        userPermissions = [
+          "VIEW_CONTENT_DASHBOARD",
+          "MANAGE_ARTICLES",
+          "CREATE_ARTICLE",
+          "EDIT_ARTICLE",
+          "VIEW_ARTICLE_ANALYTICS"
+        ];
+      }
+    } else {
+      userPermissions = getRolePermissions(acc.role, acc.isLeader);
+    }
+    
     const u: User = { 
       id: crypto.randomUUID(), 
       name: acc.name, 
@@ -89,21 +194,91 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check if current user has a permission
   const checkPermission = (permission: Permission): boolean => {
-    if (!user) return false;
-    return hasPermission(user.role, permission, user.isLeader);
+    if (!user || !user.permissions) return false;
+    const hasPermissionResult = user.permissions.includes(permission);
+    console.log(`Checking permission ${permission}:`, hasPermissionResult, 'Available:', user.permissions);
+    return hasPermissionResult;
   };
 
   // Function to toggle leadership for testing
   const setUserLeadership = (isLeader: boolean) => {
-    if (!user) return;
-    const updatedPermissions = getRolePermissions(user.role, isLeader);
+    console.log('setUserLeadership called with:', isLeader);
+    console.log('Current user before update:', user);
+    
+    if (!user) {
+      console.log('No user found, cannot toggle leadership');
+      return;
+    }
+    
+    // Fixed permission sets for testing
+    let updatedPermissions: Permission[];
+    
+    if (user.role === 'CONSULTANT') {
+      if (isLeader) {
+        updatedPermissions = [
+          "VIEW_CONSULTANT_OVERVIEW",
+          "VIEW_ANALYTICS", 
+          "MANAGE_KNOWLEDGE_BASE",
+          "CREATE_QA_TEMPLATE",
+          "EDIT_QA_TEMPLATE",
+          "DELETE_QA_TEMPLATE",
+          "APPROVE_QA_TEMPLATE",
+          "MANAGE_DOCUMENTS",
+          "OPTIMIZE_CONTENT"
+        ];
+      } else {
+        updatedPermissions = [
+          "VIEW_CONSULTANT_OVERVIEW",
+          "VIEW_ANALYTICS",
+          "MANAGE_KNOWLEDGE_BASE", 
+          "CREATE_QA_TEMPLATE",
+          "EDIT_QA_TEMPLATE",
+          "MANAGE_DOCUMENTS",
+          "OPTIMIZE_CONTENT"
+        ];
+      }
+    } else if (user.role === 'CONTENT_MANAGER') {
+      if (isLeader) {
+        updatedPermissions = [
+          "VIEW_CONTENT_DASHBOARD",
+          "MANAGE_ARTICLES",
+          "CREATE_ARTICLE",
+          "EDIT_ARTICLE",
+          "DELETE_ARTICLE",
+          "PUBLISH_ARTICLE",
+          "REVIEW_CONTENT",
+          "MANAGE_RIASEC",
+          "VIEW_ARTICLE_ANALYTICS"
+        ];
+      } else {
+        updatedPermissions = [
+          "VIEW_CONTENT_DASHBOARD",
+          "MANAGE_ARTICLES",
+          "CREATE_ARTICLE",
+          "EDIT_ARTICLE",
+          "VIEW_ARTICLE_ANALYTICS"
+        ];
+      }
+    } else {
+      // For other roles, use the existing function
+      updatedPermissions = getRolePermissions(user.role, isLeader);
+    }
+    
     const updatedUser = { 
       ...user, 
       isLeader, 
       permissions: updatedPermissions 
     };
+    
+    console.log('Toggling role:', { 
+      from: { isLeader: user.isLeader, permissions: user.permissions?.length || 0 },
+      to: { isLeader, permissions: updatedPermissions.length }
+    });
+    
+    console.log('Setting updated user:', updatedUser);
     setUser(updatedUser);
     sessionStorage.setItem("demo_user", JSON.stringify(updatedUser));
+    console.log('User updated and saved to sessionStorage');
   };
 
   const value = useMemo(

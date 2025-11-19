@@ -115,7 +115,7 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
       <div className="p-6 pb-8 space-y-6">
         {/* Page Header */}
         <div>
-          <h1>Content Optimization Suggestions</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Content Optimization Suggestions</h1>
           <p className="text-muted-foreground">
             AI-powered recommendations to improve chatbot coverage and quality
           </p>
