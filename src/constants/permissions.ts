@@ -123,7 +123,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "MANAGE_KNOWLEDGE_BASE",
     "CREATE_QA_TEMPLATE",
     "EDIT_QA_TEMPLATE",
-    "MANAGE_DOCUMENTS"
+    "MANAGE_DOCUMENTS",
+    "OPTIMIZE_CONTENT"
   ],
   
   ADMISSION_OFFICER: [
@@ -150,8 +151,7 @@ export const LEADER_PERMISSIONS: Record<Role, Permission[]> = {
   
   CONSULTANT: [
     "DELETE_QA_TEMPLATE",
-    "APPROVE_QA_TEMPLATE",
-    "OPTIMIZE_CONTENT"
+    "APPROVE_QA_TEMPLATE"
   ],
   
   ADMISSION_OFFICER: [] // No additional leader permissions for admission officers yet

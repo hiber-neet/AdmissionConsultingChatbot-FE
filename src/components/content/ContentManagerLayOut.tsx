@@ -23,7 +23,15 @@ export default function ContentManagerLayOut() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, hasPermission, setUserLeadership } = useAuth();
+  const { user, hasPermission, setUserLeadership, loginAs } = useAuth();
+  
+  // Auto-login if no user is found (for content pages)
+  useEffect(() => {
+    if (!user) {
+      console.log('No user found in ContentManagerLayOut, auto-logging in as CONTENT_MANAGER');
+      loginAs('CONTENT_MANAGER');
+    }
+  }, [user, loginAs]);
   
   // Get current route for active state
   const getCurrentRoute = (): ContentPage => {
@@ -50,7 +58,18 @@ export default function ContentManagerLayOut() {
 
   // Toggle button will appear in the sidebar footer for testing
   const toggleRole = () => {
-    setUserLeadership(!(user?.isLeader));
+    console.log('Toggle clicked in ContentManager. Current user:', user);
+    
+    if (!user) {
+      console.log('No user found, logging in as content manager');
+      loginAs('CONTENT_MANAGER');
+      return;
+    }
+    
+    console.log('Current isLeader:', user?.isLeader);
+    const newLeaderStatus = !(user?.isLeader);
+    console.log('Setting isLeader to:', newLeaderStatus);
+    setUserLeadership(newLeaderStatus);
   };
 
   return (
@@ -124,22 +143,37 @@ export default function ContentManagerLayOut() {
             </Avatar>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <div className="text-sm truncate">{user?.name || 'User'}</div>
+                <div className="text-sm truncate">{user?.name || 'Loading...'}</div>
                 <div className="text-xs text-gray-500 truncate">
-                  {user?.isLeader ? 'Content Manager Leader' : 'Content Manager'}
+                  {!user ? 'Connecting...' : user?.isLeader ? 'Content Manager Leader' : 'Content Manager'}
+                </div>
+                <div className="text-xs text-blue-600 truncate">
+                  Perms: {user?.permissions?.length || 0}
                 </div>
               </div>
             )}
           </div>
           {/* TESTING: Role toggle button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleRole}
-            className="mt-2 w-full text-xs"
-          >
-            Toggle Role (Testing)
-          </Button>
+          <div className="mt-2 space-y-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleRole}
+              className={`w-full text-xs font-medium border ${ 
+                user?.isLeader 
+                ? 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200' 
+                : 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200'
+              }`}
+              disabled={!user}
+            >
+              {!user ? '🔄 Loading...' : user?.isLeader ? '👑 Leader Mode' : '👤 Regular Mode'}
+            </Button>
+            
+            {/* Debug info */}
+            <div className="text-xs text-gray-500 p-1 bg-gray-50 rounded">
+              Debug: {!user ? 'No User' : user?.isLeader ? 'Leader' : 'Regular'} | {user?.permissions?.length || 0} perms
+            </div>
+          </div>
         </div>
       </aside>
 
