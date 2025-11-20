@@ -7,7 +7,7 @@ import "./LoginPrivate.css";
 import { getRoleFromToken } from "./jwtHelper";
 import imgLogin from "/src/assets/images/login-private.jpg";
 import { useLocation, Link  } from "react-router-dom";
-// import { login } from "../../api/auth";
+import { useAuth } from "../../contexts/Auth";
 
 const TEST_SITE_KEY = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";  
 
@@ -17,6 +17,7 @@ const LoginPrivate = () => {
   const [captchaValue, setCaptchaValue] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { login, getDefaultRoute } = useAuth();
 
  
   const siteKey = useMemo(() => {
@@ -55,52 +56,43 @@ const LoginPrivate = () => {
     try {
       setSubmitting(true);
 
- 
-      const response = await login(email, password);
+      // Use Auth context login method
+      const result = await login(email, password);
 
-      if (response?.status === 200) {
-        const { token, refreshToken } = response.data;
-        localStorage.setItem("token", token);
-        localStorage.setItem("refreshToken", refreshToken);
-
-        const role = getRoleFromToken(token);
-        if (role === "User") {
-          toast.success("Đăng nhập thành công (User).");
-          navigate("/");
-          window.location.reload();
-        } else if (role === "Admin") {
-          toast.success("Đăng nhập thành công (Admin).");
-          navigate("/");
-        } else {
-          toast.info("Đăng nhập thành công.");
-          navigate("/");
-        }
-      }
-    } catch (error) {
-      const status = error?.response?.status;
-
-      if (status === 403) {
-        swal({
-          title: "Banned",
-          text: "Tài khoản của bạn đã bị khóa vĩnh viễn và không thể đăng nhập.",
-          icon: "error",
-          buttons: {
-            ok: { text: "OK", value: true, className: "swal-ok-button" },
-          },
-        });
-      } else if (status === 400) {
+      if (result?.ok) {
+        const { token } = result;
+        
+        // Get role from token (if available)
+        const role = getRoleFromToken(token || "");
+        console.log('Role from token:', role);
+        
+        // Map role and get default route
+        let appRole = null;
+        if (role === "admin") appRole = "SYSTEM_ADMIN";
+        else if (role === "content_manager") appRole = "CONTENT_MANAGER";
+        else if (role === "consultant") appRole = "CONSULTANT";
+        else if (role === "admission_officer") appRole = "ADMISSION_OFFICER";
+        else if (role === "student") appRole = "STUDENT";
+        else appRole = "STUDENT"; // Default for unknown roles
+        
+        const defaultRoute = getDefaultRoute(appRole);
+        
+        toast.success(`Đăng nhập thành công! Chuyển đến ${appRole === "STUDENT" ? "Profile" : "Dashboard"}.`);
+        navigate(defaultRoute);
+        window.location.reload();
+      } else {
         swal({
           title: "Sai tài khoản hoặc mật khẩu",
-          text: "Vui lòng kiểm tra lại email hoặc mật khẩu.",
+          text: result?.message || "Vui lòng kiểm tra lại email hoặc mật khẩu.",
           icon: "error",
           buttons: {
             ok: { text: "OK", value: true, className: "swal-ok-button" },
           },
         });
-      } else {
-        console.error("Login failed:", status, error);
-        toast.error("Đăng nhập thất bại. Vui lòng thử lại.");
       }
+    } catch (error) {
+      console.error("Login failed:", error);
+      toast.error("Đăng nhập thất bại. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }

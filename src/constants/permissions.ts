@@ -24,6 +24,7 @@ export const ROLE_VIEWS: Record<Role, AdminView[]> = {
   ADMISSION_OFFICER: [
     "admissions","content","consultation","insights","activity", // Added for development
   ],
+  STUDENT: [], // Students don't access admin views
 };
 
 export function canAccess(role: Role | null | undefined, view: AdminView) {
@@ -71,7 +72,16 @@ export type Permission =
   | "VIEW_STUDENT_INSIGHTS"
   | "MANAGE_STUDENT_PROFILES"
   | "ACCESS_LIVE_CHAT"
-  | "VIEW_KNOWLEDGE_BASE";
+  | "VIEW_KNOWLEDGE_BASE"
+  
+  // Student permissions
+  | "VIEW_PROFILE"
+  | "EDIT_PROFILE"
+  | "TAKE_RIASEC_TEST"
+  | "VIEW_RIASEC_RESULTS"
+  | "ACCESS_CHATBOT"
+  | "VIEW_ARTICLES"
+  | "REQUEST_CONSULTATION";
 
 /** Base permissions for each role (without leadership) */
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
@@ -135,6 +145,16 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "MANAGE_STUDENT_PROFILES",
     "ACCESS_LIVE_CHAT",
     "VIEW_KNOWLEDGE_BASE"
+  ],
+  
+  STUDENT: [
+    "VIEW_PROFILE",
+    "EDIT_PROFILE",
+    "TAKE_RIASEC_TEST",
+    "VIEW_RIASEC_RESULTS",
+    "ACCESS_CHATBOT",
+    "VIEW_ARTICLES",
+    "REQUEST_CONSULTATION"
   ]
 };
 
@@ -154,7 +174,9 @@ export const LEADER_PERMISSIONS: Record<Role, Permission[]> = {
     "APPROVE_QA_TEMPLATE"
   ],
   
-  ADMISSION_OFFICER: [] // No additional leader permissions for admission officers yet
+  ADMISSION_OFFICER: [], // No additional leader permissions for admission officers yet
+  
+  STUDENT: [] // Students don't have leadership roles
 };
 
 /** Check if a user has a specific permission */

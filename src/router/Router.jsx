@@ -9,6 +9,7 @@ import { AdmissionPage } from "../pages/admission/AdmissionPage.tsx";
 import { ContentManagerPage } from "../pages/contentManager/ContentManagerPage.tsx";
 import LoginPage from "../pages/loginForAd/LoginPage.tsx";
 import ProtectedRoute from "../components/auth/ProtectedRoute.tsx";
+import RoleGuard, { AdminGuard, ContentManagerGuard, ConsultantGuard, AdmissionOfficerGuard, StudentGuard, StaffGuard } from "../components/auth/RoleGuard.tsx";
 import { AdminLayout } from "../components/admin/AdminLayout.jsx";
 import { AdminDashboardPage } from "../pages/admin/AdminDashboardPage.tsx";
 import { QATemplateManagerPage } from "../pages/admin/QATemplateManagerPage.tsx";
@@ -49,14 +50,34 @@ function NotFound() {
 export default function Router() {
   return (
     <Routes>
+      {/* Public routes */}
       <Route path="/" element={<Home />} />
       <Route path="/loginprivate" element={<LoginPrivate />} />
-      {/* <Route path="/admin" element={<AdminPage />} /> */}
-      <Route path="/profile" element={<UserProfile />} />
+      <Route path="/loginforad" element={<LoginPage />} />
+      <Route path="/chatbot" element={<ChatGuestPage />} />
+      <Route path="/riasec" element={<RiasecPage />} />
       <Route path="/404" element={<NotFound />} />
-      <Route path="/consultant" element={<ConsulantPage />} />
-      <Route path="*" element={<Navigate to="/404" replace />} />
-      <Route path="/admission" element={<AdmissionOfficerLayout />}>
+      
+      {/* Student-only routes */}
+      <Route path="/profile" element={
+        <StudentGuard>
+          <UserProfile />
+        </StudentGuard>
+      } />
+      
+      {/* Consultant routes */}
+      <Route path="/consultant" element={
+        <ConsultantGuard>
+          <ConsulantPage />
+        </ConsultantGuard>
+      } />
+      
+      {/* Admission Officer routes */}
+      <Route path="/admission" element={
+        <AdmissionOfficerGuard>
+          <AdmissionOfficerLayout />
+        </AdmissionOfficerGuard>
+      }>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<AdmissionDashboard />} />
         <Route path="request-queue" element={<RequestQueuePage />} />
@@ -66,7 +87,13 @@ export default function Router() {
         <Route path="students/:studentId" element={<StudentProfilePage />} />
         <Route path="insights" element={<StudentInsights />} />
       </Route>
-      <Route path="/content" element={<ContentManagerLayOut />}>
+      
+      {/* Content Manager routes */}
+      <Route path="/content" element={
+        <ContentManagerGuard>
+          <ContentManagerLayOut />
+        </ContentManagerGuard>
+      }>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<ContentManagerDashboardPage />} />
         <Route path="articles" element={<AllArticlesPage />} />
@@ -74,21 +101,13 @@ export default function Router() {
         <Route path="editor" element={<ArticleEditorPage />} />
         <Route path="riasec" element={<RiasecManagement />} />
       </Route>
-      <Route path="/loginforad" element={<LoginPage />} />
-<Route path="/chatbot" element={<ChatGuestPage />} />
       
- 
-<Route path="/riasec" element={<RiasecPage />} />
- 
-      
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <AdminLayout />
-          </ProtectedRoute>
-        }
-      >
+      {/* Admin routes - Only for System Admins */}
+      <Route path="/admin" element={
+        <AdminGuard>
+          <AdminLayout />
+        </AdminGuard>
+      }>
         <Route index element={<Navigate to="dashboard" replace />} />
         {/* Core Admin Routes */}
         <Route path="dashboard" element={<AdminDashboardPage />} />
@@ -111,8 +130,9 @@ export default function Router() {
         <Route path="review" element={<AdminReviewQueuePage />} />
         <Route path="editor" element={<AdminArticleEditorPage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/loginforad" replace />} />
 
+      {/* Catch-all route */}
+      <Route path="*" element={<Navigate to="/404" replace />} />
     </Routes>
   );
 }

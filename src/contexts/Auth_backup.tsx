@@ -2,9 +2,8 @@
 import React, { createContext, useContext, useMemo, useState, ReactNode, useEffect } from "react";
 import { Permission, hasPermission, getRolePermissions } from "@/constants/permissions";
 import { authAPI } from '../services/fastapi';
-import { getRoleFromToken } from '../pages/login/jwtHelper';
 
-export type Role = "SYSTEM_ADMIN" | "CONSULTANT" | "CONTENT_MANAGER" | "ADMISSION_OFFICER" | "STUDENT";
+export type Role = "SYSTEM_ADMIN" | "CONSULTANT" | "CONTENT_MANAGER" | "ADMISSION_OFFICER";
 
 export type User = {
   id: string;
@@ -23,7 +22,6 @@ type AuthCtx = {
   logout: () => void;
   hasPermission: (permission: Permission) => boolean;
   setUserLeadership: (isLeader: boolean) => void; // for testing leadership
-  getDefaultRoute: (role: Role) => string; // Add this new function
 };
 
 /** Tài khoản mẫu (có thể đổi sau này) */
@@ -33,7 +31,6 @@ const ACCOUNTS: Account[] = [
   { email: "consultant@gmail.com",password: "123",    name: "hoang",       role: "CONSULTANT", isLeader: false },
   { email: "content@gmail.com",   password: "123", name: "hieu",     role: "CONTENT_MANAGER", isLeader: false },
   { email: "officer@gmail.com",   password: "123", name: "khoa", role: "ADMISSION_OFFICER", isLeader: false },
-  { email: "student@gmail.com",   password: "123", name: "student", role: "STUDENT", isLeader: false },
 ];
 
 const AuthContext = createContext<AuthCtx | undefined>(undefined);
@@ -74,21 +71,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("token_type", token_type || "bearer");
 
-      // Try to extract user info from JWT token
-      const roleFromToken = getRoleFromToken(access_token);
-      console.log('Role from token:', roleFromToken);
-
-      // Map token role to app role
-      const appRole = mapTokenRoleToAppRole(roleFromToken) || "STUDENT"; // Default to STUDENT instead of CONTENT_MANAGER
-
-      // Create user object based on token info or fallback
+      // Create user object based on email (simplified approach)
       const userData: User = {
         id: email, // Use email as ID for now
         name: email.split('@')[0], // Extract name from email
-        role: appRole,
+        role: "CONTENT_MANAGER", // Default role, can be enhanced later
         email: email,
         isLeader: false,
-        permissions: getRolePermissions(appRole)
+        permissions: getRolePermissions("CONTENT_MANAGER")
       };
 
       setUser(userData);
@@ -106,37 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       return { ok: false, message: "Login failed. Please check your credentials." };
     }
-  };
-
-  // Helper function to map JWT token roles to app roles
-  const mapTokenRoleToAppRole = (tokenRole: string | null): Role | null => {
-    if (!tokenRole) return null;
-    
-    const roleMappings: Record<string, Role> = {
-      'admin': 'SYSTEM_ADMIN',
-      'system_admin': 'SYSTEM_ADMIN',
-      'consultant': 'CONSULTANT', 
-      'content_manager': 'CONTENT_MANAGER',
-      'content': 'CONTENT_MANAGER',
-      'admission_officer': 'ADMISSION_OFFICER',
-      'officer': 'ADMISSION_OFFICER',
-      'student': 'STUDENT'
-    };
-    
-    return roleMappings[tokenRole.toLowerCase()] || null;
-  };
-
-  // Get default route based on user role
-  const getDefaultRoute = (role: Role): string => {
-    const roleRoutes: Record<Role, string> = {
-      'SYSTEM_ADMIN': '/admin/dashboard',
-      'CONTENT_MANAGER': '/content/dashboard',
-      'CONSULTANT': '/consultant',
-      'ADMISSION_OFFICER': '/admission/dashboard',
-      'STUDENT': '/profile'
-    };
-    
-    return roleRoutes[role] || '/';
   };
 
   // Giữ lại tiện ích "loginAs(role)" để test nhanh
@@ -261,8 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loginAs, 
       logout, 
       hasPermission: checkPermission,
-      setUserLeadership,
-      getDefaultRoute
+      setUserLeadership
     }),
     [user]
   );

@@ -26,7 +26,21 @@ class FastAPIClient {
       const response = await fetch(url, config);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Try to get error details from response
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData?.detail) {
+            if (Array.isArray(errorData.detail)) {
+              errorMessage = errorData.detail.map((err: any) => `${err.loc?.join('.')}: ${err.msg}`).join(', ');
+            } else {
+              errorMessage = errorData.detail;
+            }
+          }
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -94,7 +108,18 @@ export interface User {
 export interface Major {
   major_id: number;
   major_name: string;
-  description: string;
+  articles?: Array<{
+    article_id: number;
+    title: string;
+    description: string;
+    url: string;
+    create_at: string;
+    specialization: {
+      specialization_id: number;
+      specialization_name: string;
+    };
+  }>;
+  admission_forms?: any[];
 }
 
 // Specialization types
@@ -102,7 +127,20 @@ export interface Specialization {
   specialization_id: number;
   specialization_name: string;
   major_id: number;
-  description: string;
+  articles?: Array<{
+    article_id: number;
+    title: string;
+    description: string;
+    url: string;
+    status: string;
+    create_at: string;
+    created_by: number;
+    major_id: number;
+    specialization_id: number;
+    author_name: string | null;
+    major_name: string | null;
+    specialization_name: string | null;
+  }>;
 }
 
 // Chat types
