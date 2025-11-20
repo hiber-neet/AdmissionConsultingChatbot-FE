@@ -4,9 +4,10 @@ import { useAuth } from "@/contexts/Auth";
 import { Shield } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import bgImage from "@/assets/images/toiyeufpt.jpg";
+import { getRoleFromToken } from "../login/jwtHelper";
 
 export default function LoginPage() {
-  const { login, loginAs } = useAuth();
+  const { login, loginAs, getDefaultRoute } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState("");
@@ -27,6 +28,27 @@ export default function LoginPage() {
       setErr(res.message || "Đăng nhập thất bại");
       return;
     }
+    
+    // Get user role and navigate to appropriate dashboard
+    if (res.token) {
+      const roleFromToken = getRoleFromToken(res.token);
+      if (roleFromToken) {
+        let appRole = null;
+        if (roleFromToken === "admin") appRole = "SYSTEM_ADMIN";
+        else if (roleFromToken === "content_manager") appRole = "CONTENT_MANAGER";
+        else if (roleFromToken === "consultant") appRole = "CONSULTANT";
+        else if (roleFromToken === "admission_officer") appRole = "ADMISSION_OFFICER";
+        else if (roleFromToken === "student") appRole = "STUDENT";
+        
+        if (appRole) {
+          const defaultRoute = getDefaultRoute(appRole);
+          navigate(defaultRoute, { replace: true });
+          return;
+        }
+      }
+    }
+    
+    // Fallback to the original 'from' route
     navigate(from, { replace: true });
   };
 
