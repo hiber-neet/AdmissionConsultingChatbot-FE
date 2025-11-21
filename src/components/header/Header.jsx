@@ -30,6 +30,11 @@ export default function Header() {
     setIsMobileMenuOpen(false);
   };
 
+    const goarticles = () => {
+    navigate("/articles");
+    setIsMobileMenuOpen(false);
+  };
+
   const goLogin = () => {
     navigate("/loginprivate");
     setIsMobileMenuOpen(false);
@@ -120,6 +125,17 @@ export default function Header() {
               }`}
             >
               Liên hệ
+            </button>
+
+ <button
+              onClick={goarticles}
+              className={`text-sm font-medium transition-colors ${
+                isScrolled
+                  ? "text-gray-700 hover:text-orange-600"
+                  : "text-white hover:text-orange-200"
+              }`}
+            >
+              Báo
             </button>
 
             {/* NEW: Chatbot -> /chatbotguest */}

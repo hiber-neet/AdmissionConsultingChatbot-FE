@@ -42,7 +42,7 @@ import { AllArticlesPage } from "../components/content/AllArticlesPage.tsx";
 import ReviewQueue from "../components/content/ReviewQueue.tsx";
 import { ArticleEditorPage } from "../components/content/ArticleEditorPage.tsx";
 import RiasecManagement from "../components/content/PersonalityTest/RiasecManagement.jsx";
-
+import ArticlePage from "../pages/article/ArticlePage.jsx";
 function NotFound() {
   return <h1 style={{ padding: 24 }}>404</h1>;
 }
@@ -56,6 +56,7 @@ export default function Router() {
       <Route path="/loginforad" element={<LoginPage />} />
       <Route path="/chatbot" element={<ChatGuestPage />} />
       <Route path="/riasec" element={<RiasecPage />} />
+      <Route path="/articles" element={<ArticlePage />} />
       <Route path="/404" element={<NotFound />} />
       
       {/* Student-only routes */}
