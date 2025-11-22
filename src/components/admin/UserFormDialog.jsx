@@ -3,6 +3,7 @@ import { Input } from '../ui/system_users/input';
 import { Label } from '../ui/system_users/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/system_users/dialog';
 import { RoleSelector } from './RoleSelector';
+import { PermissionSelector } from './PermissionSelector';
 import PropTypes from 'prop-types';
 
 export function UserFormDialog({
@@ -17,10 +18,6 @@ export function UserFormDialog({
     onFormChange({ ...formData, name: e.target.value });
   };
 
-  const handleUsernameChange = (e) => {
-    onFormChange({ ...formData, username: e.target.value });
-  };
-
   const handleEmailChange = (e) => {
     onFormChange({ ...formData, email: e.target.value });
   };
@@ -29,13 +26,17 @@ export function UserFormDialog({
     onFormChange({ ...formData, password: e.target.value });
   };
 
-  const handleRolesChange = (roles) => {
-    onFormChange({ ...formData, roles });
+  const handleRoleChange = (role) => {
+    onFormChange({ ...formData, role, permissions: [] }); // Reset permissions when role changes
+  };
+
+  const handlePermissionsChange = (permissions) => {
+    onFormChange({ ...formData, permissions });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] max-w-lg">
         <DialogHeader>
           <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
           <DialogDescription>
@@ -43,7 +44,7 @@ export function UserFormDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 overflow-y-auto max-h-[60vh]">
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input
@@ -51,16 +52,6 @@ export function UserFormDialog({
               value={formData.name}
               onChange={handleNameChange}
               placeholder="Enter full name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              value={formData.username}
-              onChange={handleUsernameChange}
-              placeholder="Enter username"
             />
           </div>
 
@@ -101,11 +92,24 @@ export function UserFormDialog({
             </div>
           )}
 
-          <RoleSelector
-            selectedRoles={formData.roles}
-            onRolesChange={handleRolesChange}
-            isEditing={!!editingUser}
-          />
+          <div className="space-y-6">
+            {/* Role Selection */}
+            <RoleSelector
+              selectedRole={formData.role}
+              onRoleChange={handleRoleChange}
+              isEditing={!!editingUser}
+            />
+
+            {/* Permission Management */}
+            {formData.role && (
+              <PermissionSelector
+                role={formData.role}
+                selectedPermissions={formData.permissions || []}
+                onPermissionsChange={handlePermissionsChange}
+                isEditing={!!editingUser}
+              />
+            )}
+          </div>
         </div>
 
         <DialogFooter>
@@ -127,10 +131,10 @@ UserFormDialog.propTypes = {
   editingUser: PropTypes.object,
   formData: PropTypes.shape({
     name: PropTypes.string,
-    username: PropTypes.string,
     email: PropTypes.string,
     password: PropTypes.string,
-    roles: PropTypes.arrayOf(PropTypes.string),
+    role: PropTypes.string,
+    permissions: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
   onFormChange: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,

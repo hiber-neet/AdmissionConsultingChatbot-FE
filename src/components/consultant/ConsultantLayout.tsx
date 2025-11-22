@@ -9,7 +9,8 @@ import {
   User,
   ChevronLeft,
   MessageSquare,
-  FileText
+  FileText,
+  LogOut
 } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
 import { Avatar, AvatarFallback } from '../ui/system_users/avatar';
@@ -19,15 +20,16 @@ import { QATemplateManagement } from './QATemplateManagement';
 import { DocumentManagement } from './DocumentManagement';
 import { ContentOptimization } from './ContentOptimization';
 import { LeaderKnowledgeBase } from './consultantLeader/leaderKnowledgeBase';
+import { ManagerProfile } from '../manager/ManagerProfile';
 
-type ConsultantPage = 'overview' | 'analytics' | 'qaTemplates' | 'documents' | 'optimization' | 'leaderReview';
+type ConsultantPage = 'overview' | 'analytics' | 'qaTemplates' | 'documents' | 'optimization' | 'leaderReview' | 'profile';
 
 export function ConsultantLayout() {
   const [currentPage, setCurrentPage] = useState<ConsultantPage>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [prefilledQuestion, setPrefilledQuestion] = useState<string | null>(null);
   const [templateAction, setTemplateAction] = useState<'edit' | 'add' | 'view' | null>(null);
-  const { user, hasPermission, setUserLeadership, loginAs } = useAuth(); useAuth();
+  const { user, hasPermission, setUserLeadership, loginAs, logout } = useAuth();
 
   // Auto-login if no user is found (for consultant pages)
   useEffect(() => {
@@ -89,13 +91,14 @@ export function ConsultantLayout() {
     ...(user?.isLeader ? [
       { id: 'leaderReview' as ConsultantPage, label: 'Knowledge Base Review', icon: Database },
     ] : []),
+    { id: 'profile' as ConsultantPage, label: 'Profile', icon: User },
   ];
 
   return (
-    <div className="h-full flex bg-[#F8FAFC]">
+    <div className="min-h-screen flex bg-[#F8FAFC]">
       {/* Sidebar */}
       <aside 
-        className={`bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300 ${
+        className={`bg-white border-r border-gray-200 flex flex-col min-h-screen transition-all duration-300 ${
           sidebarCollapsed ? 'w-16' : 'w-64'
         }`}
       >
@@ -179,25 +182,47 @@ export function ConsultantLayout() {
               }`}
               disabled={!user}
             >
-              {!user ? '🔄 Loading...' : user?.isLeader ? '👑 Leader Mode' : '👤 Regular Mode'}
+              {!sidebarCollapsed && (
+                !user ? '🔄 Loading...' : user?.isLeader ? '👑 Leader Mode' : '👤 Regular Mode'
+              )}
             </Button>
             
             {/* Debug info */}
-            <div className="text-xs text-gray-500 p-1 bg-gray-50 rounded">
-              Debug: {!user ? 'No User' : user?.isLeader ? 'Leader' : 'Regular'} | {user?.permissions?.length || 0} perms
-            </div>
+            {!sidebarCollapsed && (
+              <div className="text-xs text-gray-500 p-1 bg-gray-50 rounded">
+                Debug: {!user ? 'No User' : user?.isLeader ? 'Leader' : 'Regular'} | {user?.permissions?.length || 0} perms
+              </div>
+            )}
+            
+            {/* Logout Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (confirm('Are you sure you want to logout?')) {
+                  logout();
+                }
+              }}
+              className="w-full text-xs font-medium border bg-red-100 text-red-700 border-red-300 hover:bg-red-200 mt-2"
+            >
+              <LogOut className="h-3 w-3" />
+              {!sidebarCollapsed && (
+                <span className="ml-1">Logout</span>
+              )}
+            </Button>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 min-h-screen overflow-hidden">
         {currentPage === 'overview' && <DashboardOverview onNavigateToTemplates={handleDashboardNavigateToTemplates} />}
         {currentPage === 'analytics' && <AnalyticsStatistics onNavigateToTemplates={handleNavigateToTemplates} />}
         {currentPage === 'qaTemplates' && <QATemplateManagement prefilledQuestion={prefilledQuestion} onQuestionUsed={handleQuestionUsed} templateAction={templateAction} />}
         {currentPage === 'documents' && <DocumentManagement />}
         {currentPage === 'optimization' && <ContentOptimization onNavigateToKnowledgeBase={handleNavigateToKnowledgeBase} />}
         {currentPage === 'leaderReview' && user?.isLeader && <LeaderKnowledgeBase />}
+        {currentPage === 'profile' && <ManagerProfile />}
       </main>
     </div>
   );

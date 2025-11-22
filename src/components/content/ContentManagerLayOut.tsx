@@ -10,6 +10,7 @@ import {
   User,
   ChevronLeft,
   Database,
+  LogOut,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/system_users/button";
@@ -17,13 +18,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/system_users/avatar";
 import { useAuth } from "@/contexts/Auth";
 
 // Page type
-type ContentPage = "dashboard" | "articles" | "review" | "editor" | "riasec";
+type ContentPage = "dashboard" | "articles" | "review" | "editor" | "riasec" | "profile";
 
 export default function ContentManagerLayOut() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, hasPermission, setUserLeadership, loginAs } = useAuth();
+  const { user, hasPermission, setUserLeadership, loginAs, logout } = useAuth();
   
   // Auto-login if no user is found (for content pages)
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function ContentManagerLayOut() {
     ...(hasPermission("MANAGE_RIASEC") ? [
       { id: "riasec" as ContentPage, label: "RIASEC Management", icon: Database, path: "/content/riasec", permission: "MANAGE_RIASEC" }
     ] : []),
+    { id: "profile" as ContentPage, label: "Profile", icon: User, path: "/content/profile", permission: "VIEW_PROFILE" },
   ];
 
   // Toggle button will appear in the sidebar footer for testing
@@ -76,7 +78,7 @@ export default function ContentManagerLayOut() {
      <div className="min-h-screen flex bg-[#F8FAFC]">
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300 ${
+        className={`bg-white border-r border-gray-200 flex flex-col min-h-screen transition-all duration-300 ${
           sidebarCollapsed ? "w-16" : "w-64"
         }`}
       >
@@ -166,19 +168,40 @@ export default function ContentManagerLayOut() {
               }`}
               disabled={!user}
             >
-              {!user ? '🔄 Loading...' : user?.isLeader ? '👑 Leader Mode' : '👤 Regular Mode'}
+              {!sidebarCollapsed && (
+                !user ? '🔄 Loading...' : user?.isLeader ? '👑 Leader Mode' : '👤 Regular Mode'
+              )}
             </Button>
             
             {/* Debug info */}
-            <div className="text-xs text-gray-500 p-1 bg-gray-50 rounded">
-              Debug: {!user ? 'No User' : user?.isLeader ? 'Leader' : 'Regular'} | {user?.permissions?.length || 0} perms
-            </div>
+            {!sidebarCollapsed && (
+              <div className="text-xs text-gray-500 p-1 bg-gray-50 rounded">
+                Debug: {!user ? 'No User' : user?.isLeader ? 'Leader' : 'Regular'} | {user?.permissions?.length || 0} perms
+              </div>
+            )}
+            
+            {/* Logout Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (confirm('Are you sure you want to logout?')) {
+                  logout();
+                }
+              }}
+              className="w-full text-xs font-medium border bg-red-100 text-red-700 border-red-300 hover:bg-red-200 mt-2"
+            >
+              <LogOut className="h-3 w-3" />
+              {!sidebarCollapsed && (
+                <span className="ml-1">Logout</span>
+              )}
+            </Button>
           </div>
         </div>
       </aside>
 
       {/* Main */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 min-h-screen overflow-auto">
         <Outlet />
       </main>
     </div>
