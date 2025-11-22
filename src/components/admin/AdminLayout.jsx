@@ -14,7 +14,8 @@ import {
   MessageSquareText, 
   Users, 
   Shield,
-  Activity 
+  Activity,
+  User
 } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
 import { useAuth } from '../../contexts/Auth';
@@ -51,6 +52,8 @@ export function AdminLayout() {
     { id: "articles", label: "All Articles", icon: FileText, path: '/admin/articles' },
     { id: "review", label: "Review Queue", icon: ListChecks, path: '/admin/review' },
     { id: "editor", label: "New Article", icon: PenSquare, path: '/admin/editor' },
+    // profile section
+    { id: 'profile', label: 'Profile', icon: User, path: '/admin/profile' },
   ];
 
   // Filter navigation based on user role
@@ -73,9 +76,9 @@ export function AdminLayout() {
   }, [user, location.pathname, allowedNav, navigate]);
 
   return (
-    <div className="flex h-full bg-[#F8FAFC]">
+    <div className="flex min-h-screen bg-[#F8FAFC]">
       {/* Sidebar */}
-      <div className="w-64 border-r bg-white flex flex-col h-full">
+      <div className="w-64 border-r bg-white flex flex-col min-h-screen">
         <div className="p-6 border-b flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 bg-[#3B82F6] rounded-lg flex items-center justify-center">
@@ -134,7 +137,7 @@ export function AdminLayout() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-screen overflow-hidden">
         <Outlet />
       </div>
     </div>

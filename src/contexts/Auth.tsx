@@ -94,6 +94,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData);
       sessionStorage.setItem("demo_user", JSON.stringify(userData));
 
+      // Log user role to console after successful login
+      console.log("🎉 LOGIN SUCCESS!");
+      console.log("👤 User Info:", {
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        permissions: userData.permissions
+      });
+      console.log(`🔑 Role from JWT Token: "${roleFromToken}" → Mapped to: "${appRole}"`);
+      console.log("🚀 Default route:", getDefaultRoute(appRole));
+
       return { ok: true, token: access_token };
 
     } catch (error: any) {
@@ -155,13 +166,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     setUser(u);
     sessionStorage.setItem("demo_user", JSON.stringify(u));
+
+    // Log demo login info to console
+    console.log("🎭 DEMO LOGIN!");
+    console.log("👤 Demo User Info:", {
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      isLeader: u.isLeader,
+      permissions: u.permissions
+    });
+    console.log("🚀 Default route:", getDefaultRoute(u.role));
   };
 
   const logout = () => {
+    console.log('🚪 Logging out user...');
+    
+    // Optional: Notify backend of logout (best practice)
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      authAPI.logout().catch(err => {
+        console.warn('Backend logout failed (proceeding anyway):', err);
+      });
+    }
+    
+    // Clear user state
     setUser(null);
-    sessionStorage.removeItem("demo_user");
+    
+    // Clear authentication tokens
     localStorage.removeItem("access_token");
     localStorage.removeItem("token_type");
+    
+    // Clear user session data
+    sessionStorage.removeItem("demo_user");
+    sessionStorage.removeItem("token"); // Legacy token storage
+    
+    // Clear user-specific RIASEC data (if any)
+    // Note: We don't clear guest data as that should persist for anonymous users
+    const userId = user?.id;
+    if (userId) {
+      localStorage.removeItem(`riasec_result_${userId}`);
+    }
+    
+    // Clear any other user-specific cached data
+    const userProfileKey = user?.id ? `user_profile_${user.id}` : null;
+    if (userProfileKey) {
+      localStorage.removeItem(userProfileKey);
+    }
+    
+    // Optional: Clear any application cache if using service workers
+    if ('serviceWorker' in navigator && 'caches' in window) {
+      caches.keys().then(cacheNames => {
+        cacheNames.forEach(cacheName => {
+          if (cacheName.includes('auth') || cacheName.includes('user')) {
+            caches.delete(cacheName);
+          }
+        });
+      }).catch(err => console.warn('Cache cleanup failed:', err));
+    }
+    
+    // Force reload to clear any remaining application state
+    // Optional: Only if you want to completely refresh the app
+    setTimeout(() => {
+      window.location.href = '/loginforad';
+    }, 100);
+    
+    console.log('✅ Logout complete - all user data cleared');
   };
 
   // Check if current user has a permission

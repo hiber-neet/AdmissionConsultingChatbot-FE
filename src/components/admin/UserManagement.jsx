@@ -14,7 +14,8 @@ const initialUsers = [
     name: 'John Anderson',
     username: 'john.anderson',
     email: 'john.anderson@university.edu',
-    roles: ['admin', 'content_manager'],
+    role: 'SYSTEM_ADMIN',
+    permissions: ['MANAGE_USERS', 'MANAGE_ROLES', 'VIEW_ACTIVITY_LOG', 'MANAGE_SYSTEM_SETTINGS', 'ACCESS_ALL_MODULES'],
     status: 'active',
     lastActive: '5 minutes ago',
     createdAt: '2024-01-15',
@@ -24,7 +25,8 @@ const initialUsers = [
     name: 'Sarah Mitchell',
     username: 'sarah.mitchell',
     email: 'sarah.mitchell@university.edu',
-    roles: ['content_manager'],
+    role: 'CONTENT_MANAGER',
+    permissions: ['VIEW_CONTENT_DASHBOARD', 'MANAGE_ARTICLES', 'CREATE_ARTICLE', 'EDIT_ARTICLE', 'DELETE_ARTICLE', 'PUBLISH_ARTICLE', 'REVIEW_CONTENT'],
     status: 'active',
     lastActive: '2 hours ago',
     createdAt: '2024-02-20',
@@ -34,7 +36,8 @@ const initialUsers = [
     name: 'Michael Chen',
     username: 'michael.chen',
     email: 'michael.chen@university.edu',
-    roles: ['consultant'],
+    role: 'CONSULTANT',
+    permissions: ['VIEW_CONSULTANT_OVERVIEW', 'VIEW_ANALYTICS', 'MANAGE_KNOWLEDGE_BASE', 'CREATE_QA_TEMPLATE', 'EDIT_QA_TEMPLATE', 'DELETE_QA_TEMPLATE', 'APPROVE_QA_TEMPLATE'],
     status: 'active',
     lastActive: '1 day ago',
     createdAt: '2024-03-10',
@@ -44,7 +47,8 @@ const initialUsers = [
     name: 'Emily Rodriguez',
     username: 'emily.rodriguez',
     email: 'emily.rodriguez@university.edu',
-    roles: ['content_manager', 'consultant'],
+    role: 'CONTENT_MANAGER',
+    permissions: ['VIEW_CONTENT_DASHBOARD', 'MANAGE_ARTICLES', 'CREATE_ARTICLE', 'EDIT_ARTICLE'],
     status: 'active',
     lastActive: '3 hours ago',
     createdAt: '2024-04-05',
@@ -54,10 +58,33 @@ const initialUsers = [
     name: 'David Thompson',
     username: 'david.thompson',
     email: 'david.thompson@university.edu',
-    roles: ['consultant'],
+    role: 'CONSULTANT',
+    permissions: ['VIEW_CONSULTANT_OVERVIEW', 'VIEW_ANALYTICS', 'MANAGE_KNOWLEDGE_BASE'],
     status: 'inactive',
     lastActive: '2 weeks ago',
     createdAt: '2024-05-12',
+  },
+  {
+    id: '6',
+    name: 'Lisa Wang',
+    username: 'lisa.wang',
+    email: 'lisa.wang@university.edu',
+    role: 'ADMISSION_OFFICER',
+    permissions: ['VIEW_ADMISSION_DASHBOARD', 'MANAGE_STUDENT_QUEUE', 'CONDUCT_CONSULTATION', 'VIEW_STUDENT_INSIGHTS'],
+    status: 'active',
+    lastActive: '30 minutes ago',
+    createdAt: '2024-06-18',
+  },
+  {
+    id: '7',
+    name: 'Robert Johnson',
+    username: 'robert.johnson',
+    email: 'robert.johnson@university.edu',
+    role: 'ADMISSION_OFFICER',
+    permissions: ['VIEW_ADMISSION_DASHBOARD', 'MANAGE_STUDENT_QUEUE', 'CONDUCT_CONSULTATION', 'VIEW_STUDENT_INSIGHTS', 'ACCESS_LIVE_CHAT'],
+    status: 'active',
+    lastActive: '1 hour ago',
+    createdAt: '2024-07-22',
   },
 ];
 
@@ -69,45 +96,42 @@ export function UserManagement() {
   const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
-    username: '',
     email: '',
     password: '',
-    roles: [],
+    role: '',
+    permissions: [],
   });
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = filterRole === 'all' || user.roles.includes(filterRole);
+    const matchesRole = filterRole === 'all' || user.role === filterRole;
     return matchesSearch && matchesRole;
   });
 
   const handleAddUser = () => {
     setEditingUser(null);
-    setFormData({ name: '', username: '', email: '', password: '', roles: [] });
+    setFormData({ name: '', email: '', password: '', role: '', permissions: [] });
     setIsDialogOpen(true);
   };
 
   const handleCreateOrUpdate = () => {
-    if (!formData.name || !formData.email || !formData.username) return;
+    if (!formData.name || !formData.email || !formData.role) return;
     if (!editingUser && !formData.password) return; // Password required for new users
 
     if (editingUser) {
-      // Update existing user
+      // Update existing user - role cannot be changed, only permissions
       setUsers(users.map(u => 
         u.id === editingUser.id 
           ? {
               ...u,
               name: formData.name,
-              username: formData.username,
               email: formData.email,
               // Only update password if provided
               ...(formData.password && { password: formData.password }),
-              // Preserve admin role if it exists, can't be added or removed
-              roles: u.roles.includes('admin') 
-                ? ['admin', ...formData.roles.filter(r => r !== 'admin')]
-                : formData.roles.filter(r => r !== 'admin'),
+              // Role cannot be changed, only permissions can be updated
+              permissions: formData.permissions,
             }
           : u
       ));
@@ -116,10 +140,11 @@ export function UserManagement() {
       const newUser = {
         id: Date.now().toString(),
         name: formData.name,
-        username: formData.username,
+        username: formData.email.split('@')[0], // Generate username from email prefix
         email: formData.email,
         password: formData.password, // In real app, this would be hashed
-        roles: formData.roles.filter(r => r !== 'admin'), // Never allow adding admin role to new users
+        role: formData.role, // Set the permanent role
+        permissions: formData.permissions, // Set initial permissions
         status: 'active',
         lastActive: 'Just now',
         createdAt: new Date().toISOString().split('T')[0],
@@ -128,7 +153,7 @@ export function UserManagement() {
     }
 
     // Reset form
-    setFormData({ name: '', username: '', email: '', password: '', roles: [] });
+    setFormData({ name: '', email: '', password: '', role: '', permissions: [] });
     setEditingUser(null);
     setIsDialogOpen(false);
   };
@@ -137,10 +162,10 @@ export function UserManagement() {
     setEditingUser(user);
     setFormData({
       name: user.name,
-      username: user.username,
       email: user.email,
       password: '', // Don't prefill password for security
-      roles: user.roles || [],
+      role: user.role,
+      permissions: user.permissions || [],
     });
     setIsDialogOpen(true);
   };

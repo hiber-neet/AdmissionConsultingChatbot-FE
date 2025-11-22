@@ -28,6 +28,7 @@ import { AdminReviewQueuePage } from "../pages/admin/AdminReviewQueuePage.tsx";
 import { AdminArticleEditorPage } from "../pages/admin/AdminArticleEditorPage.tsx";
 import RiasecPage from "../pages/riasec/RiasecPage.jsx";
 import ChatGuestPage from "../pages/chatbot/ChatGuestPage.jsx";
+import { ManagerProfilePage } from "../pages/manager/ManagerProfilePage.tsx";
 import { AdmissionOfficerLayout } from "../components/admission/AdmissionOfficerLayout.jsx";
 import { AdmissionDashboard } from "../components/admission/AdmissionDashboard.jsx";
 import { RequestQueuePage } from "../components/admission/RequestQueuePage.jsx";
@@ -87,6 +88,7 @@ export default function Router() {
         <Route path="students" element={<StudentListPage />} />
         <Route path="students/:studentId" element={<StudentProfilePage />} />
         <Route path="insights" element={<StudentInsights />} />
+        <Route path="profile" element={<ManagerProfilePage />} />
       </Route>
       
       {/* Content Manager routes */}
@@ -101,6 +103,7 @@ export default function Router() {
         <Route path="review" element={<ReviewQueue />} />
         <Route path="editor" element={<ArticleEditorPage />} />
         <Route path="riasec" element={<RiasecManagement />} />
+        <Route path="profile" element={<ManagerProfilePage />} />
       </Route>
       
       {/* Admin routes - Only for System Admins */}
@@ -130,6 +133,7 @@ export default function Router() {
         <Route path="articles" element={<AdminAllArticlesPage />} />
         <Route path="review" element={<AdminReviewQueuePage />} />
         <Route path="editor" element={<AdminArticleEditorPage />} />
+        <Route path="profile" element={<ManagerProfilePage />} />
       </Route>
 
       {/* Catch-all route */}

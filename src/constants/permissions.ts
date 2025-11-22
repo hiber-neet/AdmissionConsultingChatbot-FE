@@ -5,7 +5,7 @@ export type AdminView =
   | "dashboard" | "templates" | "users" | "activity"
   | "admissions" | "content" | "consultation" | "insights"
   | "overview" | "analytics" | "knowledge" | "optimization"
-  | "dashboardcontent" | "articles" | "review" | "editor";
+  | "dashboardcontent" | "articles" | "review" | "editor" | "profile";
 
 /** Role -> danh sách view được phép */
 export const ROLE_VIEWS: Record<Role, AdminView[]> = {
@@ -13,16 +13,16 @@ export const ROLE_VIEWS: Record<Role, AdminView[]> = {
     "dashboard","templates","users","activity",
     "admissions","content","consultation","insights",
     "overview","analytics","knowledge","optimization",
-    "dashboardcontent","articles","review","editor",
+    "dashboardcontent","articles","review","editor","profile",
   ],
   CONTENT_MANAGER: [
-    "dashboardcontent","articles","review","editor","activity", // Added for development
+    "dashboardcontent","articles","review","editor","activity","profile", // Added for development
   ],
   CONSULTANT: [
-    "overview","analytics","knowledge","optimization","activity", // Added for development
+    "overview","analytics","knowledge","optimization","activity","profile", // Added for development
   ],
   ADMISSION_OFFICER: [
-    "admissions","content","consultation","insights","activity", // Added for development
+    "admissions","content","consultation","insights","activity","profile", // Added for development
   ],
   STUDENT: [], // Students don't access admin views
 };

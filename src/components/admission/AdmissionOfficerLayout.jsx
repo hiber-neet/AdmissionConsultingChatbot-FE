@@ -12,17 +12,21 @@ import {
   Menu,
   GraduationCap,
   BookOpen,
-  Clock
+  Clock,
+  LogOut,
+  User
 } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
 import { Input } from '../ui/system_users/input';
 import { Badge } from '../ui/system_users/badge';
 import { Avatar, AvatarFallback } from '../ui/system_users/avatar';
+import { useAuth } from '../../contexts/Auth';
 
 import PropTypes from 'prop-types';
 
 export function AdmissionOfficerLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -38,13 +42,14 @@ export function AdmissionOfficerLayout() {
     { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admission/consultation' },
     { id: 'knowledge-base', label: 'Cơ Sở Tri Thức', icon: BookOpen, path: '/admission/knowledge-base' },
     { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
+    { id: 'profile', label: 'Profile', icon: User, path: '/admission/profile' },
   ];
 
   return (
-    <div className="h-full flex bg-[#F8FAFC]">
+    <div className="min-h-screen flex bg-[#F8FAFC]">
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r flex flex-col h-screen transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'
+        className={`bg-white border-r flex flex-col min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'
           }`}
       >
         {/* Logo and Brand */}
@@ -118,6 +123,23 @@ export function AdmissionOfficerLayout() {
               </div>
             )}
           </div>
+          
+          {/* Logout Button */}
+          {!sidebarCollapsed && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (confirm('Bạn có chắc muốn đăng xuất?')) {
+                  logout();
+                }
+              }}
+              className="w-full mt-3 text-xs font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
+            >
+              <LogOut className="h-3 w-3 mr-2" />
+              Đăng xuất
+            </Button>
+          )}
         </div>
       </aside>
 
@@ -144,8 +166,8 @@ export function AdmissionOfficerLayout() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-hidden flex">
-          <div className="flex-1 overflow-hidden">
+        <main className="flex-1 min-h-screen overflow-hidden flex">
+          <div className="flex-1 min-h-screen overflow-hidden">
             <Outlet />
           </div>
         </main>

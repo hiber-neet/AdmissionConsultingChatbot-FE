@@ -1,4 +1,4 @@
-import { MoreVertical, Edit, Shield, Trash2, Mail, User } from 'lucide-react';
+import { MoreVertical, Edit, Shield, Trash2, Mail, User, GraduationCap, Crown, Users } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
 import { Badge } from '../ui/system_users/badge';
 import { Avatar, AvatarFallback } from '../ui/system_users/avatar';
@@ -8,15 +8,17 @@ import { Card } from '../ui/system_users/card';
 import PropTypes from 'prop-types';
 
 const roleColors = {
-  admin: 'destructive',
-  content_manager: 'default',
-  consultant: 'secondary',
+  SYSTEM_ADMIN: 'destructive',
+  CONTENT_MANAGER: 'default',
+  ADMISSION_OFFICER: 'outline',
+  CONSULTANT: 'secondary',
 };
 
 const roleLabels = {
-  admin: 'System Admin',
-  content_manager: 'Content Manager',
-  consultant: 'Consultant',
+  SYSTEM_ADMIN: 'System Admin',
+  CONTENT_MANAGER: 'Content Manager',
+  ADMISSION_OFFICER: 'Admission Officer',
+  CONSULTANT: 'Consultant',
 };
 
 export function UserTable({ 
@@ -27,15 +29,28 @@ export function UserTable({
 }) {
   const getRoleIcon = (role) => {
     switch (role) {
-      case 'admin':
+      case 'SYSTEM_ADMIN':
         return <Shield className="h-4 w-4" />;
-      case 'content_manager':
+      case 'CONTENT_MANAGER':
         return <Edit className="h-4 w-4" />;
-      case 'consultant':
+      case 'ADMISSION_OFFICER':
+        return <GraduationCap className="h-4 w-4" />;
+      case 'CONSULTANT':
         return <User className="h-4 w-4" />;
       default:
         return <User className="h-4 w-4" />;
     }
+  };
+
+  const hasLeaderPermissions = (permissions) => {
+    const leaderPermissions = [
+      'DELETE_ARTICLE',
+      'PUBLISH_ARTICLE', 
+      'REVIEW_CONTENT',
+      'DELETE_QA_TEMPLATE',
+      'APPROVE_QA_TEMPLATE'
+    ];
+    return permissions?.some(perm => leaderPermissions.includes(perm));
   };
 
   if (users.length === 0) {
@@ -85,12 +100,19 @@ export function UserTable({
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
-                  {user.roles.map(role => (
-                    <Badge key={role} variant={roleColors[role]} className="gap-1">
-                      {getRoleIcon(role)}
-                      {roleLabels[role]}
+                  <Badge variant={roleColors[user.role]} className="gap-1">
+                    {getRoleIcon(user.role)}
+                    {roleLabels[user.role]}
+                  </Badge>
+                  {hasLeaderPermissions(user.permissions) && (
+                    <Badge variant="outline" className="gap-1 border-amber-300 text-amber-700">
+                      <Crown className="h-3 w-3" />
+                      Leader
                     </Badge>
-                  ))}
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {user.permissions?.length || 0} permissions
                 </div>
               </TableCell>
               <TableCell>

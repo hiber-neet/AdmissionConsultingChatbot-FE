@@ -1,102 +1,97 @@
-import { Shield, Edit, User } from 'lucide-react';
+import { Shield, Edit, User, GraduationCap } from 'lucide-react';
 import { Label } from '../ui/system_users/label';
-import { Checkbox } from '../ui/system_users/checkbox';
 import PropTypes from 'prop-types';
 
-export function RoleSelector({ selectedRoles, onRolesChange, isEditing = false }) {
-  const handleRoleToggle = (role, checked) => {
-    const newRoles = checked 
-      ? [...(selectedRoles || []), role]
-      : (selectedRoles || []).filter(r => r !== role);
-    onRolesChange(newRoles);
-  };
-
-  const isAdminDisabled = isEditing && !selectedRoles?.includes('admin');
+export function RoleSelector({ selectedRole, onRoleChange, isEditing = false }) {
+  const roles = [
+    {
+      id: 'SYSTEM_ADMIN',
+      label: 'System Admin',
+      description: 'Full system control and management',
+      icon: Shield,
+      color: 'text-red-500'
+    },
+    {
+      id: 'CONTENT_MANAGER',
+      label: 'Content Manager',
+      description: 'Manages articles, knowledge base, and content',
+      icon: Edit,
+      color: 'text-blue-500'
+    },
+    {
+      id: 'CONSULTANT',
+      label: 'Consultant',
+      description: 'Provides consultation services and analytics',
+      icon: User,
+      color: 'text-green-500'
+    },
+    {
+      id: 'ADMISSION_OFFICER',
+      label: 'Admission Officer',
+      description: 'Manages student admissions and profiles',
+      icon: GraduationCap,
+      color: 'text-purple-500'
+    }
+  ];
 
   return (
     <div className="space-y-4">
-      <Label>Roles</Label>
-      <div className="grid grid-cols-1 gap-3">
-        <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="role-admin"
-            checked={selectedRoles?.includes('admin')}
-            disabled={isAdminDisabled}
-            onCheckedChange={() => {}}
-          />
-          <Label 
-            htmlFor="role-admin" 
-            className={`font-normal w-full ${isAdminDisabled ? 'text-muted-foreground' : ''}`}
-          >
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              System Admin (Full Access)
-              {isAdminDisabled && (
-                <span className="text-xs text-muted-foreground ml-2">(Reserved Role)</span>
-              )}
-            </div>
-          </Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="role-content-manager"
-            checked={selectedRoles?.includes('content_manager')}
-            onCheckedChange={(checked) => handleRoleToggle('content_manager', checked)}
-          />
-          <Label htmlFor="role-content-manager" className="font-normal w-full">
-            <div className="flex items-center gap-2">
-              <Edit className="h-4 w-4" />
-              Content Manager (KB Management)
-            </div>
-          </Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="role-consultant"
-            checked={selectedRoles?.includes('consultant')}
-            onCheckedChange={(checked) => handleRoleToggle('consultant', checked)}
-          />
-          <Label htmlFor="role-consultant" className="font-normal w-full">
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Consultant (Analytics Only)
-            </div>
-          </Label>
-        </div>
+      <div>
+        <Label className="text-sm font-medium">Account Role</Label>
+        <p className="text-xs text-muted-foreground mt-1">
+          {isEditing 
+            ? "Role cannot be changed after creation" 
+            : "Select the primary role for this account (permanent once created)"
+          }
+        </p>
       </div>
-
-      <div className="rounded-lg bg-muted p-3 text-sm">
-        <p><strong>Selected Role Permissions:</strong></p>
-        <ul className="mt-2 space-y-1 text-muted-foreground list-disc list-inside">
-          {selectedRoles?.includes('admin') && (
-            <>
-              <li>Full system control</li>
-              <li>User and role management</li>
-              <li>System configuration</li>
-            </>
-          )}
-          {selectedRoles?.includes('content_manager') && (
-            <>
-              <li>Knowledge base management</li>
-              <li>Content approval workflow</li>
-              <li>Q&A template editing</li>
-            </>
-          )}
-          {selectedRoles?.includes('consultant') && (
-            <>
-              <li>View analytics dashboard</li>
-              <li>Generate reports</li>
-              <li>Monitor performance metrics</li>
-            </>
-          )}
-        </ul>
+      
+      <div className="space-y-3">
+        {roles.map((role) => {
+          const Icon = role.icon;
+          return (
+            <div key={role.id} className="flex items-start space-x-3">
+              <input
+                type="radio"
+                id={`role-${role.id}`}
+                name="role"
+                value={role.id}
+                checked={selectedRole === role.id}
+                onChange={(e) => onRoleChange(e.target.value)}
+                disabled={isEditing}
+                className="mt-1 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 disabled:opacity-50"
+              />
+              <Label 
+                htmlFor={`role-${role.id}`} 
+                className={`flex-1 cursor-pointer ${isEditing ? 'opacity-60' : ''}`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon className={`h-4 w-4 ${role.color}`} />
+                  <span className="font-medium">{role.label}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {role.description}
+                </p>
+              </Label>
+            </div>
+          );
+        })}
       </div>
+      
+      {isEditing && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+          <p className="text-sm text-amber-800">
+            <strong>Note:</strong> User role is permanent and cannot be changed. 
+            You can only modify permissions below.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
 RoleSelector.propTypes = {
-  selectedRoles: PropTypes.arrayOf(PropTypes.string),
-  onRolesChange: PropTypes.func.isRequired,
+  selectedRole: PropTypes.string,
+  onRoleChange: PropTypes.func.isRequired,
   isEditing: PropTypes.bool,
 };

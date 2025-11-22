@@ -26,9 +26,10 @@ export function UserFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Roles</SelectItem>
-          <SelectItem value="admin">System Admin</SelectItem>
-          <SelectItem value="content_manager">Content Manager</SelectItem>
-          <SelectItem value="consultant">Consultant</SelectItem>
+          <SelectItem value="SYSTEM_ADMIN">System Admin</SelectItem>
+          <SelectItem value="CONTENT_MANAGER">Content Manager</SelectItem>
+          <SelectItem value="ADMISSION_OFFICER">Admission Officer</SelectItem>
+          <SelectItem value="CONSULTANT">Consultant</SelectItem>
         </SelectContent>
       </Select>
     </div>
