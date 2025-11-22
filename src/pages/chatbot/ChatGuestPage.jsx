@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import ChatGuestHeader from "../../components/chatbotguest/ChatGuestHeader.jsx";
+
 const CHATBOT_PREFILL_KEY = "chatbot_prefill_message";
+const GUEST_ID_KEY = "guest_user_id_v1";
+const GUEST_SESSION_KEY = "guest_session_id_v1";
 
 export default function ChatGuestPage() {
   const [messages, setMessages] = useState([]); // {sender: "user"|"bot", text: string}[]
@@ -8,13 +11,38 @@ export default function ChatGuestPage() {
   const [wsReady, setWsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [partial, setPartial] = useState("");
+  const [prefillMessage, setPrefillMessage] = useState(null); // prompt / JSON từ localStorage
+
   const partialRef = useRef("");
   const wsRef = useRef(null);
   const listRef = useRef(null);
 
+  // Tạo guestId + sessionId cố định cho guest (lưu vào localStorage)
+  const [guestId] = useState(() => {
+    let id = localStorage.getItem(GUEST_ID_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(GUEST_ID_KEY, id);
+    }
+    return id;
+  });
+
+  const [sessionId] = useState(() => {
+    let id = localStorage.getItem(GUEST_SESSION_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(GUEST_SESSION_KEY, id);
+    }
+    return id;
+  });
+
   // Auto-scroll xuống cuối mỗi khi có tin nhắn mới
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    if (!listRef.current) return;
+    listRef.current.scrollTo({
+      top: listRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   }, [messages, partial]);
 
   // Kết nối WS khi mount
@@ -22,66 +50,150 @@ export default function ChatGuestPage() {
     const ws = new WebSocket("ws://localhost:8000/chat/ws/chat");
     wsRef.current = ws;
 
-    ws.onopen = () => setWsReady(true);
+    ws.onopen = () => {
+      console.log("✅ Guest WS connected");
+      setWsReady(true);
+
+      // Gửi user_id + session_id giống code Chatbot demo
+      ws.send(
+        JSON.stringify({
+          user_id: guestId,
+          session_id: sessionId,
+        })
+      );
+    };
 
     ws.onmessage = (e) => {
+      console.log("📩 WS message:", e.data);
       try {
         const data = JSON.parse(e.data);
-        if (data.event === "chunk") {
-          setPartial((prev) => {
-            const next = prev + data.content;
-            partialRef.current = next;
-            return next;
-          });
-        } else if (data.event === "done") {
-          const final =
-            partialRef.current && partialRef.current.trim() !== ""
-              ? partialRef.current
-              : "(không có phản hồi)";
-          setMessages((prev) => [...prev, { sender: "bot", text: final }]);
-          setPartial("");
-          partialRef.current = "";
-          setIsLoading(false);
+
+        switch (data.event) {
+          case "session_created":
+            console.log("🆕 Session created for guest:", data);
+            break;
+
+          case "chunk":
+            setPartial((prev) => {
+              const next = prev + data.content;
+              partialRef.current = next;
+              return next;
+            });
+            break;
+
+          case "done": {
+            const final =
+              partialRef.current && partialRef.current.trim() !== ""
+                ? partialRef.current
+                : "(không có phản hồi)";
+            setMessages((prev) => [...prev, { sender: "bot", text: final }]);
+            setPartial("");
+            partialRef.current = "";
+            setIsLoading(false);
+            break;
+          }
+
+          case "error":
+            console.error("⚠️ WS error:", data.message);
+            setIsLoading(false);
+            break;
+
+          default:
+            // Một số log hệ thống khác không theo format event/chunk/done
+            console.warn("⚠️ Unknown WS event:", data);
         }
       } catch {
-        /* ignore */
+        // ignore log không phải JSON
       }
     };
 
-    ws.onclose = () => setWsReady(false);
-    return () => ws.close();
-  }, []);
+    ws.onclose = () => {
+      console.log("🔒 WS closed");
+      setWsReady(false);
+    };
 
- 
+    return () => ws.close();
+  }, [guestId, sessionId]);
+
+  // Lấy dữ liệu từ localStorage (có thể là JSON RIASEC hoặc legacy { text })
   useEffect(() => {
     try {
       const raw = localStorage.getItem(CHATBOT_PREFILL_KEY);
       if (!raw) return;
+
       localStorage.removeItem(CHATBOT_PREFILL_KEY);
-      const { text } = JSON.parse(raw) || {};
-      if (text) {
- 
-        setMessages([{ sender: "user", text }]);
-        setIsLoading(true);
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
-          wsRef.current.send(JSON.stringify({ message: text }));
+
+      let initial = "";
+      try {
+        const parsed = JSON.parse(raw);
+
+        // legacy: { text: "..." }
+        if (parsed && typeof parsed === "object" && "text" in parsed) {
+          initial = parsed.text;
+          console.log("Prefill TEXT cho chatbot:", parsed.text);
         }
+        // RIASEC JSON: { student_id, answers: {R,I,A,S,E,C} }
+        else if (
+          parsed &&
+          typeof parsed === "object" &&
+          "student_id" in parsed &&
+          "answers" in parsed
+        ) {
+          initial = JSON.stringify(parsed);
+          console.log("Prefill RIASEC JSON cho chatbot:", parsed);
+        } else {
+          // fallback: stringify
+          initial = JSON.stringify(parsed);
+        }
+      } catch {
+        // không parse được => dùng raw
+        initial = raw;
       }
+
+      if (!initial) return;
+
+      // Hiển thị như 1 tin nhắn user
+      setMessages([{ sender: "user", text: initial }]);
+      setPrefillMessage(initial);
+      setIsLoading(true);
     } catch {
       /* ignore */
     }
   }, []);
 
+  // Khi WS sẵn sàng và có prefillMessage thì gửi lên server
+  useEffect(() => {
+    if (!wsReady || !prefillMessage) return;
+    if (wsRef.current?.readyState !== WebSocket.OPEN) return;
+
+    wsRef.current.send(
+      JSON.stringify({
+        message: prefillMessage,
+        user_id: guestId,
+        session_id: sessionId,
+      })
+    );
+    setPrefillMessage(null);
+  }, [wsReady, prefillMessage, guestId, sessionId]);
+
   const send = (text) => {
     if (!text.trim()) return;
+
     const userMsg = { sender: "user", text };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsLoading(true);
     setPartial("");
     partialRef.current = "";
+
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ message: text }));
+      wsRef.current.send(
+        JSON.stringify({
+          message: text,
+          user_id: guestId,
+          session_id: sessionId,
+        })
+      );
     }
   };
 
@@ -93,14 +205,11 @@ export default function ChatGuestPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f7f8]">
- <ChatGuestHeader />
+      <ChatGuestHeader />
 
-      {/* Khung chat ở giữa */}
+      {/* Khung chat */}
       <main className="mx-auto max-w-3xl px-4">
-        <div
-          ref={listRef}
-          className="min-h-[60vh] pt-6 pb-40 overflow-y-auto"
-        >
+        <div ref={listRef} className="min-h-[60vh] pt-6 pb-40 overflow-y-auto">
           {messages.length === 0 && (
             <div className="mt-16 text-center text-gray-400">
               Hỏi bất kỳ điều gì… ✨
@@ -110,7 +219,9 @@ export default function ChatGuestPage() {
           {messages.map((m, i) => (
             <div
               key={i}
-              className={`mb-4 flex ${m.sender === "user" ? "justify-end" : "justify-start"}`}
+              className={`mb-4 flex ${
+                m.sender === "user" ? "justify-end" : "justify-start"
+              }`}
             >
               <div
                 className={`max-w-[85%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed shadow-sm ${
@@ -135,7 +246,7 @@ export default function ChatGuestPage() {
         </div>
       </main>
 
-      {/* Thanh nhập cố định dưới cùng, ở giữa màn hình */}
+      {/* Thanh nhập */}
       <form
         onSubmit={onSubmit}
         className="fixed bottom-0 left-0 right-0 z-20 border-t bg-[#f7f7f8]"

@@ -10,7 +10,6 @@ type Question = {
   text: string;
 };
 
-
 const TRAIT_LABEL: Record<Trait, string> = {
   R: "Realistic (Thực tế)",
   I: "Investigative (Nghiên cứu)",
@@ -29,7 +28,7 @@ const TRAIT_SUMMARY: Record<Trait, string> = {
   C: "Tổ chức, quy trình, chi tiết, dữ liệu – thích làm việc theo chuẩn.",
 };
 
-// Gợi ý ngành chi tiết (hiển thị khi đã đăng nhập)
+// Để dành nếu sau này muốn render ngành theo từng trait
 const TRAIT_MAJORS: Record<Trait, string[]> = {
   R: ["Kỹ thuật cơ khí", "Xây dựng", "Kỹ thuật điện - điện tử", "Logistics vận hành"],
   I: ["Khoa học máy tính / AI", "Phân tích dữ liệu", "Sinh học / Hóa học ứng dụng"],
@@ -39,13 +38,13 @@ const TRAIT_MAJORS: Record<Trait, string[]> = {
   C: ["Kế toán - Kiểm toán", "Quản trị hệ thống thông tin", "Thư ký - Hành chính"],
 };
 
+// 2 lựa chọn: Đồng ý = 1, Không đồng ý = 0
 const LIKERT = [
   { value: 1, label: "Đồng ý" },
-  { value: 2, label: "Không đồng ý" },
-
+  { value: 0, label: "Không đồng ý" },
 ];
 
-// 18 câu – 3 câu cho mỗi nhóm (gọn mà vẫn đủ tín hiệu)
+// 18 câu – 3 câu cho mỗi nhóm
 const QUESTIONS: Question[] = [
   // R
   { id: "q1", trait: "R", text: "Tôi thích sửa chữa hoặc lắp ráp máy móc, đồ vật." },
@@ -73,21 +72,22 @@ const QUESTIONS: Question[] = [
   { id: "q18", trait: "C", text: "Tôi thích công việc ổn định, quy củ và có hướng dẫn rõ ràng." },
 ];
 
-export default function RiasecGuestForm() {
-  const CHATBOT_PREFILL_KEY = "chatbot_prefill_message";
- 
+const CHATBOT_PREFILL_KEY = "chatbot_prefill_message";
+const GUEST_ID_KEY = "riasec_guest_id";
 
+export default function RiasecGuestForm() {
   const { user } = useAuth();
   const navigate = useNavigate();
-    // ---- NEW: key lưu theo user
+
+  // key lưu theo user (nếu có login)
   const SAVE_KEY = user ? `riasec_result_${user.id}` : null;
 
-    // ---- state
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
-  const [loadedAt, setLoadedAt] = useState<string | null>(null)
+  const [loadedAt, setLoadedAt] = useState<string | null>(null);
 
-   useEffect(() => {
+  // Load kết quả đã lưu (nếu có)
+  useEffect(() => {
     if (!user || !SAVE_KEY) return;
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return;
@@ -109,6 +109,7 @@ export default function RiasecGuestForm() {
 
   const allAnswered = Object.keys(answers).length === QUESTIONS.length;
 
+  // Điểm mỗi trait: 0–3 (3 câu, mỗi câu Đồng ý = 1)
   const scores = useMemo(() => {
     const init: Record<Trait, number> = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
     for (const q of QUESTIONS) {
@@ -128,12 +129,31 @@ export default function RiasecGuestForm() {
 
   const top3 = ranking.slice(0, 3).map((r) => r.trait).join("");
 
-  const buildChatMessage = () => {
-    const parts = (["R", "I", "A", "S", "E", "C"] as Trait[])
-      .map((t) => `${t}:${scores[t]}/3`)
-      .join(", ");
-    return `Mã RIASEC của tôi: ${top3}. Điểm chi tiết: ${parts}.
-Bạn hãy phân tích điểm mạnh theo RIASEC và gợi ý ngành/chuyên ngành phù hợp (+ lộ trình học) cho tôi nhé.`;
+  // Helper: lấy student_id (user.id hoặc guest-<timestamp>)
+  const getStudentId = () => {
+    if (user && user.id) return user.id;
+
+    let existing = localStorage.getItem(GUEST_ID_KEY);
+    if (existing) return existing;
+
+    const newId = `guest-${Date.now()}`;
+    localStorage.setItem(GUEST_ID_KEY, newId);
+    return newId;
+  };
+
+  // JSON chuẩn gửi cho chatbot 
+  const buildRiasecJson = () => {
+    return {
+      student_id: getStudentId(),
+      answers: {
+        R: scores.R,
+        I: scores.I,
+        A: scores.A,
+        S: scores.S,
+        E: scores.E,
+        C: scores.C,
+      },
+    };
   };
 
   const handleChange = (qid: string, value: number) => {
@@ -147,10 +167,9 @@ Bạn hãy phân tích điểm mạnh theo RIASEC và gợi ý ngành/chuyên ng
       return;
     }
     setSubmitted(true);
-    setLoadedAt(null); 
+    setLoadedAt(null);
   };
 
-  // ---- NEW: lưu kết quả
   const handleSave = () => {
     if (!user || !SAVE_KEY) {
       alert("Bạn cần đăng nhập để lưu kết quả.");
@@ -164,8 +183,8 @@ Bạn hãy phân tích điểm mạnh theo RIASEC và gợi ý ngành/chuyên ng
     if (existing && !confirm("Bạn đã lưu trước đó. Ghi đè kết quả?")) return;
 
     const payload = {
-      answers,                 // lưu từng câu để lần sau khôi phục đầy đủ
-      scores,                  // tiện để tham khảo nhanh
+      answers,
+      scores,
       top3,
       savedAt: new Date().toISOString(),
     };
@@ -173,7 +192,6 @@ Bạn hãy phân tích điểm mạnh theo RIASEC và gợi ý ngành/chuyên ng
     alert("Đã lưu kết quả RIASEC!");
   };
 
-  // ---- (tùy chọn) xóa kết quả đã lưu
   const handleClearSaved = () => {
     if (!user || !SAVE_KEY) return;
     if (!confirm("Xóa kết quả đã lưu?")) return;
@@ -181,14 +199,19 @@ Bạn hãy phân tích điểm mạnh theo RIASEC và gợi ý ngành/chuyên ng
     alert("Đã xóa kết quả đã lưu.");
   };
 
-
   return (
     <div className="max-w-4xl mx-auto p-6">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold">Trắc nghiệm RIASEC (dành cho khách)</h1>
+        <h1 className="text-2xl font-semibold">Trắc nghiệm RIASEC</h1>
         <p className="text-gray-600">
-          Đánh giá xu hướng nghề nghiệp theo 6 nhóm: Realistic, Investigative, Artistic, Social, Enterprising, Conventional.
+          Đánh giá xu hướng nghề nghiệp theo 6 nhóm: Realistic, Investigative, Artistic, Social,
+          Enterprising, Conventional.
         </p>
+        {loadedAt && (
+          <p className="text-xs text-gray-400 mt-1">
+            Đã tải lại kết quả đã lưu lúc: {loadedAt}
+          </p>
+        )}
       </header>
 
       {!submitted && (
@@ -202,25 +225,25 @@ Bạn hãy phân tích điểm mạnh theo RIASEC và gợi ý ngành/chuyên ng
                 <span className="text-xs text-gray-500">{TRAIT_LABEL[q.trait]}</span>
               </div>
 
-<div className="grid grid-cols-2 gap-2">
-  {LIKERT.map((opt) => (
-    <label
-      key={opt.value}
-      className={`flex items-center gap-2 rounded-lg border p-2 cursor-pointer hover:bg-gray-50 ${
-        answers[q.id] === opt.value ? "border-[#EB5A0D]" : "border-gray-200"
-      }`}
-    >
-      <input
-        type="radio"
-        name={q.id}
-        className="accent-[#EB5A0D]"
-        checked={answers[q.id] === opt.value}
-        onChange={() => handleChange(q.id, opt.value)}
-      />
-      <span className="text-sm">{opt.label}</span>
-    </label>
-  ))}
-</div>
+              <div className="grid grid-cols-2 gap-2">
+                {LIKERT.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className={`flex items-center gap-2 rounded-lg border p-2 cursor-pointer hover:bg-gray-50 ${
+                      answers[q.id] === opt.value ? "border-[#EB5A0D]" : "border-gray-200"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={q.id}
+                      className="accent-[#EB5A0D]"
+                      checked={answers[q.id] === opt.value}
+                      onChange={() => handleChange(q.id, opt.value)}
+                    />
+                    <span className="text-sm">{opt.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           ))}
 
@@ -243,28 +266,44 @@ Bạn hãy phân tích điểm mạnh theo RIASEC và gợi ý ngành/chuyên ng
 
       {submitted && (
         <div className="space-y-6">
-          {/* Tóm tắt điểm */}
- 
+          {/* Tóm tắt nhanh cho mọi đối tượng */}
+          <section className="rounded-xl border bg-white p-5">
+            <h2 className="text-lg font-semibold mb-2">Kết quả tóm tắt</h2>
+            <p className="text-gray-600 mb-2">
+              Bộ 3 nổi trội: <b>{top3}</b>
+            </p>
+            <p className="text-sm text-gray-600">
+              Điểm chi tiết (0–3 mỗi nhóm):{" "}
+              {(Object.keys(scores) as Trait[])
+                .map((t) => `${t} = ${scores[t]}`)
+                .join(", ")}
+            </p>
+          </section>
 
-          {/* Chặn chi tiết khi chưa đăng nhập */}
+          {/* Guest (chưa login) */}
           {!user && (
             <section className="rounded-xl border bg-white p-5">
-              <h3 className="font-semibold mb-2">Gợi ý ngành phù hợp (đầy đủ)</h3>
+              <h3 className="font-semibold mb-2">Gợi ý ngành phù hợp (chi tiết từ Chatbot)</h3>
               <p className="text-gray-600">
-                Kết quả là {top3} - {ranking[0].score} điểm, {ranking[1].trait} - {ranking[1].score} điểm, {ranking[2].trait} - {ranking[2].score} điểm.
+                Kết quả là {top3} – {ranking[0].trait}: {ranking[0].score} điểm,{" "}
+                {ranking[1].trait}: {ranking[1].score} điểm, {ranking[2].trait}:{" "}
+                {ranking[2].score} điểm.
               </p>
               <div className="mt-4 flex gap-3">
                 <button
                   className="px-4 py-2 rounded-md bg-black text-white hover:opacity-90"
-                  onClick={() => navigate("/chatbot")}
+                  onClick={() => {
+                    const json = buildRiasecJson();
+                    localStorage.setItem(CHATBOT_PREFILL_KEY, JSON.stringify(json));
+                    console.log("RIASC JSON (guest) gửi chatbot:", json);
+                    navigate("/chatbot");
+                  }}
                 >
                   Đưa kết quả cho chatbot
                 </button>
                 <button
                   className="px-4 py-2 rounded-md border hover:bg-gray-50"
-                  onClick={() => {
-                    setSubmitted(false);
-                  }}
+                  onClick={() => setSubmitted(false)}
                 >
                   Làm lại bài
                 </button>
@@ -272,21 +311,24 @@ Bạn hãy phân tích điểm mạnh theo RIASEC và gợi ý ngành/chuyên ng
             </section>
           )}
 
+          {/* User đã login */}
           {user && (
-<section className="rounded-xl border bg-white p-5">
-    <h3 className="font-semibold mb-4">Gợi ý ngành học theo điểm mạnh của bạn</h3>
+            <section className="rounded-xl border bg-white p-5">
+              <h3 className="font-semibold mb-4">Gợi ý ngành học theo điểm mạnh của bạn</h3>
 
-    <div className="mt-6 flex gap-3">
-      <button
-        className="px-4 py-2 rounded-md bg-[#EB5A0D] text-white hover:opacity-90"
-        onClick={() => {
-          const text = buildChatMessage();
-          localStorage.setItem(CHATBOT_PREFILL_KEY, JSON.stringify({ text }));
-          navigate("/profile");  
-        }}
-      >
-        Đưa kết quả cho Chatbot
-      </button>
+              <div className="mt-4 flex gap-3">
+                <button
+                  className="px-4 py-2 rounded-md bg-black text-white hover:opacity-90"
+                  onClick={() => {
+                    const json = buildRiasecJson();
+                    localStorage.setItem(CHATBOT_PREFILL_KEY, JSON.stringify(json));
+                    console.log("RIASC JSON (user) gửi chatbot:", json);
+                    navigate("/chatbot");
+                  }}
+                >
+                  Đưa kết quả cho chatbot
+                </button>
+
                 <button
                   className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
                   onClick={handleSave}
@@ -294,14 +336,14 @@ Bạn hãy phân tích điểm mạnh theo RIASEC và gợi ý ngành/chuyên ng
                   Save kết quả
                 </button>
 
-      <button
-        className="px-4 py-2 rounded-md border hover:bg-gray-50"
-        onClick={() => setSubmitted(false)}
-      >
-        Làm lại bài
-      </button>
-    </div>
-  </section>
+                <button
+                  className="px-4 py-2 rounded-md border hover:bg-gray-50"
+                  onClick={() => setSubmitted(false)}
+                >
+                  Làm lại bài
+                </button>
+              </div>
+            </section>
           )}
         </div>
       )}
