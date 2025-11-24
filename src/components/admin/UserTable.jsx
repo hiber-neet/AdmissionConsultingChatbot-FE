@@ -42,15 +42,16 @@ export function UserTable({
     }
   };
 
-  const hasLeaderPermissions = (permissions) => {
-    const leaderPermissions = [
-      'DELETE_ARTICLE',
-      'PUBLISH_ARTICLE', 
-      'REVIEW_CONTENT',
-      'DELETE_QA_TEMPLATE',
-      'APPROVE_QA_TEMPLATE'
-    ];
-    return permissions?.some(perm => leaderPermissions.includes(perm));
+  const hasMultipleRoles = (permissions) => {
+    // In the role-based system, users with multiple role permissions are considered "advanced users"
+    return permissions && permissions.length > 1;
+  };
+
+  const getPermissionsBadgeColor = (permissions) => {
+    if (!permissions || permissions.length === 0) return 'secondary';
+    if (permissions.includes('SYSTEM_ADMIN')) return 'destructive';
+    if (permissions.length > 1) return 'default';
+    return 'secondary';
   };
 
   if (users.length === 0) {
@@ -100,19 +101,25 @@ export function UserTable({
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
-                  <Badge variant={roleColors[user.role]} className="gap-1">
+                  <Badge variant={getPermissionsBadgeColor(user.permissions)} className="gap-1">
                     {getRoleIcon(user.role)}
                     {roleLabels[user.role]}
                   </Badge>
-                  {hasLeaderPermissions(user.permissions) && (
-                    <Badge variant="outline" className="gap-1 border-amber-300 text-amber-700">
+                  {hasMultipleRoles(user.permissions) && (
+                    <Badge variant="outline" className="gap-1 border-blue-300 text-blue-700">
                       <Crown className="h-3 w-3" />
-                      Leader
+                      Multi-Role
+                    </Badge>
+                  )}
+                  {user.permissions?.includes('SYSTEM_ADMIN') && (
+                    <Badge variant="outline" className="gap-1 border-red-300 text-red-700">
+                      <Crown className="h-3 w-3" />
+                      Admin
                     </Badge>
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {user.permissions?.length || 0} permissions
+                  {user.permissions?.length || 0} role permissions
                 </div>
               </TableCell>
               <TableCell>
@@ -162,7 +169,8 @@ UserTable.propTypes = {
     name: PropTypes.string.isRequired,
     username: PropTypes.string.isRequired,
     email: PropTypes.string.isRequired,
-    roles: PropTypes.arrayOf(PropTypes.string).isRequired,
+    role: PropTypes.string.isRequired, // Changed from 'roles' to 'role'
+    permissions: PropTypes.arrayOf(PropTypes.string), // Added permissions prop
     status: PropTypes.string.isRequired,
     lastActive: PropTypes.string.isRequired,
     createdAt: PropTypes.string.isRequired,

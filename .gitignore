@@ -21,3 +21,8 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Issues and development notes (don't commit to repo)
+CURRENT_ISSUES.md
+DEVELOPMENT_NOTES.md
+DEBUG_LOG.md

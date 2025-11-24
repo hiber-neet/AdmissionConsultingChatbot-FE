@@ -4,19 +4,15 @@ import { useAuth } from "@/contexts/Auth";
 import { Shield } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import bgImage from "@/assets/images/toiyeufpt.jpg";
-import { getRoleFromToken } from "../login/jwtHelper";
 
 export default function LoginPage() {
-  const { login, loginAs, getDefaultRoute } = useAuth();
+  const { login, loginAs, getDefaultRoute, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-
- 
-  const from = (location.state as any)?.from || "/admin";
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,27 +25,19 @@ export default function LoginPage() {
       return;
     }
     
-    // Get user role and navigate to appropriate dashboard
-    if (res.token) {
-      const roleFromToken = getRoleFromToken(res.token);
-      if (roleFromToken) {
-        let appRole = null;
-        if (roleFromToken === "admin") appRole = "SYSTEM_ADMIN";
-        else if (roleFromToken === "content_manager") appRole = "CONTENT_MANAGER";
-        else if (roleFromToken === "consultant") appRole = "CONSULTANT";
-        else if (roleFromToken === "admission_officer") appRole = "ADMISSION_OFFICER";
-        else if (roleFromToken === "student") appRole = "STUDENT";
-        
-        if (appRole) {
-          const defaultRoute = getDefaultRoute(appRole);
-          navigate(defaultRoute, { replace: true });
-          return;
-        }
+    // After successful login, get the user from Auth context and navigate to their default route
+    // Use a small delay to ensure the Auth context has been updated
+    setTimeout(() => {
+      const currentUser = JSON.parse(sessionStorage.getItem("demo_user") || "null");
+      if (currentUser && currentUser.role) {
+        const defaultRoute = getDefaultRoute(currentUser.role);
+        console.log(`Redirecting ${currentUser.role} to ${defaultRoute}`);
+        navigate(defaultRoute, { replace: true });
+      } else {
+        // Fallback to home if no user data
+        navigate("/", { replace: true });
       }
-    }
-    
-    // Fallback to the original 'from' route
-    navigate(from, { replace: true });
+    }, 100);
   };
 
   // Quick-fill cho account mẫu
