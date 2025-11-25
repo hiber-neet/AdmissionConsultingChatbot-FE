@@ -22,6 +22,16 @@ class FastAPIClient {
       ...options,
     };
 
+    //Add Bearer token 
+const token = localStorage.getItem("access_token");
+if (token) {
+  config.headers = {
+    ...config.headers,
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+
     try {
       const response = await fetch(url, config);
 
@@ -77,6 +87,10 @@ class FastAPIClient {
 // Create FastAPI client instance
 export const fastAPIClient = new FastAPIClient(FASTAPI_BASE_URL);
 
+export type LoginResponse = {
+  access_token: string;
+  token_type: string;
+};
 // Article types
 export interface Article {
   article_id: number;

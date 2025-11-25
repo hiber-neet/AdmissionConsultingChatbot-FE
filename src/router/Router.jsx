@@ -62,9 +62,9 @@ export default function Router() {
       
       {/* Student-only routes */}
       <Route path="/profile" element={
-        <StudentGuard>
+ 
           <UserProfile />
-        </StudentGuard>
+ 
       } />
       
       {/* Consultant routes */}

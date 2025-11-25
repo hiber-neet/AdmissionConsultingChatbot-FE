@@ -11,6 +11,7 @@ import {
 } from '../utils/fastapi-client';
 import { API_CONFIG } from '../config/api.js';
 
+import { LoginResponse } from '../utils/fastapi-client';
 // Articles API
 export const articlesAPI = {
   getAll: () => fastAPIClient.get<Article[]>('/articles'),
@@ -32,7 +33,7 @@ export const usersAPI = {
 // Authentication API
 export const authAPI = {
   login: (credentials: { email: string; password: string }) => 
-    fastAPIClient.post('/auth/login', credentials),
+      fastAPIClient.post<LoginResponse>('/auth/login', credentials),
   register: (userData: { username: string; email: string; password: string; full_name: string }) =>
     fastAPIClient.post('/auth/register', userData),
   logout: () => fastAPIClient.post('/auth/logout', {}),

@@ -390,6 +390,89 @@ const deleteUploaded = (index) => {
 
   const onCancel = () => setEditing(false);
 
+  const subjectsLeft = [
+    "Toán học(*)",
+    "Ngoại ngữ",
+    "Hóa học",
+    "Lịch sử",
+    "Công nghệ",
+    "Giáo dục KT - PL",
+  ];
+
+  const subjectsRight = [
+    "Ngữ văn(*)",
+    "Vật lý",
+    "Sinh học",
+    "Địa lý",
+    "Tin học",
+  ];
+
+  const [scores, setScores] = useState({}); // key: `${subject}_${grade}` -> value string
+
+const handleScoreChange = (subject, grade, rawValue) => {
+  let value = rawValue;
+
+  // Chỉ cho nhập số và dấu chấm
+  value = value.replace(/[^0-9.]/g, "");
+
+  // Tách để kiểm tra số chữ số (bỏ dấu chấm)
+  const digits = value.replace(/\./g, "");
+
+  // ❌ CHẶN hơn 2 chữ số liên tục (không cho 105, 999, 123,…)
+  if (digits.length > 2) {
+    // chỉ giữ 2 chữ số đầu
+    value = digits.slice(0, 2);
+  }
+
+  // ==============================
+  //  ⭐ XỬ LÝ CHUẨN HOÁ ĐIỂM
+  // ==============================
+
+  // Nếu là 2 chữ số (vd: 11, 90)
+  if (/^[0-9]{2}$/.test(value)) {
+    const intVal = parseInt(value, 10);
+
+    if (intVal > 10) {
+      // 11 → 1.1 | 90 → 9.0
+      value = (intVal / 10).toFixed(1);
+    }
+  }
+
+  // Nếu dạng X.Y
+  if (/^[0-9]\.[0-9]$/.test(value)) {
+    let f = parseFloat(value);
+    if (f > 10) f = 10;
+    value = f.toString();
+  }
+
+  // ép max = 10
+  let num = parseFloat(value);
+  if (!isNaN(num) && num > 10) value = "10";
+
+  // Chỉ cho tối đa 1 số thập phân
+  value = value.match(/^\d{1,2}(\.\d{0,1})?/)?.[0] || "";
+
+  // Cập nhật state
+  setScores((prev) => ({
+    ...prev,
+    [subject]: {
+      ...prev[subject],
+      [grade]: value
+    }
+  }));
+};
+
+const renderScoreInput = (subject, grade) => (
+  <input
+    type="text"
+    maxLength={4}
+    value={scores?.[subject]?.[grade] ?? ""}
+    onChange={(e) => handleScoreChange(subject, grade, e.target.value)}
+    className="w-full px-3 py-2 rounded-md text-black placeholder-gray-400"
+  />
+);
+
+
   return (
     <>
       <Header />
@@ -850,102 +933,62 @@ const deleteUploaded = (index) => {
 
             {tab === "transcript" && (
               <div className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h2 className="text-xl font-semibold mb-1">Tải lên học bạ</h2>
-                <p className="text-sm text-gray-500 mb-4">
-                  Chấp nhận: PDF, JPG, PNG (tối đa {MAX_MB}MB mỗi file). Bạn có thể tải lên nhiều trang.
-                </p>
+                {/* Replaced upload UI with the score table matching your provided design */}
+                <div className="bg-orange-500 p-6 rounded-lg text-white">
+                  <p className="mb-6 text-sm">Cần nhập tối thiểu 06 môn cho cả bảng điểm, nếu điểm là số thập phân, sử dụng dấu chấm</p>
 
-                <div className="grid gap-4">
-<div className="flex items-center gap-3 flex-wrap md:flex-nowrap">
-  {/* Ẩn input thật, dùng label làm nút */}
-  <input
-    id="transcriptFiles"
-    type="file"
-    multiple
-    accept=".pdf,image/png,image/jpeg"
-    onChange={onPickFiles}
-    className="hidden"
-  />
-  <label
-    htmlFor="transcriptFiles"
-    className="inline-flex items-center px-4 py-2 rounded-md bg-[#EB5A0D] text-white cursor-pointer hover:opacity-90"
-  >
-    Chọn file
-  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    {/* LEFT */}
+                    <div>
+                      <div className="grid grid-cols-3 gap-4 font-semibold mb-3 text-white">
+                        <div>Môn học</div>
+                        <div className="text-center">Học kỳ 1</div>
+                        <div className="text-center">Học kỳ 2</div>
+                      </div>
 
-  {/* Thông tin ngắn gọn thay cho “No file chosen” */}
-  <span className="text-sm text-gray-600">
-    {files.length ? `${files.length} file đã chọn` : "Chưa chọn file"}
-  </span>
-
-  {/* Nút tải lên dạt phải nhưng vẫn cùng một hàng */}
-  <div className="ml-auto">
-    <button
-      type="button"
-      onClick={uploadTranscript}
-      disabled={!files.length || uploading}
-      className={`px-4 py-2 rounded-md text-white ${
-        !files.length || uploading
-          ? "bg-gray-300 cursor-not-allowed"
-          : "bg-[#EB5A0D] hover:opacity-90"
-      }`}
-    >
-      {uploading ? "Đang tải..." : "Tải lên"}
-    </button>
-  </div>
-</div>
-
-                  {/* Danh sách file đang chờ upload */}
-                  {files.length > 0 && (
-                    <div className="border rounded-lg p-3">
-                      <div className="font-medium mb-2">Hàng chờ ({files.length})</div>
-                      <ul className="space-y-2">
-                        {files.map((f, i) => (
-                          <li key={i} className="flex items-center justify-between text-sm">
-                            <span className="truncate">
-                              {f.name} <span className="text-gray-500">({(f.size / (1024 * 1024)).toFixed(2)}MB)</span>
-                            </span>
-                            <button onClick={() => removeFile(i)} className="text-red-600 hover:underline">
-                              Xóa
-                            </button>
-                          </li>
+                      <div>
+                        {subjectsLeft.map((subject) => (
+                          <div key={subject} className="grid grid-cols-3 gap-4 items-center mb-3">
+                            <div className="font-semibold">{subject}</div>
+                            <div>{renderScoreInput(subject, "11")}</div>
+                            <div>{renderScoreInput(subject, "12")}</div>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
-                  )}
 
-                  {/* Danh sách đã upload */}
-{uploaded.length > 0 && (
-  <div className="border rounded-lg p-3">
-    <div className="font-medium mb-3">Đã tải lên ({uploaded.length})</div>
-    <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-      {uploaded.map((u, idx) => (
-        <div key={idx} className="relative border rounded-md p-2 text-sm">
-          {/* Nút Xóa ở góc phải trên */}
-          <button
-            type="button"
-            onClick={() => deleteUploaded(idx)}
-            className="absolute top-2 right-2 rounded-md px-2 py-1 text-xs bg-red-100 text-red-600 hover:bg-red-200"
-            title="Xóa file này"
-          >
-            Xóa
-          </button>
+                    {/* RIGHT */}
+                    <div>
+                      <div className="grid grid-cols-3 gap-4 font-semibold mb-3 text-white">
+                        <div>Môn học</div>
+                        <div className="text-center">Học Kỳ 1</div>
+                        <div className="text-center">Học Kỳ 2</div>
+                      </div>
 
-          <div className="font-medium truncate pr-10 mb-1">{u.name}</div>
-          <div className="text-gray-500 mb-2">{(u.size / (1024 * 1024)).toFixed(2)}MB</div>
+                      <div>
+                        {subjectsRight.map((subject) => (
+                          <div key={subject} className="grid grid-cols-3 gap-4 items-center mb-3">
+                            <div className="font-semibold">{subject}</div>
+                            <div>{renderScoreInput(subject, "11")}</div>
+                            <div>{renderScoreInput(subject, "12")}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
 
-          {u.preview ? (
-            <img src={u.preview} alt={u.name} className="w-full h-32 object-cover rounded" />
-          ) : (
-            <div className="h-32 flex items-center justify-center bg-gray-50 rounded">
-              <span className="text-gray-400">PDF</span>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+                  <div className="flex justify-center mt-10">
+                    <button
+                      onClick={() => {
+                        // Temporary: console.log the scores object
+                        console.log("Scores:", scores);
+                        alert("Save thành công!");
+                      }}
+                      className="bg-purple-700 hover:bg-purple-800 text-white font-bold text-2xl px-16 py-3 rounded-full"
+                    >
+                      Save
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

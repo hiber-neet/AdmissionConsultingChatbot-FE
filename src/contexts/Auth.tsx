@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('Login response:', response);
       
       // Extract token from response
-      const { access_token, token_type } = response as any;
+const { access_token, token_type } = response as any;
       
       if (!access_token) {
         return { ok: false, message: "No access token received" };
@@ -74,37 +74,110 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("token_type", token_type || "bearer");
 
-      // Try to extract user info from JWT token
-      const roleFromToken = getRoleFromToken(access_token);
-      console.log('Role from token:', roleFromToken);
+      // Decode token to get user_id
+      try {
+        const payload = JSON.parse(atob(access_token.split(".")[1]));
+        const userId = payload.user_id;
+        const userEmail = payload.sub;
+        
+        // Temporary: Map email patterns to roles until backend profile endpoint is fixed
+        let appRole: Role = "STUDENT"; // default fallback
+        let isLeader = false;
+        
+        if (userEmail.includes('admin')) {
+          appRole = "SYSTEM_ADMIN";
+          isLeader = true;
+        } else if (userEmail.includes('consultant')) {
+          appRole = "CONSULTANT";
+          isLeader = false; // Can be updated based on your needs
+        } else if (userEmail.includes('content')) {
+          appRole = "CONTENT_MANAGER";
+          isLeader = false;
+        } else if (userEmail.includes('officer')) {
+          appRole = "ADMISSION_OFFICER";
+          isLeader = false;
+        } else {
+          appRole = "STUDENT";
+        }
+        
+        if (userId) {
+          // Try to fetch user profile (optional - if it fails, we use email-based role)
+          try {
+            const profileResponse = await fetch(`http://localhost:8000/profile/${userId}`, {
+              headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (profileResponse.ok) {
+              const profileData = await profileResponse.json();
+              console.log('Profile data:', profileData);
+              
+              // Override with backend role if available
+              if (profileData.role_name) {
+                const roleMapping: Record<string, Role> = {
+                  'SYSTEM_ADMIN': 'SYSTEM_ADMIN',
+                  'CONSULTANT': 'CONSULTANT', 
+                  'CONTENT_MANAGER': 'CONTENT_MANAGER',
+                  'ADMISSION_OFFICER': 'ADMISSION_OFFICER',
+                  'STUDENT': 'STUDENT'
+                };
+                appRole = roleMapping[profileData.role_name] || appRole;
+              }
 
-      // Map token role to app role
-      const appRole = mapTokenRoleToAppRole(roleFromToken) || "STUDENT"; // Default to STUDENT instead of CONTENT_MANAGER
+              // Override leadership status if available
+              if (profileData.consultant_profile?.is_leader) isLeader = true;
+              if (profileData.content_manager_profile?.is_leader) isLeader = true;
+              
+              console.log('✅ Using backend profile data');
+            } else {
+              console.log('⚠️ Profile API failed, using email-based role mapping');
+            }
+          } catch (profileError) {
+            console.log('⚠️ Profile fetch failed, using email-based role mapping:', profileError);
+          }
+            
+          const userData: User = {
+            id: userId.toString(),
+            name: userEmail.split('@')[0],
+            role: appRole,
+            email: userEmail,
+            isLeader: isLeader,
+            permissions: getRolePermissions(appRole)
+          };
 
-      // Create user object based on token info or fallback
+          setUser(userData);
+          sessionStorage.setItem("demo_user", JSON.stringify(userData));
+
+          console.log("🎉 LOGIN SUCCESS!");
+          console.log("👤 User Info:", {
+            name: userData.name,
+            role: userData.role,
+            email: userData.email,
+            isLeader: userData.isLeader
+          });
+
+          return { ok: true, token: access_token };
+        }
+      } catch (tokenError) {
+        console.error('Error decoding token:', tokenError);
+      }
+
+      // Fallback if profile fetch fails - use basic info from token
       const userData: User = {
-        id: email, // Use email as ID for now
-        name: email.split('@')[0], // Extract name from email
-        role: appRole,
+        id: email, 
+        name: email.split('@')[0],
+        role: "STUDENT", // Safe default
         email: email,
         isLeader: false,
-        permissions: getRolePermissions(appRole)
+        permissions: getRolePermissions("STUDENT")
       };
 
       setUser(userData);
       sessionStorage.setItem("demo_user", JSON.stringify(userData));
 
-      // Log user role to console after successful login
-      console.log("🎉 LOGIN SUCCESS!");
-      console.log("👤 User Info:", {
-        name: userData.name,
-        email: userData.email,
-        role: userData.role,
-        permissions: userData.permissions
-      });
-      console.log(`🔑 Role from JWT Token: "${roleFromToken}" → Mapped to: "${appRole}"`);
-      console.log("🚀 Default route:", getDefaultRoute(appRole));
-
+      console.log("⚠️ LOGIN SUCCESS (with fallback role)");
       return { ok: true, token: access_token };
 
     } catch (error: any) {
