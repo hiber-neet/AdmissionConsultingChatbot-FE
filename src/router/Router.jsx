@@ -5,6 +5,12 @@ import { AdminPage } from "../pages/admin/AdminPage.tsx";
 import UserProfile from "../pages/profile/UserProfile.jsx";
 import Home from "../pages/home/Home.jsx";
 import { ConsulantPage } from "../pages/consulant/ConsulantPage.tsx";
+import { ConsultantOverviewPage } from "../pages/consulant/ConsultantOverviewPage.tsx";
+import { ConsultantAnalyticsPage } from "../pages/consulant/ConsultantAnalyticsPage.tsx";
+import { ConsultantTemplatesPage } from "../pages/consulant/ConsultantTemplatesPage.tsx";
+import { ConsultantDocumentsPage } from "../pages/consulant/ConsultantDocumentsPage.tsx";
+import { ConsultantOptimizationPage } from "../pages/consulant/ConsultantOptimizationPage.tsx";
+import { ConsultantLeaderPage } from "../pages/consulant/ConsultantLeaderPage.tsx";
 import { AdmissionPage } from "../pages/admission/AdmissionPage.tsx";
 import { ContentManagerPage } from "../pages/contentManager/ContentManagerPage.tsx";
 import LoginPage from "../pages/loginForAd/LoginPage.tsx";
@@ -42,7 +48,6 @@ import { ContentManagerDashboardPage } from "../components/content/ContentManage
 import { AllArticlesPage } from "../components/content/AllArticlesPage.tsx";
 import ReviewQueue from "../components/content/ReviewQueue.tsx";
 import { ArticleEditorPage } from "../components/content/ArticleEditorPage.tsx";
-import RiasecManagement from "../components/content/PersonalityTest/RiasecManagement.jsx";
 import ArticlePage from "../pages/article/ArticlePage.jsx";
 function NotFound() {
   return <h1 style={{ padding: 24 }}>404</h1>;
@@ -72,7 +77,16 @@ export default function Router() {
         <ConsultantGuard>
           <ConsulantPage />
         </ConsultantGuard>
-      } />
+      }>
+        <Route index element={<Navigate to="overview" replace />} />
+        <Route path="overview" element={<ConsultantOverviewPage />} />
+        <Route path="analytics" element={<ConsultantAnalyticsPage />} />
+        <Route path="templates" element={<ConsultantTemplatesPage />} />
+        <Route path="documents" element={<ConsultantDocumentsPage />} />
+        <Route path="optimization" element={<ConsultantOptimizationPage />} />
+        <Route path="leader" element={<ConsultantLeaderPage />} />
+        <Route path="profile" element={<ManagerProfilePage />} />
+      </Route>
       
       {/* Admission Officer routes */}
       <Route path="/admission" element={
@@ -102,7 +116,6 @@ export default function Router() {
         <Route path="articles" element={<AllArticlesPage />} />
         <Route path="review" element={<ReviewQueue />} />
         <Route path="editor" element={<ArticleEditorPage />} />
-        <Route path="riasec" element={<RiasecManagement />} />
         <Route path="profile" element={<ManagerProfilePage />} />
       </Route>
       

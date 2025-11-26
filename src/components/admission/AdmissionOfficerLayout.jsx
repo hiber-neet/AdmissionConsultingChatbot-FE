@@ -14,7 +14,16 @@ import {
   BookOpen,
   Clock,
   LogOut,
-  User
+  User,
+  FileText,
+  ListChecks,
+  PenSquare,
+  TrendingUp,
+  Database,
+  Lightbulb,
+  Activity,
+  MessageSquareText,
+  Shield
 } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
 import { Input } from '../ui/system_users/input';
@@ -26,7 +35,7 @@ import PropTypes from 'prop-types';
 
 export function AdmissionOfficerLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -44,6 +53,51 @@ export function AdmissionOfficerLayout() {
     { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
     { id: 'profile', label: 'Profile', icon: User, path: '/admission/profile' },
   ];
+
+  // Additional sections for other permissions
+  const additionalSections = [];
+
+  // Content Manager Section
+  if (user?.permissions?.includes('content_manager')) {
+    additionalSections.push({
+      title: 'Content Manager',
+      items: [
+        { id: "dashboardcontent", label: "Tổng quan content", icon: LayoutDashboard, path: '/content/dashboard' },
+        { id: "articles", label: "All Articles", icon: FileText, path: '/content/articles' },
+        { id: "review", label: "Review Queue", icon: ListChecks, path: '/content/review' },
+        { id: "editor", label: "New Article", icon: PenSquare, path: '/content/editor' },
+      ]
+    });
+  }
+
+  // Consultant Section
+  if (user?.permissions?.includes('consultant')) {
+    additionalSections.push({
+      title: 'Consultant',
+      items: [
+        { id: 'overview', label: 'Tổng quan consultant', icon: LayoutDashboard, path: '/consultant/overview' },
+        { id: 'analytics', label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
+        { id: 'templates', label: 'Q&A Templates', icon: Database, path: '/consultant/templates' },
+        { id: 'optimization', label: 'Content Optimization', icon: Lightbulb, path: '/consultant/optimization' },
+        ...(user?.isLeader ? [
+          { id: 'leader', label: 'Leader Review', icon: Database, path: '/consultant/leader' }
+        ] : []),
+      ]
+    });
+  }
+
+  // Admin Section
+  if (user?.permissions?.includes('admin')) {
+    additionalSections.push({
+      title: 'Admin',
+      items: [
+        { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
+        { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
+        { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
+        { id: 'activity', label: 'Nhật Ký Hoạt Động', icon: Activity, path: '/admin/activity' },
+      ]
+    });
+  }
 
   return (
     <div className="min-h-screen flex bg-[#F8FAFC]">
@@ -77,35 +131,85 @@ export function AdmissionOfficerLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            const isActive = getCurrentRoute() === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors relative ${isActive
-                    ? 'bg-[#3B82F6] text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-              >
-                <Icon className="h-5 w-5 flex-shrink-0" />
-                {!sidebarCollapsed && (
-                  <>
-                    <span className="text-sm">{item.label}</span>
-                    {item.badge && (
-                      <Badge
-                        variant={isActive ? "secondary" : "default"}
-                        className="ml-auto"
-                      >
-                        {item.badge}
-                      </Badge>
+          {/* Main Admission Officer Navigation */}
+          <div className="space-y-1">
+            {!sidebarCollapsed && (
+              <h3 className="px-3 text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+                Admission Officer
+              </h3>
+            )}
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              const isActive = getCurrentRoute() === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(item.path)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors relative ${isActive
+                      ? 'bg-[#3B82F6] text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                >
+                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  {!sidebarCollapsed && (
+                    <>
+                      <span className="text-sm">{item.label}</span>
+                      {item.badge && (
+                        <Badge
+                          variant={isActive ? "secondary" : "default"}
+                          className="ml-auto"
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Additional Permission Sections */}
+          {additionalSections.map((section, sectionIndex) => (
+            <div key={section.title} className="space-y-1 mt-6">
+              {!sidebarCollapsed && (
+                <h3 className="px-3 text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+                  {section.title}
+                </h3>
+              )}
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = getCurrentRoute() === item.id;
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(item.path)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-[#3B82F6] text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    {!sidebarCollapsed && (
+                      <>
+                        <span className="text-sm">{item.label}</span>
+                        {item.badge && (
+                          <Badge
+                            variant={isActive ? "secondary" : "default"}
+                            className="ml-auto"
+                          >
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </button>
-            );
-          })}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         {/* User Profile */}

@@ -1,22 +1,22 @@
 // src/components/auth/RoleGuard.tsx
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth, Role } from "@/contexts/Auth";
-import { Permission } from "@/constants/permissions";
+import { useAuth } from "@/contexts/Auth";
+import { Permission, canAccessPage, hasPermission, PagePermission, type Role } from "@/constants/permissions";
 
-interface RoleGuardProps {
+interface PermissionGuardProps {
   children: JSX.Element;
-  allowedRoles?: Role[];
   requiredPermission?: Permission;
+  requiredPageAccess?: PagePermission;
   fallbackRoute?: string;
 }
 
-export default function RoleGuard({ 
+export default function PermissionGuard({ 
   children, 
-  allowedRoles, 
-  requiredPermission, 
+  requiredPermission,
+  requiredPageAccess,
   fallbackRoute = "/" 
-}: RoleGuardProps) {
-  const { isAuthenticated, user, hasPermission, getDefaultRoute } = useAuth();
+}: PermissionGuardProps) {
+  const { isAuthenticated, user } = useAuth();
   const location = useLocation();
 
   // If not authenticated, redirect to login
@@ -37,72 +37,127 @@ export default function RoleGuard({
     />;
   }
 
-  // Check role-based access
-  if (allowedRoles && allowedRoles.length > 0) {
-    if (!allowedRoles.includes(user.role)) {
-      // Redirect to user's default route
-      const userDefaultRoute = getDefaultRoute(user.role);
-      return <Navigate to={userDefaultRoute} replace />;
-    }
-  }
+  const userPermissions = user.permissions;
 
   // Check permission-based access
   if (requiredPermission) {
-    if (!hasPermission(requiredPermission)) {
-      // Redirect to user's default route
-      const userDefaultRoute = getDefaultRoute(user.role);
-      return <Navigate to={userDefaultRoute} replace />;
+    if (!hasPermission(userPermissions, requiredPermission)) {
+      // Redirect to user's default route based on their highest permission
+      const redirectRoute = getDefaultRouteForUser(user);
+      return <Navigate to={redirectRoute} replace />;
+    }
+  }
+
+  // Check page-based access
+  if (requiredPageAccess) {
+    if (!canAccessPage(userPermissions, requiredPageAccess)) {
+      // Redirect to user's default route based on their highest permission
+      const redirectRoute = getDefaultRouteForUser(user);
+      return <Navigate to={redirectRoute} replace />;
     }
   }
 
   return children;
 }
 
-// Convenience components for specific roles
+// Helper function to get default route for a user
+function getDefaultRouteForUser(user: any): string {
+  const permissions = user.permissions || [];
+  
+  if (permissions.includes('admin')) {
+    return '/admin/dashboard';
+  } else if (permissions.includes('content_manager')) {
+    return '/content/dashboard';
+  } else if (permissions.includes('consultant')) {
+    return '/consultant';
+  } else if (permissions.includes('admission_officer')) {
+    return '/admission/dashboard';
+  } else {
+    return '/profile';
+  }
+}
+
+// Convenience components for specific permissions
 export function AdminGuard({ children, fallbackRoute }: { children: JSX.Element; fallbackRoute?: string }) {
   return (
-    <RoleGuard allowedRoles={["SYSTEM_ADMIN"]} fallbackRoute={fallbackRoute}>
+    <PermissionGuard requiredPermission="admin" fallbackRoute={fallbackRoute}>
       {children}
-    </RoleGuard>
+    </PermissionGuard>
   );
 }
 
 export function ContentManagerGuard({ children, fallbackRoute }: { children: JSX.Element; fallbackRoute?: string }) {
   return (
-    <RoleGuard allowedRoles={["CONTENT_MANAGER", "SYSTEM_ADMIN"]} fallbackRoute={fallbackRoute}>
+    <PermissionGuard requiredPermission="content_manager" fallbackRoute={fallbackRoute}>
       {children}
-    </RoleGuard>
+    </PermissionGuard>
   );
 }
 
 export function ConsultantGuard({ children, fallbackRoute }: { children: JSX.Element; fallbackRoute?: string }) {
   return (
-    <RoleGuard allowedRoles={["CONSULTANT", "SYSTEM_ADMIN"]} fallbackRoute={fallbackRoute}>
+    <PermissionGuard requiredPermission="consultant" fallbackRoute={fallbackRoute}>
       {children}
-    </RoleGuard>
+    </PermissionGuard>
   );
 }
 
 export function AdmissionOfficerGuard({ children, fallbackRoute }: { children: JSX.Element; fallbackRoute?: string }) {
   return (
-    <RoleGuard allowedRoles={["ADMISSION_OFFICER", "SYSTEM_ADMIN"]} fallbackRoute={fallbackRoute}>
+    <PermissionGuard requiredPermission="admission_officer" fallbackRoute={fallbackRoute}>
       {children}
-    </RoleGuard>
+    </PermissionGuard>
   );
 }
 
 export function StudentGuard({ children, fallbackRoute }: { children: JSX.Element; fallbackRoute?: string }) {
   return (
-    <RoleGuard allowedRoles={["STUDENT"]} fallbackRoute={fallbackRoute}>
+    <PermissionGuard requiredPermission="student" fallbackRoute={fallbackRoute}>
       {children}
-    </RoleGuard>
+    </PermissionGuard>
   );
 }
 
+// Legacy RoleGuard for backward compatibility
+interface RoleGuardProps {
+  children: JSX.Element;
+  allowedRoles?: Role[];
+  fallbackRoute?: string;
+}
+
+export function RoleGuard({ children, allowedRoles, fallbackRoute = "/" }: RoleGuardProps) {
+  const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
+
+  if (!isAuthenticated || !user) {
+    return <Navigate 
+      to="/loginforad" 
+      replace 
+      state={{ from: location.pathname + location.search }} 
+    />;
+  }
+
+  if (allowedRoles && allowedRoles.length > 0) {
+    if (!allowedRoles.includes(user.role)) {
+      const redirectRoute = getDefaultRouteForUser(user);
+      return <Navigate to={redirectRoute} replace />;
+    }
+  }
+
+  return children;
+}
+
+// Legacy convenience components that still work with roles but use permissions internally
 export function StaffGuard({ children, fallbackRoute }: { children: JSX.Element; fallbackRoute?: string }) {
-  return (
-    <RoleGuard allowedRoles={["SYSTEM_ADMIN", "CONTENT_MANAGER", "CONSULTANT", "ADMISSION_OFFICER"]} fallbackRoute={fallbackRoute}>
-      {children}
-    </RoleGuard>
-  );
+  const { user } = useAuth();
+  const userPermissions = user?.permissions || [];
+  
+  // Staff = anyone who's not just a student
+  const isStaff = userPermissions.some(p => p !== 'student');
+  
+  if (!isStaff) {
+    return <Navigate to="/profile" replace />;
+  }
+  
+  return children;
 }

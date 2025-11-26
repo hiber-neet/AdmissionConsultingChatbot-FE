@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/Auth';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   TrendingUp, 
@@ -10,26 +11,28 @@ import {
   ChevronLeft,
   MessageSquare,
   FileText,
-  LogOut
+  LogOut,
+  Users,
+  Calendar,
+  GraduationCap,
+  BookOpen,
+  Eye,
+  Plus
 } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
 import { Avatar, AvatarFallback } from '../ui/system_users/avatar';
-import { DashboardOverview } from './DashboardOverview';
-import { AnalyticsStatistics } from './AnalyticsStatistics';
-import { QATemplateManagement } from './QATemplateManagement';
-import { DocumentManagement } from './DocumentManagement';
-import { ContentOptimization } from './ContentOptimization';
-import { LeaderKnowledgeBase } from './consultantLeader/leaderKnowledgeBase';
-import { ManagerProfile } from '../manager/ManagerProfile';
-
-type ConsultantPage = 'overview' | 'analytics' | 'qaTemplates' | 'documents' | 'optimization' | 'leaderReview' | 'profile';
 
 export function ConsultantLayout() {
-  const [currentPage, setCurrentPage] = useState<ConsultantPage>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [prefilledQuestion, setPrefilledQuestion] = useState<string | null>(null);
-  const [templateAction, setTemplateAction] = useState<'edit' | 'add' | 'view' | null>(null);
   const { user, hasPermission, setUserLeadership, loginAs, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get current route for active state
+  const getCurrentRoute = () => {
+    const path = location.pathname.split('/').pop();
+    return path || 'overview';
+  };
 
   // Auto-login if no user is found (for consultant pages)
   useEffect(() => {
@@ -55,43 +58,51 @@ export function ConsultantLayout() {
     setUserLeadership(newLeaderStatus);
   };
 
-  // Handle navigation to QA Templates with pre-filled question
-  const handleNavigateToKnowledgeBase = (question: string) => {
-    setPrefilledQuestion(question);
-    setTemplateAction('add');
-    setCurrentPage('qaTemplates');
-  };
-
-  // Handle navigation from Analytics to Templates
-  const handleNavigateToTemplates = (question?: string, action?: 'edit' | 'add' | 'view') => {
-    setPrefilledQuestion(question || null);
-    setTemplateAction(action || null);
-    setCurrentPage('qaTemplates');
-  };
-
-  // Handle navigation from Dashboard to Templates (always 'add' action)
-  const handleDashboardNavigateToTemplates = (question: string, action: 'add') => {
-    setPrefilledQuestion(question);
-    setTemplateAction(action);
-    setCurrentPage('qaTemplates');
-  };
-
-  // Reset template state when question is used
-  const handleQuestionUsed = () => {
-    setPrefilledQuestion(null);
-    setTemplateAction(null);
-  };
-
   const navigation = [
-    { id: 'overview' as ConsultantPage, label: 'Dashboard Home', icon: LayoutDashboard },
-    { id: 'analytics' as ConsultantPage, label: 'Analytics & Statistics', icon: TrendingUp },
-    { id: 'qaTemplates' as ConsultantPage, label: 'Q&A Templates', icon: MessageSquare },
-    { id: 'documents' as ConsultantPage, label: 'Documents', icon: FileText },
-    { id: 'optimization' as ConsultantPage, label: 'Content Optimization', icon: Lightbulb },
+    { id: 'overview', label: 'Dashboard Home', icon: LayoutDashboard, path: '/consultant/overview' },
+    { id: 'analytics', label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
+    { id: 'templates', label: 'Q&A Templates', icon: MessageSquare, path: '/consultant/templates' },
+    { id: 'documents', label: 'Documents', icon: FileText, path: '/consultant/documents' },
+    { id: 'optimization', label: 'Content Optimization', icon: Lightbulb, path: '/consultant/optimization' },
     ...(user?.isLeader ? [
-      { id: 'leaderReview' as ConsultantPage, label: 'Knowledge Base Review', icon: Database },
+      { id: 'leader', label: 'Leader Review', icon: Database, path: '/consultant/leader' }
     ] : []),
-    { id: 'profile' as ConsultantPage, label: 'Profile', icon: User },
+    { id: 'profile', label: 'Profile', icon: User, path: '/consultant/profile' }
+  ];
+
+  // Additional navigation sections for other permissions
+  const additionalSections = [
+    // Content Manager section
+    ...(user?.permissions?.includes('content_manager') ? [{
+      title: 'Content Manager',
+      items: [
+        { label: 'Content Dashboard', icon: LayoutDashboard, path: '/content/dashboard' },
+        { label: 'All Articles', icon: FileText, path: '/content/articles' },
+        { label: 'Article Editor', icon: Plus, path: '/content/editor' },
+        { label: 'Review Queue', icon: Eye, path: '/content/review' },
+      ]
+    }] : []),
+    
+    // Admission Officer section  
+    ...(user?.permissions?.includes('admission_officer') ? [{
+      title: 'Admission Officer',
+      items: [
+        { label: 'Admission Dashboard', icon: LayoutDashboard, path: '/admission/dashboard' },
+        { label: 'Request Queue', icon: Calendar, path: '/admission/request-queue' },
+        { label: 'Students', icon: GraduationCap, path: '/admission/students' },
+        { label: 'Knowledge Base', icon: BookOpen, path: '/admission/knowledge-base' },
+      ]
+    }] : []),
+    
+    // Admin section
+    ...(user?.permissions?.includes('admin') ? [{
+      title: 'Administration',
+      items: [
+        { label: 'Admin Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+        { label: 'User Management', icon: Users, path: '/admin/users' },
+        { label: 'System Analytics', icon: TrendingUp, path: '/admin/analytics' },
+      ]
+    }] : [])
   ];
 
   return (
@@ -126,27 +137,67 @@ export function ConsultantLayout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-grow overflow-y-auto p-2 space-y-1">
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentPage === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setCurrentPage(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-[#3B82F6] text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Icon className="h-5 w-5 flex-shrink-0" />
-                {!sidebarCollapsed && (
-                  <span className="text-sm">{item.label}</span>
-                )}
-              </button>
-            );
-          })}
+        <nav className="flex-grow overflow-y-auto p-2 space-y-3">
+          {/* Main Consultant Navigation */}
+          <div>
+            {!sidebarCollapsed && (
+              <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Consultant
+              </div>
+            )}
+            <div className="space-y-1">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                const isActive = getCurrentRoute() === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(item.path)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-[#3B82F6] text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                    title={sidebarCollapsed ? item.label : undefined}
+                  >
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    {!sidebarCollapsed && (
+                      <span className="text-sm">{item.label}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Additional Permission Sections */}
+          {additionalSections.map((section, sectionIndex) => (
+            <div key={sectionIndex}>
+              {!sidebarCollapsed && (
+                <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  {section.title}
+                </div>
+              )}
+              <div className="space-y-1">
+                {section.items.map((item, itemIndex) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={itemIndex}
+                      onClick={() => navigate(item.path)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                      title={sidebarCollapsed ? item.label : undefined}
+                    >
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      {!sidebarCollapsed && (
+                        <span className="text-sm">{item.label}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* User Profile */}
@@ -216,13 +267,7 @@ export function ConsultantLayout() {
 
       {/* Main Content */}
       <main className="flex-1 min-h-screen overflow-hidden">
-        {currentPage === 'overview' && <DashboardOverview onNavigateToTemplates={handleDashboardNavigateToTemplates} />}
-        {currentPage === 'analytics' && <AnalyticsStatistics onNavigateToTemplates={handleNavigateToTemplates} />}
-        {currentPage === 'qaTemplates' && <QATemplateManagement prefilledQuestion={prefilledQuestion} onQuestionUsed={handleQuestionUsed} templateAction={templateAction} />}
-        {currentPage === 'documents' && <DocumentManagement />}
-        {currentPage === 'optimization' && <ContentOptimization onNavigateToKnowledgeBase={handleNavigateToKnowledgeBase} />}
-        {currentPage === 'leaderReview' && user?.isLeader && <LeaderKnowledgeBase />}
-        {currentPage === 'profile' && <ManagerProfile />}
+        <Outlet />
       </main>
     </div>
   );

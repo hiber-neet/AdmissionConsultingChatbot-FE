@@ -1,4 +1,4 @@
-import { MoreVertical, Edit, Shield, Trash2, Mail, User, GraduationCap, Crown, Users } from 'lucide-react';
+import { MoreVertical, Edit, Shield, Trash2, Mail, User, GraduationCap, Crown, Users, Ban, UserCheck } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
 import { Badge } from '../ui/system_users/badge';
 import { Avatar, AvatarFallback } from '../ui/system_users/avatar';
@@ -25,7 +25,8 @@ export function UserTable({
   users, 
   onEdit, 
   onDelete, 
-  onToggleStatus 
+  onBanUser,
+  loading 
 }) {
   const getRoleIcon = (role) => {
     switch (role) {
@@ -40,6 +41,10 @@ export function UserTable({
       default:
         return <User className="h-4 w-4" />;
     }
+  };
+
+  const isAdminUser = (user) => {
+    return user.role === 'SYSTEM_ADMIN' || (user.permissions && user.permissions.includes('admin'));
   };
 
   const hasMultipleRoles = (permissions) => {
@@ -123,30 +128,69 @@ export function UserTable({
                 </div>
               </TableCell>
               <TableCell>
-                <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
-                  {user.status}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
+                    {user.status}
+                  </Badge>
+                  {user.isBanned && (
+                    <Badge variant="destructive" className="gap-1">
+                      <Ban className="h-3 w-3" />
+                      Banned
+                    </Badge>
+                  )}
+                  {isAdminUser(user) && (
+                    <Badge variant="outline" className="gap-1 border-blue-300 text-blue-700">
+                      <Shield className="h-3 w-3" />
+                      Protected
+                    </Badge>
+                  )}
+                  {user.banReason && (
+                    <span className="text-xs text-red-600">
+                      {user.banReason}
+                    </span>
+                  )}
+                </div>
               </TableCell>
               <TableCell className="text-muted-foreground">{user.lastActive}</TableCell>
               <TableCell className="text-muted-foreground">{user.createdAt}</TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" disabled={loading}>
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit(user)}>
+                    <DropdownMenuItem onClick={() => onEdit(user)} disabled={loading}>
                       <Edit className="h-4 w-4 mr-2" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onToggleStatus(user.id)}>
-                      <Shield className="h-4 w-4 mr-2" />
-                      {user.status === 'active' ? 'Deactivate' : 'Activate'}
+                    <DropdownMenuItem 
+                      onClick={() => user.status === 'active' ? onBanUser(user.id, false) : onBanUser(user.id, true)} 
+                      disabled={loading || isAdminUser(user)}
+                      className={
+                        isAdminUser(user) 
+                          ? "text-gray-400 cursor-not-allowed" 
+                          : user.status === 'active' 
+                            ? "text-orange-600" 
+                            : "text-green-600"
+                      }
+                    >
+                      {user.status === 'active' ? (
+                        <>
+                          <Ban className="h-4 w-4 mr-2" />
+                          {isAdminUser(user) ? 'Cannot Ban Admin' : 'Deactivate (Ban)'}
+                        </>
+                      ) : (
+                        <>
+                          <UserCheck className="h-4 w-4 mr-2" />
+                          {isAdminUser(user) ? 'Cannot Unban Admin' : 'Activate (Unban)'}
+                        </>
+                      )}
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => onDelete(user.id)}
+                      disabled={loading}
                       className="text-destructive"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
@@ -169,13 +213,16 @@ UserTable.propTypes = {
     name: PropTypes.string.isRequired,
     username: PropTypes.string.isRequired,
     email: PropTypes.string.isRequired,
-    role: PropTypes.string.isRequired, // Changed from 'roles' to 'role'
-    permissions: PropTypes.arrayOf(PropTypes.string), // Added permissions prop
+    role: PropTypes.string.isRequired,
+    permissions: PropTypes.arrayOf(PropTypes.string),
     status: PropTypes.string.isRequired,
     lastActive: PropTypes.string.isRequired,
     createdAt: PropTypes.string.isRequired,
+    isBanned: PropTypes.bool,
+    banReason: PropTypes.string,
   })).isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
-  onToggleStatus: PropTypes.func.isRequired,
+  onBanUser: PropTypes.func.isRequired,
+  loading: PropTypes.bool,
 };
