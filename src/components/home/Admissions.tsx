@@ -1,6 +1,7 @@
 import { Calendar, FileText, CheckCircle, Award, User, Mail, Phone, GraduationCap, Lock } from 'lucide-react';
 import { useState } from 'react';
-
+  import { authAPI } from "@/services/fastapi"; 
+  import { useNavigate } from 'react-router';
 const steps = [
   {
     icon: FileText,
@@ -34,11 +35,47 @@ export default function Admissions() {
     person: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert('Cảm ơn bạn đã đăng ký! Chúng tôi sẽ liên hệ trong thời gian sớm nhất.');
-    setFormData({ name: '', email: '', password: '', phone: '', program: '', person: '' });
-  };
+    const navigate = useNavigate(); 
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
+    // Có thể thêm validate đơn giản
+    if (!formData.name || !formData.email || !formData.password) {
+      alert('Vui lòng điền đầy đủ Họ tên, Email, Password');
+      return;
+    }
+
+    // Map sang payload mà BE cần
+    const payload = {
+      username: formData.email.split('@')[0],   // hoặc cho user nhập riêng nếu muốn
+      email: formData.email,
+      password: formData.password,
+      full_name: formData.name,
+    };
+
+    // Gọi API FastAPI
+    await authAPI.register(payload);
+
+    alert('Bạn đã đăng ký tài khoản thành công! Hãy đăng nhập để tiếp tục.');
+navigate('/loginprivate');
+
+    // Reset form
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      phone: '',
+      program: '',
+      person: '',
+    });
+
+  } catch (err: any) {
+    console.error('Register error:', err);
+    alert(err?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+  }
+};
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
