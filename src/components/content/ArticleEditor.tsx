@@ -19,6 +19,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
   const [loadingSpecializations, setLoadingSpecializations] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [createdArticle, setCreatedArticle] = useState<any>(null);
 
   // Fetch majors on component mount
   useEffect(() => {
@@ -109,7 +110,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
     }
   }, [message]);
 
-  const handlePublish = async () => {
+  const handleAddArticle = async () => {
     if (!title.trim()) {
       setMessage({ type: 'error', text: 'Title is required' });
       return;
@@ -134,18 +135,24 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
     try {
       setSaving(true);
       setMessage(null);
+      setCreatedArticle(null);
 
       const articleData = {
         title: title.trim(),
         description: description.trim(),
         url: url.trim(),
-        major_id: majorId,
-        specialization_id: specializationId,
+        major_id: majorId === 0 ? null : majorId,
+        specialization_id: specializationId
       };
 
+      console.log('Sending POST request to /articles with data:', articleData);
+      
       const response = await fastAPIArticles.create(articleData);
       
-      setMessage({ type: 'success', text: `Article "${response.title}" published successfully!` });
+      console.log('Received response:', response);
+      
+      setMessage({ type: 'success', text: `Article "${response.title}" added successfully!` });
+      setCreatedArticle(response);
       
       // Reset form
       setTitle('');
@@ -155,18 +162,13 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
       setSpecializationId(0);
       
     } catch (error: any) {
-      console.error('Error publishing article:', error);
-      const errorMessage = error.message || 'Failed to publish article';
+      console.error('Error adding article:', error);
+      const errorMessage = error.message || 'Failed to add article';
       setMessage({ type: 'error', text: errorMessage });
+      setCreatedArticle(null);
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleSaveDraft = async () => {
-    // Similar to handlePublish but maybe with different status
-    // For now, we'll use the same API but could be modified for draft status
-    setMessage({ type: 'success', text: 'Draft saved locally' });
   };
 
   return (
@@ -182,6 +184,27 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
         </div>
       )}
 
+      {/* Created Article Display */}
+      {createdArticle && (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+          <h3 className="text-lg font-semibold text-blue-800 mb-3">Article Created Successfully!</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div><strong>Article ID:</strong> {createdArticle.article_id}</div>
+            <div><strong>Status:</strong> {createdArticle.status}</div>
+            <div><strong>Title:</strong> {createdArticle.title}</div>
+            <div><strong>Created By:</strong> {createdArticle.created_by}</div>
+            <div><strong>Description:</strong> {createdArticle.description}</div>
+            <div><strong>Created Date:</strong> {createdArticle.create_at}</div>
+            <div><strong>URL:</strong> <a href={createdArticle.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{createdArticle.url}</a></div>
+            <div><strong>Author:</strong> {createdArticle.author_name || 'N/A'}</div>
+            <div><strong>Major ID:</strong> {createdArticle.major_id || 'N/A'}</div>
+            <div><strong>Major Name:</strong> {createdArticle.major_name || 'N/A'}</div>
+            <div><strong>Specialization ID:</strong> {createdArticle.specialization_id}</div>
+            <div><strong>Specialization Name:</strong> {createdArticle.specialization_name || 'N/A'}</div>
+          </div>
+        </div>
+      )}
+
       {/* Top bar */}
       <div className="bg-white border rounded-xl p-3 mb-4 flex items-center gap-3">
         <input
@@ -191,23 +214,11 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
           className="flex-1 text-lg font-semibold outline-none"
         />
         <button 
-          onClick={() => setMessage({ type: 'success', text: 'Preview feature coming soon!' })}
-          className="px-3 py-2 rounded-md border text-sm hover:bg-gray-50"
-        >
-          Preview
-        </button>
-        <button 
-          onClick={handleSaveDraft}
-          className="px-3 py-2 rounded-md border text-sm hover:bg-gray-50"
-        >
-          Save Draft
-        </button>
-        <button 
-          onClick={handlePublish}
+          onClick={handleAddArticle}
           disabled={saving || loading}
-          className="px-3 py-2 rounded-md bg-black text-white text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {saving ? 'Publishing...' : 'Publish'}
+          {saving ? 'Adding...' : 'Add Article'}
         </button>
       </div>
 

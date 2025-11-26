@@ -11,6 +11,13 @@ import {
   ChevronLeft,
   Database,
   LogOut,
+  MessageSquare,
+  TrendingUp,
+  Lightbulb,
+  Users,
+  Calendar,
+  GraduationCap,
+  BookOpen
 } from "lucide-react";
 
 import { Button } from "@/components/ui/system_users/button";
@@ -18,7 +25,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/system_users/avatar";
 import { useAuth } from "@/contexts/Auth";
 
 // Page type
-type ContentPage = "dashboard" | "articles" | "review" | "editor" | "riasec" | "profile";
+type ContentPage = "dashboard" | "articles" | "review" | "editor" | "profile";
 
 export default function ContentManagerLayOut() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -46,16 +53,51 @@ export default function ContentManagerLayOut() {
   };
 
   const navigation = [
-    { id: "dashboard" as ContentPage, label: "Dashboard", icon: LayoutDashboard, path: "/content/dashboard", permission: "VIEW_CONTENT_DASHBOARD" },
-    { id: "articles" as ContentPage, label: "Article List", icon: FileText, path: "/content/articles", permission: "MANAGE_ARTICLES" },
-    { id: "editor" as ContentPage, label: "Article Details", icon: PenSquare, path: "/content/editor", permission: "CREATE_ARTICLE" },
-    ...(hasPermission("REVIEW_CONTENT") ? [
-      { id: "review" as ContentPage, label: "Review Queue", icon: ListChecks, path: "/content/review", permission: "REVIEW_CONTENT" }
+    { id: "dashboard" as ContentPage, label: "Dashboard", icon: LayoutDashboard, path: "/content/dashboard", permission: "content_manager" },
+    { id: "articles" as ContentPage, label: "Article List", icon: FileText, path: "/content/articles", permission: "content_manager" },
+    { id: "editor" as ContentPage, label: "Article Details", icon: PenSquare, path: "/content/editor", permission: "content_manager" },
+    ...(hasPermission("content_manager") ? [
+      { id: "review" as ContentPage, label: "Review Queue", icon: ListChecks, path: "/content/review", permission: "content_manager" }
     ] : []),
-    ...(hasPermission("MANAGE_RIASEC") ? [
-      { id: "riasec" as ContentPage, label: "RIASEC Management", icon: Database, path: "/content/riasec", permission: "MANAGE_RIASEC" }
-    ] : []),
-    { id: "profile" as ContentPage, label: "Profile", icon: User, path: "/content/profile", permission: "VIEW_PROFILE" },
+    { id: "profile" as ContentPage, label: "Profile", icon: User, path: "/content/profile", permission: "student" },
+  ];
+
+  // Additional navigation sections for other permissions
+  const additionalSections = [
+    // Consultant section
+    ...(user?.permissions?.includes('consultant') ? [{
+      title: 'Consultant',
+      items: [
+        { label: 'Consultant Dashboard', icon: LayoutDashboard, path: '/consultant/overview' },
+        { label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
+        { label: 'Q&A Templates', icon: MessageSquare, path: '/consultant/templates' },
+        { label: 'Content Optimization', icon: Lightbulb, path: '/consultant/optimization' },
+        ...(user?.isLeader ? [
+          { label: 'Leader Review', icon: Database, path: '/consultant/leader' }
+        ] : []),
+      ]
+    }] : []),
+    
+    // Admission Officer section  
+    ...(user?.permissions?.includes('admission_officer') ? [{
+      title: 'Admission Officer',
+      items: [
+        { label: 'Admission Dashboard', icon: LayoutDashboard, path: '/admission/dashboard' },
+        { label: 'Request Queue', icon: Calendar, path: '/admission/request-queue' },
+        { label: 'Students', icon: GraduationCap, path: '/admission/students' },
+        { label: 'Knowledge Base', icon: BookOpen, path: '/admission/knowledge-base' },
+      ]
+    }] : []),
+    
+    // Admin section
+    ...(user?.permissions?.includes('admin') ? [{
+      title: 'Administration',
+      items: [
+        { label: 'Admin Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+        { label: 'User Management', icon: Users, path: '/admin/users' },
+        { label: 'System Analytics', icon: TrendingUp, path: '/admin/analytics' },
+      ]
+    }] : [])
   ];
 
   // Toggle button will appear in the sidebar footer for testing
@@ -110,25 +152,65 @@ export default function ContentManagerLayOut() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 p-2 space-y-1">
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            const isActive = getCurrentRoute() === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-[#3B82F6] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                <Icon className="h-5 w-5 flex-shrink-0" />
-                {!sidebarCollapsed && <span className="text-sm">{item.label}</span>}
-              </button>
-            );
-          })}
+        <nav className="flex-1 p-2 space-y-3 overflow-y-auto">
+          {/* Main Content Manager Navigation */}
+          <div>
+            {!sidebarCollapsed && (
+              <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Content Manager
+              </div>
+            )}
+            <div className="space-y-1">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                const isActive = getCurrentRoute() === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(item.path)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                      isActive
+                        ? "bg-[#3B82F6] text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                    title={sidebarCollapsed ? item.label : undefined}
+                  >
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    {!sidebarCollapsed && <span className="text-sm">{item.label}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Additional Permission Sections */}
+          {additionalSections.map((section, sectionIndex) => (
+            <div key={sectionIndex}>
+              {!sidebarCollapsed && (
+                <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  {section.title}
+                </div>
+              )}
+              <div className="space-y-1">
+                {section.items.map((item, itemIndex) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={itemIndex}
+                      onClick={() => navigate(item.path)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                      title={sidebarCollapsed ? item.label : undefined}
+                    >
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      {!sidebarCollapsed && (
+                        <span className="text-sm">{item.label}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* User */}

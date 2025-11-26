@@ -1,10 +1,11 @@
 // src/contexts/auth.tsx
 import React, { createContext, useContext, useMemo, useState, ReactNode, useEffect } from "react";
-import { Permission, hasPermission, getRolePermissions } from "@/constants/permissions";
+import { Permission, hasPermission as checkPermission, getRolePermissions, type Role } from "@/constants/permissions";
 import { authAPI } from '../services/fastapi';
 import { getRoleFromToken } from '../pages/login/jwtHelper';
 
-export type Role = "SYSTEM_ADMIN" | "CONSULTANT" | "CONTENT_MANAGER" | "ADMISSION_OFFICER" | "STUDENT";
+// Re-export Role type for backward compatibility
+export type { Role };
 
 export type User = {
   id: string;
@@ -29,11 +30,11 @@ type AuthCtx = {
 /** Tài khoản mẫu (có thể đổi sau này) */
 type Account = { email: string; password: string; name: string; role: Role; isLeader?: boolean };
 const ACCOUNTS: Account[] = [
-  { email: "admin@gmail.com",     password: "123",   name: "dat",   role: "SYSTEM_ADMIN", isLeader: true },
-  { email: "consultant@gmail.com",password: "123",    name: "hoang",       role: "CONSULTANT", isLeader: false },
-  { email: "content@gmail.com",   password: "123", name: "hieu",     role: "CONTENT_MANAGER", isLeader: false },
-  { email: "officer@gmail.com",   password: "123", name: "khoa", role: "ADMISSION_OFFICER", isLeader: false },
-  { email: "student@gmail.com",   password: "123", name: "student", role: "STUDENT", isLeader: false },
+  { email: "admin@gmail.com",     password: "123",   name: "Admin User",   role: "SYSTEM_ADMIN", isLeader: true },
+  { email: "consultant@gmail.com",password: "123",    name: "Consultant User",       role: "CONSULTANT", isLeader: false },
+  { email: "content@gmail.com",   password: "123", name: "Content Manager",     role: "CONTENT_MANAGER", isLeader: false },
+  { email: "officer@gmail.com",   password: "123", name: "Admission Officer", role: "ADMISSION_OFFICER", isLeader: false },
+  { email: "student@gmail.com",   password: "123", name: "Student User", role: "STUDENT", isLeader: false },
 ];
 
 const AuthContext = createContext<AuthCtx | undefined>(undefined);
@@ -53,7 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('Attempting login with FastAPI...');
+      console.log('🔐 Attempting login with FastAPI...');
+      console.log('📧 Email:', email.trim());
       
       // Call FastAPI login endpoint
       const response = await authAPI.login({ 
@@ -61,24 +63,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password 
       });
 
-      console.log('Login response:', response);
+      console.log('✅ Login response received:', response);
       
       // Extract token from response
-const { access_token, token_type } = response as any;
+      const { access_token, token_type } = response as any;
       
       if (!access_token) {
+        console.error('❌ No access token in response');
         return { ok: false, message: "No access token received" };
       }
+
+      console.log('🎫 Token received:', {
+        token_preview: access_token.substring(0, 20) + '...',
+        token_type: token_type || 'bearer'
+      });
 
       // Store token in localStorage
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("token_type", token_type || "bearer");
+      
+      console.log('💾 Token stored in localStorage');
 
-      // Decode token to get user_id
+      // Decode token to get user information
       try {
         const payload = JSON.parse(atob(access_token.split(".")[1]));
+        console.log('🔍 JWT Payload decoded:', payload);
+        
         const userId = payload.user_id;
         const userEmail = payload.sub;
+        
+        if (!userId || !userEmail) {
+          console.error('❌ Invalid token payload - missing user_id or email');
+          return { ok: false, message: "Invalid token format" };
+        }
+        
+        console.log('👤 User info from token:', {
+          userId,
+          userEmail
+        });
         
         // Temporary: Map email patterns to roles until backend profile endpoint is fixed
         let appRole: Role = "STUDENT"; // default fallback
@@ -101,8 +123,9 @@ const { access_token, token_type } = response as any;
         }
         
         if (userId) {
-          // Try to fetch user profile (optional - if it fails, we use email-based role)
+          // Fetch user profile to get dynamic permissions
           try {
+            console.log('🔍 Fetching user profile for dynamic permissions...');
             const profileResponse = await fetch(`http://localhost:8000/profile/${userId}`, {
               headers: {
                 'Authorization': `Bearer ${access_token}`,
@@ -112,53 +135,96 @@ const { access_token, token_type } = response as any;
             
             if (profileResponse.ok) {
               const profileData = await profileResponse.json();
-              console.log('Profile data:', profileData);
+              console.log('✅ Profile data received:', profileData);
               
-              // Override with backend role if available
-              if (profileData.role_name) {
-                const roleMapping: Record<string, Role> = {
-                  'SYSTEM_ADMIN': 'SYSTEM_ADMIN',
-                  'CONSULTANT': 'CONSULTANT', 
-                  'CONTENT_MANAGER': 'CONTENT_MANAGER',
-                  'ADMISSION_OFFICER': 'ADMISSION_OFFICER',
-                  'STUDENT': 'STUDENT'
+              // Map backend permissions to frontend permissions
+              const mapBackendPermissionToFrontend = (backendPermission: string): Permission[] => {
+                const permissionMap: Record<string, Permission[]> = {
+                  'admin': ['admin', 'content_manager', 'admission_officer', 'consultant', 'student'],
+                  'content_manager': ['content_manager', 'student'],
+                  'admission_officer': ['admission_officer', 'student'],
+                  'consultant': ['consultant', 'student'],
+                  'student': ['student']
                 };
-                appRole = roleMapping[profileData.role_name] || appRole;
+                
+                return permissionMap[backendPermission.toLowerCase()] || ['student'];
+              };
+              
+              // Get permissions from profile
+              let userPermissions: Permission[] = ['student']; // default
+              if (profileData.permission && Array.isArray(profileData.permission)) {
+                userPermissions = profileData.permission.flatMap((perm: string) => 
+                  mapBackendPermissionToFrontend(perm)
+                );
+                // Remove duplicates
+                userPermissions = Array.from(new Set(userPermissions));
               }
-
-              // Override leadership status if available
+              
+              console.log('🔑 Mapped permissions:', userPermissions);
+              
+              // Determine role from permissions (highest permission becomes primary role)
+              if (userPermissions.includes('admin')) {
+                appRole = "SYSTEM_ADMIN";
+              } else if (userPermissions.includes('content_manager')) {
+                appRole = "CONTENT_MANAGER";
+              } else if (userPermissions.includes('admission_officer')) {
+                appRole = "ADMISSION_OFFICER";
+              } else if (userPermissions.includes('consultant')) {
+                appRole = "CONSULTANT";
+              } else {
+                appRole = "STUDENT";
+              }
+              
+              // Get leadership status from profiles
               if (profileData.consultant_profile?.is_leader) isLeader = true;
               if (profileData.content_manager_profile?.is_leader) isLeader = true;
+              if (profileData.role_name === 'admin') isLeader = true; // Admins are always leaders
               
-              console.log('✅ Using backend profile data');
+              const userData: User = {
+                id: userId.toString(),
+                name: profileData.full_name || userEmail.split('@')[0],
+                role: appRole,
+                email: profileData.email || userEmail,
+                isLeader: isLeader,
+                permissions: userPermissions // Use dynamic permissions from backend
+              };
+
+              setUser(userData);
+              sessionStorage.setItem("demo_user", JSON.stringify(userData));
+
+              console.log("🎉 LOGIN SUCCESS with dynamic permissions!");
+              console.log("👤 User Info:", {
+                name: userData.name,
+                role: userData.role,
+                email: userData.email,
+                isLeader: userData.isLeader,
+                permissions: userData.permissions
+              });
+
+              return { ok: true, token: access_token };
+              
             } else {
               console.log('⚠️ Profile API failed, using email-based role mapping');
+              throw new Error('Profile API failed');
             }
           } catch (profileError) {
-            console.log('⚠️ Profile fetch failed, using email-based role mapping:', profileError);
-          }
+            console.log('⚠️ Profile fetch failed, falling back to email-based role mapping:', profileError);
             
-          const userData: User = {
-            id: userId.toString(),
-            name: userEmail.split('@')[0],
-            role: appRole,
-            email: userEmail,
-            isLeader: isLeader,
-            permissions: getRolePermissions(appRole)
-          };
+            const userData: User = {
+              id: userId.toString(),
+              name: userEmail.split('@')[0],
+              role: appRole,
+              email: userEmail,
+              isLeader: isLeader,
+              permissions: getRolePermissions(appRole) // Fallback to hardcoded permissions
+            };
 
-          setUser(userData);
-          sessionStorage.setItem("demo_user", JSON.stringify(userData));
+            setUser(userData);
+            sessionStorage.setItem("demo_user", JSON.stringify(userData));
 
-          console.log("🎉 LOGIN SUCCESS!");
-          console.log("👤 User Info:", {
-            name: userData.name,
-            role: userData.role,
-            email: userData.email,
-            isLeader: userData.isLeader
-          });
-
-          return { ok: true, token: access_token };
+            console.log("⚠️ LOGIN SUCCESS with fallback permissions!");
+            return { ok: true, token: access_token };
+          }
         }
       } catch (tokenError) {
         console.error('Error decoding token:', tokenError);
@@ -308,11 +374,9 @@ const { access_token, token_type } = response as any;
   };
 
   // Check if current user has a permission
-  const checkPermission = (permission: Permission): boolean => {
+  const checkUserPermission = (permission: Permission): boolean => {
     if (!user || !user.permissions) return false;
-    const hasPermissionResult = user.permissions.includes(permission);
-    console.log(`Checking permission ${permission}:`, hasPermissionResult, 'Available:', user.permissions);
-    return hasPermissionResult;
+    return checkPermission(user.permissions, permission);
   };
 
   // Function to toggle leadership for testing
@@ -325,59 +389,8 @@ const { access_token, token_type } = response as any;
       return;
     }
     
-    // Fixed permission sets for testing
-    let updatedPermissions: Permission[];
-    
-    if (user.role === 'CONSULTANT') {
-      if (isLeader) {
-        updatedPermissions = [
-          "VIEW_CONSULTANT_OVERVIEW",
-          "VIEW_ANALYTICS", 
-          "MANAGE_KNOWLEDGE_BASE",
-          "CREATE_QA_TEMPLATE",
-          "EDIT_QA_TEMPLATE",
-          "DELETE_QA_TEMPLATE",
-          "APPROVE_QA_TEMPLATE",
-          "MANAGE_DOCUMENTS",
-          "OPTIMIZE_CONTENT"
-        ];
-      } else {
-        updatedPermissions = [
-          "VIEW_CONSULTANT_OVERVIEW",
-          "VIEW_ANALYTICS",
-          "MANAGE_KNOWLEDGE_BASE", 
-          "CREATE_QA_TEMPLATE",
-          "EDIT_QA_TEMPLATE",
-          "MANAGE_DOCUMENTS",
-          "OPTIMIZE_CONTENT"
-        ];
-      }
-    } else if (user.role === 'CONTENT_MANAGER') {
-      if (isLeader) {
-        updatedPermissions = [
-          "VIEW_CONTENT_DASHBOARD",
-          "MANAGE_ARTICLES",
-          "CREATE_ARTICLE",
-          "EDIT_ARTICLE",
-          "DELETE_ARTICLE",
-          "PUBLISH_ARTICLE",
-          "REVIEW_CONTENT",
-          "MANAGE_RIASEC",
-          "VIEW_ARTICLE_ANALYTICS"
-        ];
-      } else {
-        updatedPermissions = [
-          "VIEW_CONTENT_DASHBOARD",
-          "MANAGE_ARTICLES",
-          "CREATE_ARTICLE",
-          "EDIT_ARTICLE",
-          "VIEW_ARTICLE_ANALYTICS"
-        ];
-      }
-    } else {
-      // For other roles, use the existing function
-      updatedPermissions = getRolePermissions(user.role, isLeader);
-    }
+    // In the simplified system, use role-based permissions
+    const updatedPermissions = getRolePermissions(user.role, isLeader);
     
     const updatedUser = { 
       ...user, 
@@ -403,7 +416,7 @@ const { access_token, token_type } = response as any;
       login, 
       loginAs, 
       logout, 
-      hasPermission: checkPermission,
+      hasPermission: checkUserPermission,
       setUserLeadership,
       getDefaultRoute
     }),
