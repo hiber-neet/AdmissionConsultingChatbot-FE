@@ -5,6 +5,8 @@ import Footer from "@/components/footer/Footer";
 import Header from "@/components/header/Header";
 import banner from "@/assets/images/login-private.jpg";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/Auth";
+
 // import { BASE } from "@/configs/base";
 
 const SidebarItem = ({ active, icon, label, onClick }) => (
@@ -33,8 +35,12 @@ const GRADES = [
 ];
 
 const UserProfile = () => {
+      const { user, isAuthenticated  } = useAuth();
   const [tab, setTab] = useState("profile");
   const [editing, setEditing] = useState(false);
+
+ 
+
 
 //hoc ba
 const [files, setFiles] = useState([]);        // File[] chờ upload
@@ -243,19 +249,68 @@ const deleteUploaded = (index) => {
 
  
   const [form, setForm] = useState({
-    fullName: "Nguyễn Thanh Đạt",
-    gender: "male",
-    dob: "2006-01-01",
-    email: "a@gmail.com",
-    phone: "0123456789",
-    address: "Thủ Đức, TP.HCM",
-    school: "THPT Demo",
-    grade: "12",
-    admissionScore: "25",
-    subjects: "Toán, Lý, Hóa",
-    preferredMajor: "Kỹ thuật phần mềm",
-    riasecCode: "RIA",  
+   fullName: "",
+  gender: "male",
+  dob: "",
+  email: "",
+  phone: "",
+  address: "",
+  school: "",
+  grade: "12",
+  admissionScore: "",
+  subjects: "",
+  preferredMajor: "",
+  riasecCode: "",
   });
+
+useEffect(() => {
+  // chỉ gọi khi đã có user (tức là đã login)
+  if (!user) return;
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        console.warn("No access_token in localStorage");
+        return;
+      }
+
+      // Giả sử BE có endpoint: GET /profile/{user_id}
+      const res = await axios.get(
+        `http://127.0.0.1:8000/profile/${user.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = res.data;
+      console.log("🔥 Profile from backend:", data);
+
+      // map field từ BE sang form của FE
+      setForm({
+        fullName: data.full_name || "",
+        gender: data.gender || "male",
+        dob: data.dob || "",
+        email: data.email || user.email,         // fallback
+        phone: data.phone || "",
+        address: data.address || "",
+        school: data.school || "",
+        grade: data.grade || "12",
+        admissionScore: data.admission_score?.toString() || "",
+        subjects: data.subjects || "",
+        preferredMajor: data.preferred_major || "",
+        riasecCode: data.riasec_code || "",
+      });
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+    }
+  };
+
+  fetchProfile();
+}, [user]);
+
 
   useEffect(() => {
     fetchProfile();
@@ -412,28 +467,22 @@ const deleteUploaded = (index) => {
 const handleScoreChange = (subject, grade, rawValue) => {
   let value = rawValue;
 
-  // Chỉ cho nhập số và dấu chấm
+ 
   value = value.replace(/[^0-9.]/g, "");
 
-  // Tách để kiểm tra số chữ số (bỏ dấu chấm)
   const digits = value.replace(/\./g, "");
 
-  // ❌ CHẶN hơn 2 chữ số liên tục (không cho 105, 999, 123,…)
   if (digits.length > 2) {
-    // chỉ giữ 2 chữ số đầu
+
     value = digits.slice(0, 2);
   }
 
-  // ==============================
-  //  ⭐ XỬ LÝ CHUẨN HOÁ ĐIỂM
-  // ==============================
 
-  // Nếu là 2 chữ số (vd: 11, 90)
   if (/^[0-9]{2}$/.test(value)) {
     const intVal = parseInt(value, 10);
 
     if (intVal > 10) {
-      // 11 → 1.1 | 90 → 9.0
+ 
       value = (intVal / 10).toFixed(1);
     }
   }
@@ -472,6 +521,17 @@ const renderScoreInput = (subject, grade) => (
   />
 );
 
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Header />
+        <div className="text-center py-10">
+          Bạn cần đăng nhập để xem trang này.
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>

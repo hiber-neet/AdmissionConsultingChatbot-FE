@@ -1,12 +1,15 @@
 // src/components/header/Header.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, Menu, X } from "lucide-react";
+import { GraduationCap, Menu, X, User as UserIcon, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/Auth";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -14,23 +17,28 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToSection = (id) => {
-    const element = document.getElementById(id);
-    if (element) {
-      const offset = 80;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - offset;
-      window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-      setIsMobileMenuOpen(false);
-    }
-  };
+const scrollToSection = (id) => {
+  if (window.location.pathname !== "/") {
+    navigate("/", { state: { scrollTo: id } });
+    return;
+  }
+
+  // Nếu đang ở trang Home thì scroll luôn
+  const el = document.getElementById(id);
+  if (el) {
+    const offset = 80;
+    const y = el.getBoundingClientRect().top + window.pageYOffset - offset;
+    window.scrollTo({ top: y, behavior: "smooth" });
+  }
+};
+
 
   const goChatbot = () => {
     navigate("/chatbot");
     setIsMobileMenuOpen(false);
   };
 
-    const goarticles = () => {
+  const goarticles = () => {
     navigate("/articles");
     setIsMobileMenuOpen(false);
   };
@@ -39,6 +47,25 @@ export default function Header() {
     navigate("/loginprivate");
     setIsMobileMenuOpen(false);
   };
+
+  const goProfile = () => {
+    navigate("/profile");
+    setIsUserMenuOpen(false);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setIsUserMenuOpen(false);
+    setIsMobileMenuOpen(false);
+    navigate("/");
+  };
+
+  // Lấy initial từ tên/email để hiển thị trong avatar tròn
+  const userInitial =
+    user?.name?.trim()?.[0] ||
+    user?.email?.trim()?.[0] ||
+    "U";
 
   return (
     <nav
@@ -51,7 +78,10 @@ export default function Header() {
           {/* Logo */}
           <div
             className="flex items-center space-x-3 cursor-pointer"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              setIsMobileMenuOpen(false);
+            }}
           >
             <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-2 rounded-xl">
               <GraduationCap className={`h-8 w-8 text-white`} />
@@ -127,7 +157,7 @@ export default function Header() {
               Liên hệ
             </button>
 
- <button
+            <button
               onClick={goarticles}
               className={`text-sm font-medium transition-colors ${
                 isScrolled
@@ -138,32 +168,71 @@ export default function Header() {
               Báo
             </button>
 
-            {/* NEW: Chatbot -> /chatbotguest */}
-            <button
-              onClick={goChatbot}
-              className={`text-sm font-medium transition-colors ${
-                isScrolled
-                  ? "text-gray-700 hover:text-orange-600"
-                  : "text-white hover:text-orange-200"
-              }`}
-            >
-              Chatbot
-            </button>
+{!isAuthenticated && (
+  <button
+    onClick={goChatbot}
+    className={`text-sm font-medium transition-colors ${
+      isScrolled
+        ? "text-gray-700 hover:text-orange-600"
+        : "text-white hover:text-orange-200"
+    }`}
+  >
+    Chatbot
+  </button>
+)}
 
-            {/* CTA: Đăng ký + Đăng nhập (đặt cạnh nhau, Đăng nhập bên phải) */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => scrollToSection("admissions")}
-                className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2.5 rounded-full font-medium hover:shadow-lg hover:scale-105 transition-all duration-300"
-              >
-                Đăng ký ngay
-              </button>
-              <button
-                onClick={goLogin}
-                className="rounded-full bg-black text-white px-6 py-2.5 font-medium hover:opacity-90 transition"
-              >
-                Đăng nhập
-              </button>
+            {/* Right area: nếu chưa login thì hiện CTA, nếu đã login thì hiện avatar user */}
+            <div className="flex items-center gap-3 relative">
+              {!isAuthenticated ? (
+                <>
+                  <button
+                    onClick={() => scrollToSection("admissions")}
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2.5 rounded-full font-medium hover:shadow-lg hover:scale-105 transition-all duration-300"
+                  >
+                    Đăng ký ngay
+                  </button>
+                  <button
+                    onClick={goLogin}
+                    className="rounded-full bg-black text-white px-6 py-2.5 font-medium hover:opacity-90 transition"
+                  >
+                    Đăng nhập
+                  </button>
+                </>
+              ) : (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsUserMenuOpen((v) => !v)}
+                    className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 shadow-sm hover:shadow-md transition"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-semibold">
+                      {userInitial}
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 max-w-[120px] truncate">
+                      {user?.name || user?.email}
+                    </span>
+                  </button>
+
+                  {isUserMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-44 rounded-lg bg-white shadow-lg border border-gray-100 py-1 z-50">
+                      <button
+                        onClick={goProfile}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                      >
+                        <UserIcon className="w-4 h-4" />
+                        <span>Profile</span>
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Đăng xuất</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -222,30 +291,57 @@ export default function Header() {
               >
                 Liên hệ
               </button>
+{!isAuthenticated && (
+  <button
+    onClick={goChatbot}
+    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition-colors"
+  >
+    Chatbot
+  </button>
+)}
 
-              {/* NEW: Chatbot (mobile) */}
-              <button
-                onClick={goChatbot}
-                className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition-colors"
-              >
-                Chatbot
-              </button>
-
-              {/* CTA ở mobile */}
-              <div className="pt-2 flex gap-3">
-                <button
-                  onClick={() => scrollToSection("admissions")}
-                  className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-3 rounded-lg font-medium hover:shadow-lg transition-all"
-                >
-                  Đăng ký ngay
-                </button>
-                <button
-                  onClick={goLogin}
-                  className="flex-1 bg-black text-white px-4 py-3 rounded-lg font-medium hover:opacity-90 transition-all"
-                >
-                  Đăng nhập
-                </button>
-              </div>
+              {/* Khu vực Auth ở mobile */}
+              {!isAuthenticated ? (
+                <div className="pt-2 flex gap-3">
+                  <button
+                    onClick={() => scrollToSection("admissions")}
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-3 rounded-lg font-medium hover:shadow-lg transition-all"
+                  >
+                    Đăng ký ngay
+                  </button>
+                  <button
+                    onClick={goLogin}
+                    className="flex-1 bg-black text-white px-4 py-3 rounded-lg font-medium hover:opacity-90 transition-all"
+                  >
+                    Đăng nhập
+                  </button>
+                </div>
+              ) : (
+                <div className="pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-3 px-4 py-2">
+                    <div className="w-9 h-9 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-semibold">
+                      {userInitial}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-gray-800">
+                        {user?.name || user?.email}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={goProfile}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition-colors"
+                  >
+                    Profile
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition-colors"
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

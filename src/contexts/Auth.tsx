@@ -192,8 +192,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setUser(userData);
               sessionStorage.setItem("demo_user", JSON.stringify(userData));
 
-              console.log("🎉 LOGIN SUCCESS with dynamic permissions!");
-              console.log("👤 User Info:", {
+              console.log("LOGIN SUCCESS with dynamic permissions!");
+              console.log("User Info:", {
                 name: userData.name,
                 role: userData.role,
                 email: userData.email,
@@ -204,11 +204,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               return { ok: true, token: access_token };
               
             } else {
-              console.log('⚠️ Profile API failed, using email-based role mapping');
+              console.log('Profile API failed, using email-based role mapping');
               throw new Error('Profile API failed');
             }
           } catch (profileError) {
-            console.log('⚠️ Profile fetch failed, falling back to email-based role mapping:', profileError);
+            console.log('Profile fetch failed, falling back to email-based role mapping:', profileError);
             
             const userData: User = {
               id: userId.toString(),
@@ -367,10 +367,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Force reload to clear any remaining application state
     // Optional: Only if you want to completely refresh the app
     setTimeout(() => {
-      window.location.href = '/loginforad';
+      window.location.href = '/loginprivate';
     }, 100);
     
-    console.log('✅ Logout complete - all user data cleared');
+    console.log('Logout complete - all user data cleared');
   };
 
   // Check if current user has a permission
