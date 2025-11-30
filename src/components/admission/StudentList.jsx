@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search,
   Filter,
@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from '../ui/system_users/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/system_users/tabs';
+import { toast } from 'react-toastify';
 
 // Student object structure:
 // {
@@ -154,9 +155,110 @@ const mockStudents = [
 
 // Props: { onSelectStudent: (studentId: string) => void }
 export function StudentList({ onSelectStudent }) {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [programFilter, setProgramFilter] = useState('all');
+
+  // Function to transform API student data to component format
+  const transformStudentData = (apiStudent) => {
+    return {
+      id: `ST${String(apiStudent.user_id || 0).padStart(3, '0')}`,
+      name: apiStudent.full_name || 'Unknown Name',
+      email: apiStudent.email || '',
+      phone: apiStudent.phone_number || 'N/A',
+      location: 'N/A', // API doesn't provide location
+      appliedDate: new Date().toISOString().split('T')[0], // API doesn't provide applied date, use current date
+      program: 'Chưa xác định', // API doesn't provide program
+      status: apiStudent.status ? 'approved' : 'pending', // Map status boolean to string
+      gpa: 0, // API doesn't provide GPA
+      uploadedFiles: 0, // API doesn't provide uploaded files count
+      testScore: null // API doesn't provide test score
+    };
+  };
+
+  // Fetch students from API
+  const fetchStudents = async () => {
+    console.log('🔄 Fetching students from API...');
+    setLoading(true);
+    
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        toast.error('No authentication token found. Please login again.');
+        setStudents(mockStudents); // Fallback to mock data
+        return;
+      }
+
+      const baseUrl = 'http://localhost:8000';
+      console.log('📋 Request details:', {
+        url: `${baseUrl}/users/students`,
+        token: token ? `${token.substring(0, 20)}...` : 'No token'
+      });
+
+      const response = await fetch(`${baseUrl}/users/students`, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      console.log('📡 API Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('❌ API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        
+        let errorMessage;
+        try {
+          const parsedError = JSON.parse(errorData);
+          errorMessage = parsedError.detail || `HTTP ${response.status}: ${response.statusText}`;
+        } catch (parseError) {
+          errorMessage = `HTTP ${response.status}: ${errorData || response.statusText}`;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log('✅ API Success:', {
+        dataType: typeof data,
+        dataLength: Array.isArray(data) ? data.length : 'Not array',
+        data
+      });
+
+      // Transform API data to component format
+      if (Array.isArray(data)) {
+        console.log('📊 Response is array with', data.length, 'students');
+        const transformedStudents = data.map(transformStudentData);
+        console.log('🔄 Transformed students:', transformedStudents);
+        setStudents(transformedStudents);
+      } else {
+        console.log('🤷 Unexpected response format, using fallback data');
+        setStudents(mockStudents);
+      }
+
+    } catch (err) {
+      console.error('💥 Fetch error:', err);
+      toast.error(`Failed to fetch students: ${err.message}`);
+      // Use fallback data when API fails
+      console.log('🔄 Using fallback data due to API error');
+      setStudents(mockStudents);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load students on component mount
+  useEffect(() => {
+    fetchStudents();
+  }, []);
 
   const getStatusBadge = (status) => {
     const statusConfig = {
@@ -175,7 +277,7 @@ export function StudentList({ onSelectStudent }) {
     );
   };
 
-  const filteredStudents = mockStudents.filter((student) => {
+  const filteredStudents = students.filter((student) => {
     const matchesSearch =
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -186,13 +288,13 @@ export function StudentList({ onSelectStudent }) {
   });
 
   const stats = {
-    total: mockStudents.length,
-    approved: mockStudents.filter(s => s.status === 'approved').length,
-    reviewing: mockStudents.filter(s => s.status === 'reviewing').length,
-    pending: mockStudents.filter(s => s.status === 'pending').length,
+    total: students.length,
+    approved: students.filter(s => s.status === 'approved').length,
+    reviewing: students.filter(s => s.status === 'reviewing').length,
+    pending: students.filter(s => s.status === 'pending').length,
   };
 
-  const programs = Array.from(new Set(mockStudents.map(s => s.program)));
+  const programs = Array.from(new Set(students.map(s => s.program)));
 
   return (
     <ScrollArea className="h-full">
@@ -206,12 +308,29 @@ export function StudentList({ onSelectStudent }) {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" className="gap-2">
-              <Download className="h-4 w-4" />
-              Xuất Danh Sách
+            <Button 
+              variant="outline" 
+              className="gap-2"
+              onClick={fetchStudents}
+              disabled={loading}
+            >
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              {loading ? 'Đang tải...' : 'Tải lại danh sách'}
             </Button>
           </div>
         </div>
+
+        {/* Loading state */}
+        {loading && (
+          <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+            <span className="text-sm">Đang tải danh sách học sinh từ API...</span>
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -309,11 +428,17 @@ export function StudentList({ onSelectStudent }) {
           <CardHeader>
             <CardTitle>
               Danh Sách ({filteredStudents.length})
+              {loading && <span className="text-sm font-normal text-muted-foreground ml-2">- Đang tải...</span>}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y">
-              {filteredStudents.length === 0 ? (
+              {loading ? (
+                <div className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent mx-auto mb-2"></div>
+                  <div className="text-muted-foreground">Đang tải danh sách học sinh...</div>
+                </div>
+              ) : filteredStudents.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground">
                   Không tìm thấy học sinh nào phù hợp với bộ lọc
                 </div>
@@ -344,15 +469,15 @@ export function StudentList({ onSelectStudent }) {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Mail className="h-3 w-3" />
-                            <span className="truncate">{student.email}</span>
+                            <span className="truncate">{student.email || 'Chưa có email'}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <Phone className="h-3 w-3" />
-                            <span>{student.phone}</span>
+                            <span>{student.phone || 'Chưa có SĐT'}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
-                            <span className="truncate">{student.location}</span>
+                            <span className="truncate">{student.location || 'Chưa xác định'}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
@@ -363,22 +488,26 @@ export function StudentList({ onSelectStudent }) {
                         <div className="flex items-center gap-4 mt-2">
                           <div className="flex items-center gap-1 text-sm">
                             <GraduationCap className="h-3 w-3 text-muted-foreground" />
-                            <span>{student.program}</span>
+                            <span>{student.program || 'Chưa xác định'}</span>
                           </div>
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">GPA:</span>{' '}
-                            <span className="font-medium">{student.gpa.toFixed(2)}</span>
-                          </div>
+                          {student.gpa > 0 && (
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">GPA:</span>{' '}
+                              <span className="font-medium">{student.gpa.toFixed(2)}</span>
+                            </div>
+                          )}
                           {student.testScore && (
                             <div className="text-sm">
                               <span className="text-muted-foreground">Điểm Test:</span>{' '}
                               <span className="font-medium">{student.testScore}</span>
                             </div>
                           )}
-                          <div className="flex items-center gap-1 text-sm">
-                            <FileText className="h-3 w-3 text-muted-foreground" />
-                            <span>{student.uploadedFiles} tài liệu</span>
-                          </div>
+                          {student.uploadedFiles > 0 && (
+                            <div className="flex items-center gap-1 text-sm">
+                              <FileText className="h-3 w-3 text-muted-foreground" />
+                              <span>{student.uploadedFiles} tài liệu</span>
+                            </div>
+                          )}
                         </div>
                       </div>
 
