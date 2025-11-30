@@ -34,14 +34,14 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
     {
       id: 'ADMISSION_OFFICER',
       name: 'Admission Officer',
-      description: 'Student admission management - consultations, queue management, insights',
+      description: 'Customer admission management - consultations, queue management, insights',
       icon: GraduationCap,
-      color: 'bg-orange-100 text-orange-800 border-orange-200'
+      color: 'bg-green-100 text-green-800 border-green-200'
     },
     {
-      id: 'STUDENT',
-      name: 'Student Access',
-      description: 'Basic student privileges - profile access, limited features',
+      id: 'CUSTOMER',
+      name: 'Customer Access',
+      description: 'Basic customer privileges - profile access, limited features',
       icon: User,
       color: 'bg-gray-100 text-gray-800 border-gray-200'
     }

@@ -5,34 +5,35 @@ import { UserFilters } from './UserFilters';
 import { UserStats } from './UserStats';
 import { UserFormDialog } from './UserFormDialog';
 import { UserTable } from './UserTable';
+import { toast } from 'react-toastify';
 
 import PropTypes from 'prop-types';
 
 // Role mapping from role_id to role name
 const roleMapping = {
   1: 'SYSTEM_ADMIN',
-  2: 'CONTENT_MANAGER', 
-  3: 'ADMISSION_OFFICER',
-  4: 'CONSULTANT',
-  5: 'STUDENT',
-  null: 'STUDENT', // Default role for users without role_id
-  undefined: 'STUDENT'
+  2: 'CONSULTANT', 
+  3: 'CONTENT_MANAGER',
+  4: 'ADMISSION_OFFICER',
+  5: 'CUSTOMER',
+  null: 'CUSTOMER', // Default role for users without role_id
+  undefined: 'CUSTOMER'
 };
 
 // Permission name to ID mapping (permissions are the same as roles)
 // Note: These IDs should match your backend database permission_id values
 const PERMISSION_NAME_TO_ID = {
   'admin': 1,
-  'content_manager': 2,
-  'admission_officer': 3,
-  'consultant': 4,
-  'student': 5,
+  'consultant': 2,
+  'content_manager': 3,
+  'admission_officer': 4,
+  'customer': 5,
   // Also handle uppercase versions for compatibility
   'ADMIN': 1,
-  'CONTENT_MANAGER': 2,
-  'ADMISSION_OFFICER': 3,
-  'CONSULTANT': 4,
-  'STUDENT': 5,
+  'CONSULTANT': 2,
+  'CONTENT_MANAGER': 3,
+  'ADMISSION_OFFICER': 4,
+  'CUSTOMER': 5,
   // Handle SYSTEM_ADMIN alias
   'SYSTEM_ADMIN': 1
 };
@@ -40,15 +41,15 @@ const PERMISSION_NAME_TO_ID = {
 // Reverse mapping from permission ID to name
 const PERMISSION_ID_TO_NAME = {
   1: 'admin',
-  2: 'content_manager', 
-  3: 'admission_officer',
-  4: 'consultant',
-  5: 'student'
+  2: 'consultant', 
+  3: 'content_manager',
+  4: 'admission_officer',
+  5: 'customer'
 };
 
 // Function to transform API user data to frontend format
 const transformUserData = (apiUser) => {
-  const roleName = roleMapping[apiUser.role_id] || 'STUDENT';
+  const roleName = roleMapping[apiUser.role_id] || 'CUSTOMER';
   
   // Transform permissions from API format to frontend format
   let permissions = [roleName]; // Default to role name as permission
@@ -57,12 +58,12 @@ const transformUserData = (apiUser) => {
     // If API returns permission objects with permission_id
     permissions = apiUser.permissions.map(perm => {
       if (typeof perm === 'object' && perm.permission_id) {
-        return PERMISSION_ID_TO_NAME[perm.permission_id] || 'student';
+        return PERMISSION_ID_TO_NAME[perm.permission_id] || 'customer';
       } else if (typeof perm === 'string') {
         // If it's already a permission name, normalize to lowercase
         return perm.toLowerCase().replace('system_admin', 'admin');
       } else if (typeof perm === 'number') {
-        return PERMISSION_ID_TO_NAME[perm] || 'student';
+        return PERMISSION_ID_TO_NAME[perm] || 'customer';
       }
       return roleName.toLowerCase(); // Fallback to role name
     });
@@ -189,8 +190,6 @@ const initialUsers = [
 export function UserManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -201,19 +200,21 @@ export function UserManagement() {
     password: '',
     role: '',
     permissions: [],
+    phone_number: '',
+    interest_desired_major: '',
+    interest_region: '',
   });
 
   // Fetch users from API
   const fetchUsers = async () => {
     console.log('🔄 Fetching users from API...');
     setLoading(true);
-    setError(null);
     
     // Check if we have a valid token first
     const token = localStorage.getItem('access_token');
     if (!token) {
       console.error('❌ No token found in localStorage');
-      setError('No authentication token found. Please login again.');
+      toast.error('No authentication token found. Please login again.');
       setUsers(initialUsers);
       setLoading(false);
       return;
@@ -225,7 +226,7 @@ export function UserManagement() {
       const currentTime = Date.now() / 1000;
       if (payload.exp < currentTime) {
         console.error('❌ Token is expired');
-        setError('Authentication token expired. Please login again.');
+        toast.error('Authentication token expired. Please login again.');
         setUsers(initialUsers);
         setLoading(false);
         return;
@@ -233,7 +234,7 @@ export function UserManagement() {
       console.log('✅ Token is valid and not expired');
     } catch (e) {
       console.error('❌ Invalid token format:', e);
-      setError('Invalid authentication token. Please login again.');
+      toast.error('Invalid authentication token. Please login again.');
       setUsers(initialUsers);
       setLoading(false);
       return;
@@ -344,7 +345,7 @@ export function UserManagement() {
 
     } catch (err) {
       console.error('💥 Fetch error:', err);
-      setError(err.message);
+      toast.error(`Failed to fetch users: ${err.message}`);
       // Use fallback data when API fails
       console.log('🔄 Using fallback data due to API error');
       setUsers(initialUsers);
@@ -538,6 +539,54 @@ export function UserManagement() {
     }
   };
 
+  // Create new user API call
+  const createUser = async (userData) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const baseUrl = 'http://localhost:8000';
+      console.log('➕ Creating new user via API...');
+      console.log('📋 User data to create:', userData);
+
+      const response = await fetch(`${baseUrl}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(userData)
+      });
+
+      console.log('📡 Create User API Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('❌ Create User API Error:', errorData);
+        
+        let errorMessage;
+        try {
+          const parsedError = JSON.parse(errorData);
+          errorMessage = parsedError.detail || `HTTP ${response.status}`;
+        } catch (parseError) {
+          errorMessage = `HTTP ${response.status}: ${errorData}`;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log('✅ User created successfully:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('💥 Create user error:', error);
+      throw error;
+    }
+  };
+
   // Load users on component mount
   useEffect(() => {
     fetchUsers();
@@ -553,18 +602,29 @@ export function UserManagement() {
 
   const handleAddUser = () => {
     setEditingUser(null);
-    setFormData({ name: '', email: '', password: '', role: '', permissions: [] });
+    setFormData({ 
+      name: '', 
+      email: '', 
+      password: '', 
+      role: '', 
+      permissions: [], 
+      phone_number: '', 
+      interest_desired_major: '', 
+      interest_region: '' 
+    });
     setIsDialogOpen(true);
   };
 
   const handleCreateOrUpdate = async () => {
     if (!formData.name || !formData.email || !formData.role) return;
     if (!editingUser && !formData.password) return; // Password required for new users
+    if (!editingUser && !formData.phone_number) {
+      toast.error('Phone number is required for new users');
+      return;
+    }
 
     try {
       setLoading(true);
-      setError(null);
-      setSuccessMessage(null);
 
       if (editingUser) {
         // Update existing user - call API for permission updates
@@ -595,10 +655,10 @@ export function UserManagement() {
             contentManagerIsLeader
           );
           
-          setSuccessMessage('User permissions updated successfully!');
+          toast.success('User permissions updated successfully!');
         } else {
           console.log('📝 No permission changes detected');
-          setSuccessMessage('User information updated successfully!');
+          toast.success('User information updated successfully!');
         }
         
         // Update local state regardless
@@ -616,40 +676,84 @@ export function UserManagement() {
             : u
         ));
       } else {
-        // Create new user (no API call needed for now - this is local only)
-        console.log('➕ Creating new user locally...');
-        const newUser = {
-          id: Date.now().toString(),
-          name: formData.name,
-          username: formData.email.split('@')[0], // Generate username from email prefix
-          email: formData.email,
-          password: formData.password, // In real app, this would be hashed
-          role: formData.role, // Set the permanent role
-          permissions: formData.permissions, // Set initial permissions
-          status: 'active',
-          lastActive: 'Just now',
-          createdAt: new Date().toISOString().split('T')[0],
-          isBanned: false,
-          banReason: null,
+        // Create new user via API
+        console.log('➕ Creating new user via API...');
+        
+        // Map role name to role_id
+        const roleNameToId = {
+          'SYSTEM_ADMIN': 1,
+          'CONSULTANT': 2,
+          'CONTENT_MANAGER': 3,
+          'ADMISSION_OFFICER': 4,
+          'CUSTOMER': 5
         };
+        
+        const roleId = roleNameToId[formData.role];
+        if (!roleId) {
+          throw new Error(`Invalid role: ${formData.role}`);
+        }
+        
+        // Convert permission names to IDs
+        const permissionIds = formData.permissions
+          .map(permName => PERMISSION_NAME_TO_ID[permName])
+          .filter(id => id !== undefined); // Remove any unmapped permissions
+        
+        console.log('🔄 Mapped permission IDs:', permissionIds);
+        
+        // Determine leadership flags
+        const consultantIsLeader = formData.role === 'CONSULTANT' && 
+          (formData.permissions.includes('admin') || formData.permissions.includes('content_manager') || formData.permissions.length > 1);
+        const contentManagerIsLeader = formData.role === 'CONTENT_MANAGER' && 
+          (formData.permissions.includes('admin') || formData.permissions.includes('consultant') || formData.permissions.length > 1);
+        
+        // Prepare API request body
+        const requestBody = {
+          full_name: formData.name,
+          email: formData.email,
+          status: true,
+          password: formData.password,
+          role_id: roleId,
+          permissions: permissionIds,
+          phone_number: formData.phone_number || '',
+          consultant_is_leader: consultantIsLeader,
+          content_manager_is_leader: contentManagerIsLeader,
+          interest_desired_major: formData.interest_desired_major || '',
+          interest_region: formData.interest_region || ''
+        };
+        
+        console.log('📤 API Request body:', JSON.stringify(requestBody, null, 2));
+        
+        // Call the API
+        const createdUser = await createUser(requestBody);
+        
+        // Transform API response to frontend format
+        const newUser = transformUserData(createdUser);
+        
+        // Add to the users list
         setUsers([newUser, ...users]);
-        setSuccessMessage('New user created successfully!');
+        toast.success('New user created successfully!');
+        
+        // Refresh the user list to ensure we have the latest data
+        await fetchUsers();
       }
 
       // Reset form and close dialog
-      setFormData({ name: '', email: '', password: '', role: '', permissions: [] });
+      setFormData({ 
+        name: '', 
+        email: '', 
+        password: '', 
+        role: '', 
+        permissions: [], 
+        phone_number: '', 
+        interest_desired_major: '', 
+        interest_region: '' 
+      });
       setEditingUser(null);
       setIsDialogOpen(false);
       
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(null), 3000);
-      
     } catch (error) {
       console.error('💥 Create/Update user error:', error);
-      setError(`Failed to ${editingUser ? 'update' : 'create'} user: ${error.message}`);
-      
-      // Clear error after 5 seconds
-      setTimeout(() => setError(null), 5000);
+      toast.error(`Failed to ${editingUser ? 'update' : 'create'} user: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -663,6 +767,9 @@ export function UserManagement() {
       password: '', // Don't prefill password for security
       role: user.role,
       permissions: user.permissions || [],
+      phone_number: user.phone_number || '',
+      interest_desired_major: '',
+      interest_region: '',
     });
     setIsDialogOpen(true);
   };
@@ -682,8 +789,6 @@ export function UserManagement() {
   const handleBanUser = async (userId, isCurrentlyBanned) => {
     try {
       setLoading(true);
-      setError(null);
-      setSuccessMessage(null);
       
       // Find the user to check their current status
       const user = users.find(u => u.id === userId);
@@ -691,33 +796,26 @@ export function UserManagement() {
       
       // Check if user is admin - admins cannot be banned
       if (user.role === 'SYSTEM_ADMIN' || (user.permissions && user.permissions.includes('admin'))) {
-        setError('Cannot ban admin users. Admin users have special privileges.');
-        setTimeout(() => setError(null), 5000);
+        toast.error('Cannot ban admin users. Admin users have special privileges.');
         return;
       }
       
       if (user.status === 'active') {
         // User is active, so we're deactivating (banning) them
         await banUser(userId);
-        setSuccessMessage('User deactivated and banned successfully');
+        toast.success('User deactivated and banned successfully');
         console.log('✅ User deactivated and banned successfully');
       } else {
         // User is inactive, so we're activating (unbanning) them
         await unbanUser(userId);
-        setSuccessMessage('User activated and unbanned successfully');
+        toast.success('User activated and unbanned successfully');
         console.log('✅ User activated and unbanned successfully');
       }
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(null), 3000);
       
     } catch (error) {
       console.error('💥 Ban/Unban error:', error);
       const action = users.find(u => u.id === userId)?.status === 'active' ? 'deactivate' : 'activate';
-      setError(`Failed to ${action} user: ${error.message}`);
-      
-      // Show error for a few seconds then clear it
-      setTimeout(() => setError(null), 5000);
+      toast.error(`Failed to ${action} user: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -742,57 +840,6 @@ export function UserManagement() {
           <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
             <span className="text-sm">Loading users from API...</span>
-          </div>
-        )}
-
-        {/* Success message */}
-        {successMessage && (
-          <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg">
-            <span className="text-sm">✅ {successMessage}</span>
-          </div>
-        )}
-
-        {/* Error state */}
-        {error && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-              <span className="text-sm">⚠️ API Error: {error}</span>
-              <button 
-                onClick={fetchUsers}
-                className="text-xs bg-red-100 hover:bg-red-200 px-2 py-1 rounded"
-              >
-                Retry
-              </button>
-            </div>
-            {error.includes("Admin permissions required") && (
-              <div className="bg-yellow-50 border border-yellow-200 px-3 py-2 rounded-lg text-sm">
-                <div className="font-medium text-yellow-800 mb-1">🔧 Troubleshooting:</div>
-                <div className="text-yellow-700 space-y-1">
-                  <div>• JWT token user doesn't have admin permissions in backend database</div>
-                  <div>• Try logging in with a different admin account</div>
-                  <div>• Or check which user ID the JWT token belongs to</div>
-                  <div>• Using fallback data for now</div>
-                  <div className="mt-2">
-                    <button 
-                      onClick={() => {
-                        const token = localStorage.getItem('access_token');
-                        if (token) {
-                          try {
-                            const payload = JSON.parse(atob(token.split(".")[1]));
-                            alert(`JWT Token User ID: ${payload.user_id || payload.sub}\nRole ID: ${payload.role_id}\n\nFrontend User ID: ${JSON.parse(sessionStorage.getItem("demo_user") || "{}").id}`);
-                          } catch (e) {
-                            alert('Could not decode token');
-                          }
-                        }
-                      }}
-                      className="bg-yellow-100 hover:bg-yellow-200 px-2 py-1 rounded text-xs"
-                    >
-                      Debug Token
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 

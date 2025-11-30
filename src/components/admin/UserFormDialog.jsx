@@ -26,6 +26,18 @@ export function UserFormDialog({
     onFormChange({ ...formData, password: e.target.value });
   };
 
+  const handlePhoneChange = (e) => {
+    onFormChange({ ...formData, phone_number: e.target.value });
+  };
+
+  const handleInterestMajorChange = (e) => {
+    onFormChange({ ...formData, interest_desired_major: e.target.value });
+  };
+
+  const handleInterestRegionChange = (e) => {
+    onFormChange({ ...formData, interest_region: e.target.value });
+  };
+
   const handleRoleChange = (role) => {
     onFormChange({ ...formData, role, permissions: [] }); // Reset permissions when role changes
   };
@@ -92,6 +104,41 @@ export function UserFormDialog({
             </div>
           )}
 
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={formData.phone_number || ''}
+              onChange={handlePhoneChange}
+              placeholder="Enter phone number"
+            />
+          </div>
+
+          {!editingUser && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="interest_major">Interest - Desired Major (Optional)</Label>
+                <Input
+                  id="interest_major"
+                  value={formData.interest_desired_major || ''}
+                  onChange={handleInterestMajorChange}
+                  placeholder="e.g. Computer Science"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="interest_region">Interest - Region (Optional)</Label>
+                <Input
+                  id="interest_region"
+                  value={formData.interest_region || ''}
+                  onChange={handleInterestRegionChange}
+                  placeholder="e.g. Hanoi"
+                />
+              </div>
+            </>
+          )}
+
           <div className="space-y-6">
             {/* Role Selection */}
             <RoleSelector
@@ -135,6 +182,9 @@ UserFormDialog.propTypes = {
     password: PropTypes.string,
     role: PropTypes.string,
     permissions: PropTypes.arrayOf(PropTypes.string),
+    phone_number: PropTypes.string,
+    interest_desired_major: PropTypes.string,
+    interest_region: PropTypes.string,
   }).isRequired,
   onFormChange: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
