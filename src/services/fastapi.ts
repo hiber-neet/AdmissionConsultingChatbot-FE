@@ -12,6 +12,57 @@ import {
 import { API_CONFIG } from '../config/api.js';
 
 import { LoginResponse } from '../utils/fastapi-client';
+
+// Analytics types
+export interface KnowledgeGap {
+  id: number;
+  question: string;
+  frequency: number;
+  priority: 'high' | 'medium' | 'low';
+  category: string;
+  suggestedAction: string;
+  last_asked?: string;
+  first_asked?: string;
+  question_span_days?: number;
+  match_score?: number;
+  in_grace_period?: boolean;
+}
+
+export interface LowSatisfactionAnswer {
+  id: number;
+  question: string;
+  currentSatisfaction: number;
+  targetSatisfaction: number;
+  feedback: string;
+  suggestion: string;
+  usage_count?: number;
+  success_rate?: number;
+}
+
+export interface TrendingTopic {
+  id: number;
+  topic: string;
+  growthRate: number;
+  questionsCount: number;
+  description: string;
+  action: string;
+  timeframe?: string;
+}
+
+export interface AnalyticsSummary {
+  knowledge_gaps_count: number;
+  low_satisfaction_count: number;
+  trending_topics_count: number;
+  total_interactions: number;
+  existing_qa_count: number;
+  user_questions_count: number;
+}
+
+export interface CategoryStatistic {
+  category: string;
+  total_questions: number;
+  total_times_asked: number;
+}
 // Articles API
 export const articlesAPI = {
   getAll: () => fastAPIClient.get<Article[]>('/articles'),
@@ -105,6 +156,20 @@ export const riasecAPI = {
   getResults: (id: number) => fastAPIClient.get(`/riasec/results/${id}`),
 };
 
+// Analytics API
+export const analyticsAPI = {
+  getKnowledgeGaps: (days?: number, minFrequency?: number) => 
+    fastAPIClient.get<KnowledgeGap[]>(`/analytics/knowledge-gaps?days=${days || 30}&min_frequency=${minFrequency || 3}`),
+  getLowSatisfactionAnswers: (threshold?: number, minUsage?: number) =>
+    fastAPIClient.get<LowSatisfactionAnswer[]>(`/analytics/low-satisfaction-answers?threshold=${threshold || 3.5}&min_usage=${minUsage || 5}`),
+  getTrendingTopics: (days?: number, minQuestions?: number) =>
+    fastAPIClient.get<TrendingTopic[]>(`/analytics/trending-topics?days=${days || 14}&min_questions=${minQuestions || 5}`),
+  getAnalyticsSummary: () =>
+    fastAPIClient.get<AnalyticsSummary>('/analytics/analytics-summary'),
+  getCategoryStatistics: (days?: number) =>
+    fastAPIClient.get<CategoryStatistic[]>(`/analytics/category-statistics?days=${days || 30}`)
+};
+
 // Export all APIs
 export {
   articlesAPI as fastAPIArticles,
@@ -116,4 +181,5 @@ export {
   chatAPI as fastAPIChat,
   knowledgeAPI as fastAPIKnowledge,
   riasecAPI as fastAPIRiasec,
+  analyticsAPI as fastAPIAnalytics,
 };

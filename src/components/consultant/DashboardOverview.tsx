@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   MessageSquare, 
   Target, 
   Clock, 
   AlertCircle,
   TrendingUp,
-  Plus
+  Plus,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/system_users/card';
 import { Button } from '../ui/system_users/button';
@@ -26,6 +27,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import { analyticsAPI, KnowledgeGap } from '../../services/fastapi';
 
 const questionsOverTimeData = [
   { date: 'Oct 1', queries: 245 },
@@ -45,45 +47,58 @@ const categoryData = [
   { name: 'Other', value: 90, color: '#6B7280' },
 ];
 
-const unansweredQuestions = [
-  {
-    id: 1,
-    question: 'What are the housing options for international students?',
-    timestamp: '2 hours ago',
-    category: 'Campus Life',
-  },
-  {
-    id: 2,
-    question: 'Can I defer my admission to next semester?',
-    timestamp: '4 hours ago',
-    category: 'Admissions',
-  },
-  {
-    id: 3,
-    question: 'What is the policy for transfer credits from community colleges?',
-    timestamp: '5 hours ago',
-    category: 'Academic',
-  },
-  {
-    id: 4,
-    question: 'Are there part-time MBA programs available?',
-    timestamp: '6 hours ago',
-    category: 'Programs',
-  },
-  {
-    id: 5,
-    question: 'How do I update my contact information after applying?',
-    timestamp: '8 hours ago',
-    category: 'Applications',
-  },
-];
-
 interface DashboardOverviewProps {
   onNavigateToTemplates?: (question: string, action: 'add') => void;
 }
 
 export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewProps = {}) {
   const [timeRange, setTimeRange] = useState<'today' | 'week'>('week');
+  
+  // API state for unanswered questions
+  const [unansweredQuestions, setUnansweredQuestions] = useState<KnowledgeGap[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch unanswered questions (knowledge gaps)
+  useEffect(() => {
+    const fetchUnansweredQuestions = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        // Get knowledge gaps from last 7 days, minimum frequency 1 to get more recent questions
+        const response = await analyticsAPI.getKnowledgeGaps(7, 1);
+        // Sort by last_asked date (most recent first) and take only 5
+        const sortedGaps = (response || [])
+          .filter(gap => gap.last_asked) // Only include items with last_asked date
+          .sort((a, b) => new Date(b.last_asked!).getTime() - new Date(a.last_asked!).getTime())
+          .slice(0, 5);
+        setUnansweredQuestions(sortedGaps);
+      } catch (err: any) {
+        console.error('Error fetching unanswered questions:', err);
+        setError(err.response?.data?.detail || 'Failed to fetch unanswered questions');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUnansweredQuestions();
+  }, []);
+
+  // Helper function to format relative time
+  const formatRelativeTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      return 'Less than 1 hour ago';
+    } else if (diffInHours < 24) {
+      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    }
+  };
 
   return (
     <ScrollArea className="min-h-screen h-full">
@@ -254,39 +269,95 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
                   Questions the chatbot couldn't answer - add them to improve coverage
                 </CardDescription>
               </div>
-              <Badge variant="destructive" className="gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {unansweredQuestions.length} pending
-              </Badge>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {unansweredQuestions.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-start justify-between gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                <span>Loading unanswered questions...</span>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8 text-red-600">
+                <p>Error: {error}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => window.location.reload()}
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-medium">{item.question}</p>
-                      <Badge variant="outline" className="text-xs">
-                        {item.category}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{item.timestamp}</p>
-                  </div>
-                  <Button 
-                    size="sm" 
-                    className="bg-[#3B82F6] hover:bg-[#2563EB] flex-shrink-0"
-                    onClick={() => onNavigateToTemplates?.(item.question, 'add')}
+                  Retry
+                </Button>
+              </div>
+            ) : unansweredQuestions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No recent unanswered questions found.</p>
+                <p className="text-sm">Great job! Your knowledge base seems comprehensive.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {unansweredQuestions.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-start justify-between gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                   >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add to KB
-                  </Button>
-                </div>
-              ))}
-            </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium">{item.question}</p>
+                        <Badge variant="outline" className="text-xs">
+                          {item.category}
+                        </Badge>
+                        <Badge 
+                          variant={item.priority === 'high' ? 'destructive' : item.priority === 'medium' ? 'default' : 'secondary'} 
+                          className="text-xs"
+                        >
+                          {item.priority} priority
+                        </Badge>
+                        {item.in_grace_period && (
+                          <Badge variant="default" className="text-xs bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
+                            Monitoring
+                          </Badge>
+                        )}
+                        {item.match_score !== undefined && item.match_score > 0.3 && item.match_score < 0.6 && (
+                          <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+                            Partial Match
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>Asked {item.frequency} times</span>
+                        {item.last_asked && (
+                          <>
+                            <span>•</span>
+                            <span>{formatRelativeTime(item.last_asked)}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      className={`flex-shrink-0 ${
+                        item.in_grace_period 
+                          ? 'bg-yellow-600 hover:bg-yellow-700' 
+                          : item.match_score !== undefined && item.match_score > 0.3 
+                            ? 'bg-orange-600 hover:bg-orange-700'
+                            : 'bg-[#3B82F6] hover:bg-[#2563EB]'
+                      }`}
+                      onClick={() => onNavigateToTemplates?.(item.question, 'add')}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      {item.in_grace_period 
+                        ? 'Monitor' 
+                        : item.match_score !== undefined && item.match_score > 0.3 
+                          ? 'Improve' 
+                          : 'Add to KB'
+                      }
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
