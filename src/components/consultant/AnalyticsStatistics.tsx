@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Search, 
-  ArrowUpDown
+  ArrowUpDown,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/system_users/card';
 import { Input } from '../ui/system_users/input';
@@ -17,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '../ui/system_users/table';
+import { analyticsAPI, CategoryStatistic } from '../../services/fastapi';
 
 interface QuestionData {
   id: number;
@@ -95,8 +97,44 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
   const [dateRange, setDateRange] = useState('Last 30 Days');
   const [sortField, setSortField] = useState<keyof QuestionData>('timesAsked');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [categorySortField, setCategorySortField] = useState<'category' | 'totalQuestions'>('totalQuestions');
+  const [categorySortField, setCategorySortField] = useState<'category' | 'total_questions'>('total_questions');
   const [categorySortDirection, setCategorySortDirection] = useState<'asc' | 'desc'>('desc');
+  
+  // API state
+  const [categoryStats, setCategoryStats] = useState<CategoryStatistic[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get days based on date range
+  const getDaysFromRange = (range: string): number => {
+    switch (range) {
+      case 'Last 7 Days': return 7;
+      case 'Last 30 Days': return 30;
+      case 'Last 90 Days': return 90;
+      case 'All Time': return 365 * 10; // Large number for all time
+      default: return 30;
+    }
+  };
+
+  // Fetch category statistics
+  useEffect(() => {
+    const fetchCategoryStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const days = getDaysFromRange(dateRange);
+        const response = await analyticsAPI.getCategoryStatistics(days);
+        setCategoryStats(response || []);
+      } catch (err: any) {
+        console.error('Error fetching category statistics:', err);
+        setError(err.response?.data?.detail || 'Failed to fetch category statistics');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategoryStats();
+  }, [dateRange]);
 
   const filteredData = questionData
     .filter(item => {
@@ -115,27 +153,8 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
       return 0;
     });
 
-  // Calculate category statistics
-  const categoryStats = questionData.reduce((acc, item) => {
-    if (!acc[item.category]) {
-      acc[item.category] = {
-        category: item.category,
-        totalQuestions: 0,
-        totalTimesAsked: 0,
-      };
-    }
-    
-    acc[item.category].totalQuestions += 1;
-    acc[item.category].totalTimesAsked += item.timesAsked;
-    
-    return acc;
-  }, {} as Record<string, {
-    category: string;
-    totalQuestions: number;
-    totalTimesAsked: number;
-  }>);
-
-  const categoryData = Object.values(categoryStats).sort((a, b) => {
+  // Sort category data from API
+  const sortedCategoryData = [...categoryStats].sort((a, b) => {
     const aVal = a[categorySortField];
     const bVal = b[categorySortField];
     
@@ -159,7 +178,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
     }
   };
 
-  const handleCategorySort = (field: 'category' | 'totalQuestions') => {
+  const handleCategorySort = (field: 'category' | 'total_questions') => {
     if (categorySortField === field) {
       setCategorySortDirection(categorySortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -232,48 +251,71 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="h-12">
-                  <TableHead className="py-3">
-                    <button
-                      onClick={() => handleCategorySort('category')}
-                      className="flex items-center gap-1 hover:text-foreground font-medium"
-                    >
-                      Category
-                      <ArrowUpDown className="h-3.5 w-3.5" />
-                    </button>
-                  </TableHead>
-                  <TableHead className="text-right py-3">
-                    <button
-                      onClick={() => handleCategorySort('totalQuestions')}
-                      className="flex items-center gap-1 hover:text-foreground ml-auto font-medium"
-                    >
-                      Total Questions
-                      <ArrowUpDown className="h-3.5 w-3.5" />
-                    </button>
-                  </TableHead>
-                  <TableHead className="text-right py-3">
-                    <span className="font-medium">Total Times Asked</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {categoryData.map((category) => (
-                  <TableRow key={category.category} className="h-14">
-                    <TableCell className="py-3">
-                      <Badge variant="outline" className="text-sm px-2.5 py-1">{category.category}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right py-3 text-base font-medium">
-                      {category.totalQuestions}
-                    </TableCell>
-                    <TableCell className="text-right py-3 text-base">
-                      {category.totalTimesAsked}
-                    </TableCell>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                <span>Loading category statistics...</span>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8 text-red-600">
+                <p>Error: {error}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : sortedCategoryData.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No category data available for the selected time period.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="h-12">
+                    <TableHead className="py-3">
+                      <button
+                        onClick={() => handleCategorySort('category')}
+                        className="flex items-center gap-1 hover:text-foreground font-medium"
+                      >
+                        Category
+                        <ArrowUpDown className="h-3.5 w-3.5" />
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-right py-3">
+                      <button
+                        onClick={() => handleCategorySort('total_questions')}
+                        className="flex items-center gap-1 hover:text-foreground ml-auto font-medium"
+                      >
+                        Total Questions
+                        <ArrowUpDown className="h-3.5 w-3.5" />
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-right py-3">
+                      <span className="font-medium">Total Times Asked</span>
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {sortedCategoryData.map((category) => (
+                    <TableRow key={category.category} className="h-14">
+                      <TableCell className="py-3">
+                        <Badge variant="outline" className="text-sm px-2.5 py-1">{category.category}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right py-3 text-base font-medium">
+                        {category.total_questions}
+                      </TableCell>
+                      <TableCell className="text-right py-3 text-base">
+                        {category.total_times_asked}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
 
