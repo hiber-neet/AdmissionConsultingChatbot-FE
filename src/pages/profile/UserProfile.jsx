@@ -6,6 +6,13 @@ import Header from "@/components/header/Header";
 import banner from "@/assets/images/login-private.jpg";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/Auth";
+import {
+  joinQueue,
+  getQueueStatus,
+  sendSessionMessage,
+  endSession,
+  getSessionMessages,
+} from "@/services/liveChat";
 
 // import { BASE } from "@/configs/base";
 
@@ -140,7 +147,6 @@ const [activeId, setActiveId] = useState(convs[0]?.id || null);
   const partialRef = useRef("");
   const [wsReady, setWsReady] = useState(false);
 
-
 // load messages khi đổi phiên
 useEffect(() => {
   const c = convs.find(c => c.id === activeId);
@@ -189,17 +195,154 @@ const pushToActive = (msg) => {
 };
 
 
+//Live Chat with admission official 
+const [liveStatus, setLiveStatus] = useState("idle"); 
+
+// "idle" | "in_queue" | "chatting" | "ended"
+const [queueInfo, setQueueInfo] = useState(null);     // {queue_id, position,...}
+const [sessionInfo, setSessionInfo] = useState(null); // {session_id, official_name,...}
+const [liveMessages, setLiveMessages] = useState([]); // [{sender, content, created_at}, ...]
+const [liveInput, setLiveInput] = useState("");
+const customerEventSourceRef = useRef(null);
 
 
-  
-  const [consultants] = useState([
-    { id: "c1", name: "Consultant 1", role: "Tư vấn tuyển sinh", avatar: "https://i.pravatar.cc/100?img=11" },
-    { id: "c2", name: "Consultant 2", role: "Tư vấn học vụ", avatar: "https://i.pravatar.cc/100?img=12" },
-    { id: "c3", name: "Consultant 3", role: "Hướng nghiệp", avatar: "https://i.pravatar.cc/100?img=13" },
-  ]);
-  const [selectedConsultant, setSelectedConsultant] = useState(null);
-  const [cMessages, setCMessages] = useState({});
-  const [cInput, setCInput] = useState("");
+const handleJoinQueue = async () => {
+  if (!user) {
+    alert("Bạn cần đăng nhập trước.");
+    return;
+  }
+  try {
+    setLiveStatus("in_queue");
+    const data = await joinQueue(user.id);
+    setQueueInfo(data);
+    console.log("join_queue result:", data);
+  } catch (err) {
+    console.error("joinQueue error:", err);
+
+    // Nếu là lỗi từ axios
+    const msg =
+      err?.response?.data?.detail ||
+      err?.response?.data?.message ||
+      "Không thể tham gia hàng chờ, vui lòng thử lại.";
+
+    alert(msg);
+    setLiveStatus("idle");
+  }
+};
+
+const handleSendLiveMessage = async (e) => {
+  e.preventDefault();
+  if (!liveInput.trim() || !sessionInfo?.session_id) return;
+  const content = liveInput.trim();
+
+  // push message phía client ngay
+  const msg = {
+    sender: "customer",
+    content,
+    created_at: new Date().toISOString(),
+  };
+  setLiveMessages((prev) => [...prev, msg]);
+  setLiveInput("");
+
+  try {
+    await sendSessionMessage(sessionInfo.session_id, {
+      sender: "customer",
+      content,
+    });
+  } catch (err) {
+    console.error(err);
+    alert("Gửi thất bại, thử lại.");
+  }
+};
+
+const handleEndLiveChat = async () => {
+  if (!sessionInfo?.session_id) return;
+  try {
+    await endSession(sessionInfo.session_id, user.id); // thêm user.id
+  } catch (err) {
+    console.error(err);
+  }
+  setLiveStatus("ended");
+  setSessionInfo(null);
+};
+
+
+// SSE cho customer: nhận sự kiện queue + message từ BE
+useEffect(() => {
+  if (tab !== "consultant" || !user) {
+    // rời tab hoặc chưa login => đóng SSE
+    if (customerEventSourceRef.current) {
+      customerEventSourceRef.current.close();
+      customerEventSourceRef.current = null;
+    }
+    return;
+  }
+
+  const token = localStorage.getItem("access_token") || "";
+  // nếu BE cần token, cho phép đọc từ query ?token=
+  const url = `http://127.0.0.1:8000/live_chat/livechat/sse/customer/${user.id}?token=${encodeURIComponent(
+    token
+  )}`;
+
+  const es = new EventSource(url);
+  customerEventSourceRef.current = es;
+
+  es.onopen = () => {
+    console.log("SSE customer connected");
+  };
+
+  es.onerror = (err) => {
+    console.error("SSE error", err);
+    // optional: es.close();
+  };
+
+es.onmessage = async (event) => {
+  try {
+    const data = JSON.parse(event.data);
+    console.log("SSE data:", data);
+
+    // nếu BE gửi field "event" thì đổi data.type -> data.event
+    switch (data.type /* hoặc data.event */) {
+      case "queued": {
+        const qs = await getQueueStatus(user.id);
+        setQueueInfo(qs);
+        // optional: setLiveStatus("in_queue");
+        break;
+      }
+
+       case "accepted":
+        // data: { event: "accepted", session_id, official_id }
+        setSessionInfo({
+          session_id: data.session_id,
+          official_name: "Tư vấn viên", // tạm, nếu BE gửi tên thì map vào
+        });
+        setLiveStatus("chatting");
+
+        // load lịch sử tin nhắn nếu cần
+        if (data.session_id) {
+          const msgs = await getSessionMessages(data.session_id);
+          setLiveMessages(msgs || []);
+        }
+        break;
+
+      case "chat_ended":
+        setLiveStatus("ended");
+        break;
+
+      default:
+        console.log("Unhandled SSE:", data);
+    }
+  } catch (e) {
+    console.warn("Non-JSON SSE:", event.data);
+  }
+};
+
+  return () => {
+    es.close();
+  };
+}, [tab, user]);
+
+
 
   const openConsultant = (c) => {
     setSelectedConsultant(c);
@@ -287,22 +430,24 @@ useEffect(() => {
 
       const data = res.data;
       console.log("🔥 Profile from backend:", data);
+setForm({
+  fullName: data.full_name || "",
+  gender: data.gender || "male",
+  dob: data.dob || "",
+  email: data.email || user.email,
+  phone: data.phone_number || "",
+  address: data.address || "",
+  school: data.school || "",
+  grade: data.grade || "12",
+  admissionScore: data.admission_score?.toString() || "",
+  subjects: data.subjects || "",
 
-      // map field từ BE sang form của FE
-      setForm({
-        fullName: data.full_name || "",
-        gender: data.gender || "male",
-        dob: data.dob || "",
-        email: data.email || user.email,         // fallback
-        phone: data.phone || "",
-        address: data.address || "",
-        school: data.school || "",
-        grade: data.grade || "12",
-        admissionScore: data.admission_score?.toString() || "",
-        subjects: data.subjects || "",
-        preferredMajor: data.preferred_major || "",
-        riasecCode: data.riasec_code || "",
-      });
+  preferredMajor:
+    data.student_profile?.interest?.desired_major || "",
+
+  riasecCode: data.student_profile?.riasec_result?.result || "",
+});
+
     } catch (error) {
       console.error("Failed to fetch profile:", error);
     }
@@ -733,29 +878,56 @@ const renderScoreInput = (subject, grade) => (
                       />
                     </div>
 
-                    {/* Tổ hợp môn */}
-                    <div>
-                      <label className="text-sm text-gray-500">Combination of 3 subjects</label>
-                      <input
-                        name="subjects"
-                        value={form.subjects}
-                        onChange={handleChange}
-                        disabled={!editing}
-                        className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
-                      />
-                    </div>
+{/* Tổ hợp môn */}
+<div>
+  <label className="text-sm text-gray-500">Combination of 3 subjects</label>
+  <select
+    name="subjects"
+    value={form.subjects}
+    onChange={handleChange}
+    disabled={!editing}
+    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm 
+               focus:outline-none focus:ring-2 focus:ring-[#EB5A0D] bg-white"
+  >
+    <option value="">Chọn tổ hợp</option>
+    {/* Khối A */}
+    <option value="A00">A00 - Toán, Lý, Hóa</option>
+    <option value="A01">A01 - Toán, Lý, Anh</option>
+
+    {/* Khối B */}
+    <option value="B00">B00 - Toán, Hóa, Sinh</option>
+
+    {/* Khối C */}
+    <option value="C00">C00 - Văn, Sử, Địa</option>
+
+    {/* Khối D */}
+    <option value="D01">D01 - Toán, Văn, Anh</option>
+    <option value="D07">D07 - Toán, Hóa, Anh</option>
+    <option value="D90">D90 - Toán, Anh, KHTN</option>
+  </select>
+</div>
+
 
                     {/* Ngành mong muốn */}
-                    <div>
-                      <label className="text-sm text-gray-500">Preferred major</label>
-                      <input
-                        name="preferredMajor"
-                        value={form.preferredMajor}
-                        onChange={handleChange}
-                        disabled={!editing}
-                        className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
-                      />
-                    </div>
+<div>
+  <label className="text-sm text-gray-500">Preferred major</label>
+  <select
+    name="preferredMajor"
+    value={form.preferredMajor}
+    onChange={handleChange}
+    disabled={!editing}
+    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm 
+               focus:outline-none focus:ring-2 focus:ring-[#EB5A0D] bg-white"
+  >
+    <option value="">Chọn ngành học</option>
+    <option value="software">Kỹ thuật phần mềm</option>
+    <option value="design">Thiết kế đồ họa</option>
+    <option value="ai">Trí tuệ nhân tạo</option>
+    <option value="security">An ninh mạng</option>
+    <option value="business">Kinh doanh số</option>
+    <option value="game">Thiết kế trò chơi</option>
+  </select>
+</div>
 
                     {/* Mã RIASEC (readonly nếu muốn) */}
                     <div>
@@ -916,80 +1088,139 @@ const renderScoreInput = (subject, grade) => (
   </div>
 )}
 
-            {tab === "consultant" && (
-              <div className="rounded-2xl border border-gray-200 bg-white grid grid-cols-12 overflow-hidden min-h-[600px]">
-                <aside className="col-span-12 md:col-span-4 border-r border-gray-100">
-                  <div className="bg-[#EB5A0D] text-white px-6 py-3 text-lg font-semibold">
-                    Danh sách tư vấn viên
-                  </div>
-                  <ul className="divide-y divide-gray-100">
-                    {consultants.map((c) => (
-                      <li
-                        key={c.id}
-                        onClick={() => openConsultant(c)}
-                        className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition ${
-                          selectedConsultant?.id === c.id ? "bg-[#FFF3ED]" : ""
-                        }`}
-                      >
-                        <img src={c.avatar} alt={c.name} className="w-10 h-10 rounded-full object-cover" />
-                        <div>
-                          <div className="font-medium">{c.name}</div>
-                          <div className="text-xs text-gray-500">{c.role}</div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </aside>
+{tab === "consultant" && (
+  <div className="rounded-2xl border border-gray-200 bg-white flex flex-col min-h-[600px]">
+    <div className="bg-[#EB5A0D] text-white px-6 py-3 flex items-center justify-between">
+      <div className="text-lg font-semibold">Live chat với tư vấn viên</div>
+      <div className="text-sm">
+        Trạng thái:{" "}
+        <span className="font-semibold">
+          {liveStatus === "idle" && "Chưa bắt đầu"}
+          {liveStatus === "in_queue" && "Đang trong hàng chờ"}
+          {liveStatus === "chatting" && "Đang trò chuyện"}
+          {liveStatus === "ended" && "Đã kết thúc"}
+        </span>
+      </div>
+    </div>
 
-                <section className="col-span-12 md:col-span-8 flex flex-col">
-                  <div className="bg-[#EB5A0D] text-white px-6 py-3 text-lg font-semibold text-center">
-                    {selectedConsultant ? `Chat với ${selectedConsultant.name}` : "Chọn một tư vấn viên để bắt đầu"}
-                  </div>
+    {/* Khu info hàng chờ / tư vấn viên */}
+    <div className="px-6 py-3 border-b border-gray-100 flex flex-wrap items-center gap-4 text-sm text-gray-700">
+      {liveStatus === "idle" && (
+        <>
+          <p>
+            Ấn nút dưới đây để vào hàng chờ và kết nối với tư vấn viên tuyển sinh.
+          </p>
+          <button
+            onClick={handleJoinQueue}
+            className="ml-auto bg-[#EB5A0D] text-white px-4 py-2 rounded-md hover:opacity-90"
+          >
+            Bắt đầu chat
+          </button>
+        </>
+      )}
 
-                  <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
-                    {!selectedConsultant ? (
-                      <div className="text-gray-400 text-center mt-10">
-                        Hãy chọn một tư vấn viên ở danh sách bên trái để trò chuyện 💬
-                      </div>
-                    ) : (
-                      (cMessages[selectedConsultant.id] || []).map((msg, i) => (
-                        <div key={i} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
-                          <div
-                            className={`px-4 py-2 max-w-[70%] rounded-xl text-sm ${
-                              msg.sender === "user" ? "bg-[#EB5A0D] text-white" : "bg-gray-200 text-gray-800"
-                            }`}
-                          >
-                            {msg.text}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  <form onSubmit={handleConsultSend} className="flex items-center gap-3 border-t border-gray-200 p-4">
-                    <input
-                      type="text"
-                      placeholder={selectedConsultant ? "Nhập tin nhắn..." : "Chọn tư vấn viên trước khi nhập..."}
-                      value={cInput}
-                      onChange={(e) => setCInput(e.target.value)}
-                      disabled={!selectedConsultant}
-                      className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D] disabled:bg-gray-100"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!selectedConsultant || !cInput.trim()}
-                      className={`px-4 py-2 rounded-md text-white transition ${
-                        !selectedConsultant || !cInput.trim()
-                          ? "bg-gray-300 cursor-not-allowed"
-                          : "bg-[#EB5A0D] hover:opacity-90"
-                      }`}
-                    >
-                      Gửi
-                    </button>
-                  </form>
-                </section>
-              </div>
+      {liveStatus === "in_queue" && (
+        <>
+          <p>
+            Bạn đang trong hàng chờ…
+            {queueInfo?.position != null && (
+              <span> Vị trí hiện tại: {queueInfo.position}</span>
             )}
+          </p>
+        </>
+      )}
+
+      {liveStatus === "chatting" && (
+        <>
+          <p>
+            Đang trò chuyện với{" "}
+            <span className="font-semibold">
+              {sessionInfo?.official_name || "tư vấn viên"}
+            </span>
+          </p>
+          <button
+            onClick={handleEndLiveChat}
+            className="ml-auto text-sm text-red-600 hover:underline"
+          >
+            Kết thúc phiên
+          </button>
+        </>
+      )}
+
+      {liveStatus === "ended" && (
+        <>
+          <p>Phiên chat đã kết thúc. Bạn có thể bắt đầu lại nếu cần.</p>
+          <button
+            onClick={handleJoinQueue}
+            className="ml-auto bg-[#EB5A0D] text-white px-4 py-2 rounded-md hover:opacity-90"
+          >
+            Bắt đầu lại
+          </button>
+        </>
+      )}
+    </div>
+
+    {/* KHUNG CHAT */}
+    <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-3">
+      {!liveMessages.length ? (
+        <p className="text-gray-400 text-center mt-10">
+          {liveStatus === "idle"
+            ? "Chưa có cuộc hội thoại nào."
+            : "Đang chờ tin nhắn..."}
+        </p>
+      ) : (
+        liveMessages.map((m, idx) => (
+          <div
+            key={idx}
+            className={`flex ${
+              m.sender === "customer" ? "justify-end" : "justify-start"
+            }`}
+          >
+            <div
+              className={`px-4 py-2 max-w-[70%] rounded-xl text-sm ${
+                m.sender === "customer"
+                  ? "bg-[#EB5A0D] text-white"
+                  : "bg-white text-gray-800 border border-gray-200"
+              }`}
+            >
+              {m.content}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+
+    {/* INPUT */}
+    <form
+      onSubmit={handleSendLiveMessage}
+      className="flex items-center gap-3 border-t border-gray-200 p-4"
+    >
+      <input
+        type="text"
+        placeholder={
+          liveStatus === "chatting"
+            ? "Nhập tin nhắn..."
+            : "Hãy vào hàng chờ để bắt đầu chat..."
+        }
+        value={liveInput}
+        onChange={(e) => setLiveInput(e.target.value)}
+        disabled={liveStatus !== "chatting"}
+        className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D] disabled:bg-gray-100"
+      />
+      <button
+        type="submit"
+        disabled={liveStatus !== "chatting" || !liveInput.trim()}
+        className={`px-4 py-2 rounded-md text-white ${
+          liveStatus !== "chatting" || !liveInput.trim()
+            ? "bg-gray-300 cursor-not-allowed"
+            : "bg-[#EB5A0D] hover:opacity-90"
+        }`}
+      >
+        Gửi
+      </button>
+    </form>
+  </div>
+)}
 
             {tab === "transcript" && (
               <div className="rounded-2xl border border-gray-200 bg-white p-6">

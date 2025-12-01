@@ -41,18 +41,30 @@ const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
   try {
-    // Có thể thêm validate đơn giản
-    if (!formData.name || !formData.email || !formData.password) {
+    
+    if (!formData.name || !formData.email || !formData.password || !formData.phone) {
       alert('Vui lòng điền đầy đủ Họ tên, Email, Password');
       return;
     }
 
+    const phoneRegex = /^0\d{9}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      alert("Số điện thoại phải bắt đầu bằng 0 và gồm 10 chữ số");
+      return;
+    }
+
+
     // Map sang payload mà BE cần
     const payload = {
-      username: formData.email.split('@')[0],   // hoặc cho user nhập riêng nếu muốn
+      username: formData.email.split('@')[0],
+       full_name: formData.name,
       email: formData.email,
       password: formData.password,
-      full_name: formData.name,
+      phone_number: formData.phone,    
+      role_id: null,                     
+      permissions: [],                 
+      interest_desired_major: formData.program || null,
+      interest_region: formData.person || null,
     };
 
     // Gọi API FastAPI
@@ -63,12 +75,12 @@ navigate('/loginprivate');
 
     // Reset form
     setFormData({
-      name: '',
-      email: '',
-      password: '',
-      phone: '',
-      program: '',
-      person: '',
+      name: "",
+      email: "",
+      password: "",
+      phone: "",
+      program: "",
+      person: "",
     });
 
   } catch (err: any) {
