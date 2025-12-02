@@ -35,7 +35,7 @@ import PropTypes from 'prop-types';
 
 export function AdmissionOfficerLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, activeRole, switchToRole, getAccessibleRoles } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -54,50 +54,62 @@ export function AdmissionOfficerLayout() {
     { id: 'profile', label: 'Profile', icon: User, path: '/admission/profile' },
   ];
 
-  // Additional sections for other permissions
-  const additionalSections = [];
+  // Define navigation for all roles
+  const roleNavigations = {
+    SYSTEM_ADMIN: [
+      { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
+      { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
+      { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
+      { id: 'activity', label: 'Nhật Ký Hoạt Động', icon: Activity, path: '/admin/activity' },
+      { id: 'profile', label: 'Profile', icon: User, path: '/admin/profile' },
+    ],
+    CONTENT_MANAGER: [
+      { id: "dashboard", label: "Tổng quan content", icon: LayoutDashboard, path: '/content/dashboard' },
+      { id: "articles", label: "All Articles", icon: FileText, path: '/content/articles' },
+      { id: "review", label: "Review Queue", icon: ListChecks, path: '/content/review' },
+      { id: "editor", label: "New Article", icon: PenSquare, path: '/content/editor' },
+      { id: "profile", label: "Profile", icon: User, path: '/content/profile' },
+    ],
+    ADMISSION_OFFICER: navigation,
+    CONSULTANT: [
+      { id: 'overview', label: 'Dashboard Home', icon: LayoutDashboard, path: '/consultant/overview' },
+      { id: 'analytics', label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
+      { id: 'templates', label: 'Training Questions', icon: MessageSquareText, path: '/consultant/templates' },
+      { id: 'optimization', label: 'Content Optimization', icon: Lightbulb, path: '/consultant/optimization' },
+      ...(user?.isLeader ? [
+        { id: 'leader', label: 'Leader Review', icon: Database, path: '/consultant/leader' }
+      ] : []),
+      { id: 'profile', label: 'Profile', icon: User, path: '/consultant/profile' }
+    ],
+    STUDENT: [
+      { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
+    ]
+  };
 
-  // Content Manager Section
-  if (user?.permissions?.includes('content_manager')) {
-    additionalSections.push({
-      title: 'Content Manager',
-      items: [
-        { id: "dashboardcontent", label: "Tổng quan content", icon: LayoutDashboard, path: '/content/dashboard' },
-        { id: "articles", label: "All Articles", icon: FileText, path: '/content/articles' },
-        { id: "review", label: "Review Queue", icon: ListChecks, path: '/content/review' },
-        { id: "editor", label: "New Article", icon: PenSquare, path: '/content/editor' },
-      ]
-    });
-  }
+  // Get current navigation based on active role
+  const currentNavigation = roleNavigations[activeRole] || roleNavigations[user?.role] || [];
+  
+  // Get accessible roles for role switching
+  const accessibleRoles = getAccessibleRoles();
+  
+  // Role labels and icons for switching buttons
+  const roleLabels = {
+    SYSTEM_ADMIN: { label: 'Admin', icon: Shield, color: 'bg-red-100 text-red-700 border-red-200' },
+    CONTENT_MANAGER: { label: 'Content', icon: FileEdit, color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    ADMISSION_OFFICER: { label: 'Admission', icon: GraduationCap, color: 'bg-green-100 text-green-700 border-green-200' },
+    CONSULTANT: { label: 'Consultant', icon: TrendingUp, color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    STUDENT: { label: 'Student', icon: User, color: 'bg-gray-100 text-gray-700 border-gray-200' }
+  };
 
-  // Consultant Section
-  if (user?.permissions?.includes('consultant')) {
-    additionalSections.push({
-      title: 'Consultant',
-      items: [
-        { id: 'overview', label: 'Tổng quan consultant', icon: LayoutDashboard, path: '/consultant/overview' },
-        { id: 'analytics', label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
-        { id: 'templates', label: 'Q&A Templates', icon: Database, path: '/consultant/templates' },
-        { id: 'optimization', label: 'Content Optimization', icon: Lightbulb, path: '/consultant/optimization' },
-        ...(user?.isLeader ? [
-          { id: 'leader', label: 'Leader Review', icon: Database, path: '/consultant/leader' }
-        ] : []),
-      ]
-    });
-  }
-
-  // Admin Section
-  if (user?.permissions?.includes('admin')) {
-    additionalSections.push({
-      title: 'Admin',
-      items: [
-        { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
-        { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
-        { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
-        { id: 'activity', label: 'Nhật Ký Hoạt Động', icon: Activity, path: '/admin/activity' },
-      ]
-    });
-  }
+  // Handle role switching
+  const handleRoleSwitch = (role) => {
+    switchToRole(role);
+    // Navigate to the main dashboard of the switched role
+    const navItems = roleNavigations[role];
+    if (navItems && navItems.length > 0) {
+      navigate(navItems[0].path);
+    }
+  };
 
   return (
     <div className="min-h-screen flex bg-[#F8FAFC]">
@@ -130,15 +142,15 @@ export function AdmissionOfficerLayout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-          {/* Main Admission Officer Navigation */}
+        <nav className="flex-1 p-2 space-y-4 overflow-y-auto">
+          {/* Current Role Pages */}
           <div className="space-y-1">
             {!sidebarCollapsed && (
               <h3 className="px-3 text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-                Admission Officer
+                {roleLabels[activeRole || user?.role]?.label || 'Pages'}
               </h3>
             )}
-            {navigation.map((item) => {
+            {currentNavigation.map((item) => {
               const Icon = item.icon;
               const isActive = getCurrentRoute() === item.id;
               return (
@@ -169,47 +181,40 @@ export function AdmissionOfficerLayout() {
             })}
           </div>
 
-          {/* Additional Permission Sections */}
-          {additionalSections.map((section, sectionIndex) => (
-            <div key={section.title} className="space-y-1 mt-6">
-              {!sidebarCollapsed && (
-                <h3 className="px-3 text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-                  {section.title}
-                </h3>
-              )}
-              {section.items.map((item) => {
-                const Icon = item.icon;
-                const isActive = getCurrentRoute() === item.id;
-
+          {/* Role Switching Buttons */}
+          {accessibleRoles.length > 1 && !sidebarCollapsed && (
+            <div className="space-y-2 border-t pt-4">
+              <h3 className="px-3 text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+                Switch Role
+              </h3>
+              {accessibleRoles.map((role) => {
+                const roleInfo = roleLabels[role];
+                const Icon = roleInfo.icon;
+                const isCurrentRole = role === (activeRole || user?.role);
+                
                 return (
                   <button
-                    key={item.id}
-                    onClick={() => navigate(item.path)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-[#3B82F6] text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
+                    key={role}
+                    onClick={() => !isCurrentRole && handleRoleSwitch(role)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors border ${
+                      isCurrentRole
+                        ? `${roleInfo.color} font-medium border-opacity-50`
+                        : 'text-gray-600 hover:bg-gray-50 border-gray-200'
+                    } ${
+                      isCurrentRole ? 'cursor-default' : 'cursor-pointer'
                     }`}
+                    disabled={isCurrentRole}
                   >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    {!sidebarCollapsed && (
-                      <>
-                        <span className="text-sm">{item.label}</span>
-                        {item.badge && (
-                          <Badge
-                            variant={isActive ? "secondary" : "default"}
-                            className="ml-auto"
-                          >
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </>
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    {!sidebarCollapsed && <span className="text-sm">{roleInfo.label}</span>}
+                    {isCurrentRole && (
+                      <span className="ml-auto text-xs opacity-70">Current</span>
                     )}
                   </button>
                 );
               })}
             </div>
-          ))}
+          )}
         </nav>
 
         {/* User Profile */}

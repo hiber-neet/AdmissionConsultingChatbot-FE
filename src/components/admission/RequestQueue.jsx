@@ -46,10 +46,14 @@ import { Separator } from '../ui/system_users/separator';
 // RequestQueue component props:
 // {
 //   requests: QueueRequest[],
-//   onTakeRequest: (requestId: string) => void
+//   onTakeRequest: (requestId: string) => void,
+//   acceptingRequestId: string | null - ID of the request currently being accepted
 // }
 
-export function RequestQueue({ requests, onTakeRequest }) {
+export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
+  console.log('🎯 RequestQueue received requests:', requests);
+  console.log('🎯 RequestQueue requests length:', requests?.length);
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
@@ -65,6 +69,9 @@ export function RequestQueue({ requests, onTakeRequest }) {
       filterPriority === 'all' || request.priority === filterPriority;
     return matchesSearch && matchesType && matchesPriority;
   });
+
+  console.log('🔍 Filtered requests length:', filteredRequests.length);
+  console.log('🔍 Filter states - search:', searchQuery, 'type:', filterType, 'priority:', filterPriority);
 
   const getPriorityConfig = (priority) => {
     const configs = {
@@ -296,9 +303,10 @@ export function RequestQueue({ requests, onTakeRequest }) {
                           <Button
                             onClick={() => onTakeRequest(request.id)}
                             className="gap-2 flex-shrink-0"
+                            disabled={acceptingRequestId === request.id}
                           >
                             <UserPlus className="h-4 w-4" />
-                            Nhận Yêu Cầu
+                            {acceptingRequestId === request.id ? 'Đang xử lý...' : 'Nhận Yêu Cầu'}
                           </Button>
                         </div>
 

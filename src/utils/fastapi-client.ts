@@ -165,6 +165,15 @@ export interface ChatMessage {
   created_at: string;
 }
 
+export interface ChatSessionMessage {
+  interaction_id: number;
+  session_id: number;
+  sender_id: number;
+  message_text: string;
+  timestamp: string;
+  is_from_bot: boolean;
+}
+
 export interface ChatRequest {
   message: string;
 }
@@ -183,4 +192,11 @@ export interface TrainingQuestion {
   question: string;
   answer: string;
   created_at: string;
+}
+
+// Intent types
+export interface Intent {
+  intent_id: number;
+  intent_name: string;
+  description?: string;
 }

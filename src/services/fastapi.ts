@@ -7,7 +7,8 @@ import {
   ChatMessage, 
   ChatRequest,
   KnowledgeDocument,
-  TrainingQuestion 
+  TrainingQuestion,
+  Intent
 } from '../utils/fastapi-client';
 import { API_CONFIG } from '../config/api.js';
 
@@ -125,10 +126,21 @@ export const chatAPI = {
 
 // Knowledge Base API
 export const knowledgeAPI = {
-  uploadDocument: (formData: FormData) => {
+  uploadDocument: (formData: FormData, intendId: number) => {
     // For file uploads, we need to handle FormData differently
-    return fetch(`${API_CONFIG.FASTAPI_BASE_URL}/knowledge/upload/document`, {
+    const token = localStorage.getItem("access_token");
+    const headers: HeadersInit = {};
+    
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    
+    // Add intend_id as query parameter
+    const url = `${API_CONFIG.FASTAPI_BASE_URL}/knowledge/upload/document?intend_id=${intendId}`;
+    
+    return fetch(url, {
       method: 'POST',
+      headers,
       body: formData,
     }).then(response => {
       if (!response.ok) {
@@ -170,6 +182,75 @@ export const analyticsAPI = {
     fastAPIClient.get<CategoryStatistic[]>(`/analytics/category-statistics?days=${days || 30}`)
 };
 
+// Live Chat types
+export interface LiveChatQueueItem {
+  id: number;
+  customer_id: number;
+  admission_official_id: number;
+  status: 'waiting' | 'accepted' | 'rejected';
+  created_at: string;
+  // Customer information will need to be joined from User table
+  customer?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
+}
+
+export interface ChatSessionMessage {
+  id: number;
+  session_id: number;
+  sender_id: number;
+  message_text: string;
+  timestamp: string;
+  is_from_bot: boolean;
+}
+
+export interface ActiveChatSession {
+  session_id: number;
+  customer_id: number;
+  customer_name: string;
+  session_type: string;
+  start_time: string;
+  status: 'active';
+}
+
+// Live Chat API functions
+export const liveChatAPI = {
+  // Get queue list for admission official
+  getQueueList: (officialId: number) => 
+    fastAPIClient.get<LiveChatQueueItem[]>(`/live_chat/livechat/admission_official/queue/list/${officialId}`),
+
+  // Get active sessions for admission official
+  getActiveSessions: (officialId: number) => 
+    fastAPIClient.get<ActiveChatSession[]>(`/live_chat/livechat/admission_official/active_sessions/${officialId}`),
+
+  // Accept a queue request
+  acceptRequest: (officialId: number, queueId: number) => 
+    fastAPIClient.post(`/live_chat/livechat/admission_official/accept?official_id=${officialId}&queue_id=${queueId}`, {}),
+
+  // Reject a queue request
+  rejectRequest: (officialId: number, queueId: number, reason: string) => 
+    fastAPIClient.post(`/live_chat/livechat/admission_official/reject?official_id=${officialId}&queue_id=${queueId}&reason=${encodeURIComponent(reason)}`, {}),
+
+  // Get messages for a session
+  getSessionMessages: (sessionId: number) => 
+    fastAPIClient.get<ChatSessionMessage[]>(`/live_chat/livechat/session/${sessionId}/messages`),
+
+  // End session
+  endSession: (sessionId: number, endedBy: number) => 
+    fastAPIClient.post(`/live_chat/livechat/live-chat/end?session_id=${sessionId}&ended_by=${endedBy}`, {})
+};
+
+// Intent API functions
+export const intentAPI = {
+  // Get all intents
+  getIntents: () => fastAPIClient.get<Intent[]>('/intent'),
+  
+  // Get specific intent
+  getIntent: (intentId: number) => fastAPIClient.get<Intent>(`/intent/${intentId}`)
+};
+
 // Export all APIs
 export {
   articlesAPI as fastAPIArticles,
@@ -182,4 +263,6 @@ export {
   knowledgeAPI as fastAPIKnowledge,
   riasecAPI as fastAPIRiasec,
   analyticsAPI as fastAPIAnalytics,
+  liveChatAPI as fastAPILiveChat,
+  intentAPI as fastAPIIntent,
 };

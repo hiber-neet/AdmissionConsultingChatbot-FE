@@ -19,12 +19,15 @@ export type User = {
 type AuthCtx = {
   user: User | null;
   isAuthenticated: boolean;
+  activeRole: Role | null; // Current active role for navigation
   login: (email: string, password: string) => Promise<{ ok: boolean; message?: string; token?: string }>;
   loginAs: (role: Role) => void; // demo switch nhanh (giữ lại)
   logout: () => void;
   hasPermission: (permission: Permission) => boolean;
   setUserLeadership: (isLeader: boolean) => void; // for testing leadership
   getDefaultRoute: (role: Role) => string; // Add this new function
+  switchToRole: (role: Role) => void; // Switch active role for navigation
+  getAccessibleRoles: () => Role[]; // Get all roles user can switch to
 };
 
 /** Tài khoản mẫu (có thể đổi sau này) */
@@ -41,6 +44,7 @@ const AuthContext = createContext<AuthCtx | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [activeRole, setActiveRole] = useState<Role | null>(null);
 
   // khôi phục từ sessionStorage cho demo
   useEffect(() => {
@@ -49,6 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedUser = JSON.parse(raw);
       console.log('Loading user from sessionStorage:', storedUser);
       setUser(storedUser);
+      // Set active role to user's primary role
+      setActiveRole(storedUser.role);
     }
   }, []);
 
@@ -190,6 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               };
 
               setUser(userData);
+              setActiveRole(userData.role); // Set active role to primary role
               sessionStorage.setItem("demo_user", JSON.stringify(userData));
 
               console.log("LOGIN SUCCESS with dynamic permissions!");
@@ -220,6 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
 
             setUser(userData);
+            setActiveRole(userData.role); // Set active role to primary role
             sessionStorage.setItem("demo_user", JSON.stringify(userData));
 
             console.log("⚠️ LOGIN SUCCESS with fallback permissions!");
@@ -241,6 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       setUser(userData);
+      setActiveRole(userData.role); // Set active role to primary role
       sessionStorage.setItem("demo_user", JSON.stringify(userData));
 
       console.log("⚠️ LOGIN SUCCESS (with fallback role)");
@@ -304,6 +313,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       permissions: userPermissions
     };
     setUser(u);
+    setActiveRole(u.role); // Set active role to primary role
     sessionStorage.setItem("demo_user", JSON.stringify(u));
 
     // Log demo login info to console
@@ -331,6 +341,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // Clear user state
     setUser(null);
+    setActiveRole(null); // Clear active role
     
     // Clear authentication tokens
     localStorage.removeItem("access_token");
@@ -409,18 +420,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('User updated and saved to sessionStorage');
   };
 
+  // Function to switch active role for navigation
+  const switchToRole = (role: Role) => {
+    if (!user?.permissions) return;
+    
+    // Check if user has permission for this role
+    const accessibleRoles = getAccessibleRoles();
+    if (accessibleRoles.includes(role)) {
+      setActiveRole(role);
+      console.log('Switched active role to:', role);
+    } else {
+      console.warn('User does not have permission for role:', role);
+    }
+  };
+
+  // Function to get all roles user can access based on permissions
+  const getAccessibleRoles = (): Role[] => {
+    if (!user?.permissions) return [];
+    
+    const roles: Role[] = [];
+    
+    // Map permissions to roles
+    if (user.permissions.includes('admin')) roles.push('SYSTEM_ADMIN');
+    if (user.permissions.includes('content_manager')) roles.push('CONTENT_MANAGER');
+    if (user.permissions.includes('admission_officer')) roles.push('ADMISSION_OFFICER');
+    if (user.permissions.includes('consultant')) roles.push('CONSULTANT');
+    if (user.permissions.includes('student')) roles.push('STUDENT');
+    
+    return roles;
+  };
+
   const value = useMemo(
     () => ({ 
       user, 
       isAuthenticated: !!user, 
+      activeRole,
       login, 
       loginAs, 
       logout, 
       hasPermission: checkUserPermission,
       setUserLeadership,
-      getDefaultRoute
+      getDefaultRoute,
+      switchToRole,
+      getAccessibleRoles
     }),
-    [user]
+    [user, activeRole]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

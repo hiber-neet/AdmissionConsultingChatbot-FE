@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, MessageCircle, Trash2, Edit } from 'lucide-react';
+import { Search, Plus, MessageCircle, Trash2, Edit, CheckCircle } from 'lucide-react';
 import { ScrollArea } from '../ui/system_users/scroll-area';
 import { Input } from '../ui/system_users/input';
 import { Button } from '../ui/system_users/button';
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '../ui/system_users/textarea';
 import { useAuth } from '../../contexts/Auth';
 import { fastAPIClient } from '../../utils/fastapi-client';
+import { toast } from 'react-toastify';
 
 interface TrainingQuestionPair {
   question_id: number;
@@ -59,7 +60,6 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
   const [editedQuestion, setEditedQuestion] = useState('');
   const [editedAnswer, setEditedAnswer] = useState('');
   const [editedIntentId, setEditedIntentId] = useState<number | null>(null);
-  const [showDraftConfirmation, setShowDraftConfirmation] = useState(false);
 
   // Fetch training questions from API
   useEffect(() => {
@@ -178,9 +178,75 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
     }
   };
 
-  const handleSave = () => {
-    // Save logic would go here - API call to update training question
-    setIsEditing(false);
+  const handleSave = async () => {
+    if (!selectedQuestion || !editedQuestion.trim() || !editedAnswer.trim() || !editedIntentId) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    try {
+      // TODO: Implement update API call when backend endpoint is ready
+      // const response = await fastAPIClient.put(`/knowledge/training_question/${selectedQuestion.question_id}`, {
+      //   question: editedQuestion.trim(),
+      //   answer: editedAnswer.trim(),
+      //   intent_id: editedIntentId
+      // });
+
+      // For now, update local state
+      setTrainingQuestions(prev => 
+        prev.map(tq => 
+          tq.question_id === selectedQuestion.question_id
+            ? {
+                ...tq,
+                question: editedQuestion.trim(),
+                answer: editedAnswer.trim(),
+                intent_id: editedIntentId,
+                intent_name: intents.find(intent => intent.intent_id === editedIntentId)?.intent_name
+              }
+            : tq
+        )
+      );
+
+      // Update selected question
+      const updatedQuestion = {
+        ...selectedQuestion,
+        question: editedQuestion.trim(),
+        answer: editedAnswer.trim(),
+        intent_id: editedIntentId,
+        intent_name: intents.find(intent => intent.intent_id === editedIntentId)?.intent_name
+      };
+      setSelectedQuestion(updatedQuestion);
+
+      setIsEditing(false);
+      toast.success('Training question updated successfully!');
+    } catch (error) {
+      console.error('Error updating training question:', error);
+      toast.error('Failed to update training question. Please try again.');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedQuestion) return;
+
+    try {
+      // TODO: Implement delete API call when backend endpoint is ready
+      // await fastAPIClient.delete(`/knowledge/training_question/${selectedQuestion.question_id}`);
+
+      // For now, update local state
+      setTrainingQuestions(prev => 
+        prev.filter(tq => tq.question_id !== selectedQuestion.question_id)
+      );
+
+      // Select the first question if available, or clear selection
+      const remaining = trainingQuestions.filter(tq => tq.question_id !== selectedQuestion.question_id);
+      setSelectedQuestion(remaining.length > 0 ? remaining[0] : null);
+
+      setShowDeleteDialog(false);
+      toast.success('Training question deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting training question:', error);
+      toast.error('Failed to delete training question. Please try again.');
+    }
   };
 
   const handleCancel = () => {
@@ -230,10 +296,12 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
       setEditedIntentId(null);
       setShowAddDialog(false);
 
+      // Show success message
+      toast.success('Training question created successfully!');
       console.log('Training question created successfully:', response);
     } catch (error) {
       console.error('Error creating training question:', error);
-      // You might want to show an error toast or alert here
+      toast.error('Failed to create training question. Please try again.');
     } finally {
       setCreating(false);
     }
@@ -448,10 +516,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
             <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={() => {
-              // Delete logic would go here
-              setShowDeleteDialog(false);
-            }}>
+            <Button variant="destructive" onClick={handleDelete}>
               Delete
             </Button>
           </DialogFooter>
@@ -464,7 +529,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
           <DialogHeader>
             <DialogTitle>Add New Training Question</DialogTitle>
             <DialogDescription>
-              Create a new training question by filling out the form below.
+              Create a new training question pair that will be used to train the chatbot. The question and answer will be added to the knowledge base for better responses.
             </DialogDescription>
           </DialogHeader>
           
@@ -523,23 +588,6 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
               disabled={creating || !editedQuestion.trim() || !editedAnswer.trim() || !editedIntentId}
             >
               {creating ? "Creating..." : "Create Training Question"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Draft Confirmation Dialog */}
-      <Dialog open={showDraftConfirmation} onOpenChange={setShowDraftConfirmation}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Draft Submitted for Review</DialogTitle>
-            <DialogDescription>
-              Your training question draft has been submitted for review. A consultant will review and approve or reject your submission.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => setShowDraftConfirmation(false)}>
-              Close
             </Button>
           </DialogFooter>
         </DialogContent>

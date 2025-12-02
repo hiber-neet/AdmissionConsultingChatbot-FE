@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react';
-import { Button } from '../ui/system_users/button';
-import { Dialog, DialogTrigger } from '../ui/system_users/dialog';
+import { Button } from '../../ui/system_users/button';
+import { Dialog, DialogTrigger } from '../../ui/system_users/dialog';
 import PropTypes from 'prop-types';
 
 export function UserManagementHeader({ onAddUser }) {

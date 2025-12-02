@@ -1,67 +1,169 @@
-import { useState } from 'react';
-import { Search, Plus, FileText, Trash2, Edit, ExternalLink } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Plus, FileText, Trash2, Edit, ExternalLink, Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/system_users/scroll-area';
 import { Input } from '../ui/system_users/input';
 import { Button } from '../ui/system_users/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/system_users/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/system_users/dialog';
-
-interface Document {
-  id: number;
-  title: string;
-  content: string;
-  lastUpdated: string;
-  fileType: 'pdf' | 'doc' | 'txt';
-  fileSize: string;
-  author: string;
-}
-
-const documents: Document[] = [
-  {
-    id: 1,
-    title: 'Admission Requirements Guide 2025',
-    content: 'Comprehensive guide to admission requirements...',
-    lastUpdated: '2024-10-15',
-    fileType: 'pdf',
-    fileSize: '2.4 MB',
-    author: 'Admissions Office'
-  },
-  {
-    id: 2,
-    title: 'Financial Aid Handbook',
-    content: 'Complete information about financial aid options...',
-    lastUpdated: '2024-10-10',
-    fileType: 'pdf',
-    fileSize: '1.8 MB',
-    author: 'Financial Aid Office'
-  },
-  {
-    id: 3,
-    title: 'International Student Guide',
-    content: 'Information for international applicants...',
-    lastUpdated: '2024-09-28',
-    fileType: 'pdf',
-    fileSize: '3.1 MB',
-    author: 'International Office'
-  }
-];
-
-
-
-// Temporary role check - replace with actual role check from your auth system
+import { fastAPIClient, KnowledgeDocument, Intent } from '../../utils/fastapi-client';
+import { knowledgeAPI, intentAPI } from '../../services/fastapi';
 import { useAuth } from '../../contexts/Auth';
+import { API_CONFIG } from '../../config/api.js';
+import { toast } from 'react-toastify';
 
-const isConsultantLeader = false; // Set to true to test leader functionality
+// Use KnowledgeDocument interface directly from fastapi-client
+type Document = KnowledgeDocument;
+
+// Helper functions
+const getFileType = (filePath: string) => {
+  const extension = filePath.split('.').pop()?.toLowerCase() || '';
+  return extension;
+};
+
+const formatFileSize = (sizeInBytes: number) => {
+  if (sizeInBytes < 1024) return `${sizeInBytes} B`;
+  if (sizeInBytes < 1024 * 1024) return `${(sizeInBytes / 1024).toFixed(1)} KB`;
+  return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
 
 export function DocumentManagement() {
+  const { user } = useAuth();
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDoc, setSelectedDoc] = useState<Document | null>(documents[0]);
+  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showDraftConfirmation, setShowDraftConfirmation] = useState(false);
-  const [editedTitle, setEditedTitle] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // Upload form state
+  const [intents, setIntents] = useState<Intent[]>([]);
+  const [selectedIntent, setSelectedIntent] = useState<string>('');
+  const [documentTitle, setDocumentTitle] = useState('');
+  const [documentCategory, setDocumentCategory] = useState('');
+
+  // Fetch documents on component mount
+  useEffect(() => {
+    fetchDocuments();
+    fetchIntents();
+  }, []);
+
+  const fetchDocuments = async () => {
+    try {
+      setLoading(true);
+      const data = await knowledgeAPI.getDocuments();
+      setDocuments(data);
+      
+      // Set first document as selected if available
+      if (data.length > 0 && !selectedDoc) {
+        setSelectedDoc(data[0]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch documents:', error);
+      toast.error('Failed to load documents. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchIntents = async () => {
+    try {
+      const data = await intentAPI.getIntents();
+      setIntents(data);
+    } catch (error) {
+      console.error('Failed to fetch intents:', error);
+      toast.error('Failed to load intents. Please try again.');
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!uploadedFile || !user || !selectedIntent) {
+      toast.error('Please fill all required fields (file and intent)');
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      const formData = new FormData();
+      formData.append('file', uploadedFile);
+      formData.append('title', documentTitle || uploadedFile.name.split('.')[0]);
+      formData.append('category', documentCategory || 'general');
+      formData.append('current_user_id', user.id.toString());
+
+      // Debug logging
+      console.log('Upload data:', {
+        intend_id: selectedIntent,
+        file: uploadedFile.name,
+        title: documentTitle || uploadedFile.name.split('.')[0],
+        category: documentCategory || 'general',
+        current_user_id: user.id.toString()
+      });
+
+      await knowledgeAPI.uploadDocument(formData, parseInt(selectedIntent));
+
+      // Reset form and close dialog
+      setUploadedFile(null);
+      setSelectedIntent('');
+      setDocumentTitle('');
+      setDocumentCategory('');
+      setShowUploadDialog(false);
+      
+      // Refresh documents list
+      await fetchDocuments();
+      
+      toast.success('Document uploaded successfully!');
+    } catch (error) {
+      console.error('Failed to upload document:', error);
+      toast.error(`Failed to upload document: ${error.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedDoc) return;
+
+    try {
+      setDeleting(true);
+      await knowledgeAPI.deleteDocument(selectedDoc.document_id);
+      
+      // Remove from local state
+      setDocuments(prev => prev.filter(doc => doc.document_id !== selectedDoc.document_id));
+      
+      // Clear selection
+      setSelectedDoc(null);
+      setShowDeleteDialog(false);
+      
+      toast.success('Document deleted successfully!');
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+      toast.error('Failed to delete document. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleView = (doc: Document) => {
+    try {
+      // Open document in new tab using view endpoint
+      const viewUrl = `${API_CONFIG.FASTAPI_BASE_URL}/knowledge/documents/${doc.document_id}/view`;
+      window.open(viewUrl, '_blank');
+    } catch (error) {
+      console.error('Failed to open document:', error);
+      toast.error('Failed to open document. Please try again.');
+    }
+  };
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -81,13 +183,12 @@ export function DocumentManagement() {
               size="sm" 
               className="gap-2"
               onClick={() => {
-                setEditedTitle('');
                 setUploadedFile(null);
                 setShowUploadDialog(true);
               }}
             >
               <Plus className="h-4 w-4" />
-              Upload
+              Upload File
             </Button>
           </div>
           
@@ -108,29 +209,73 @@ export function DocumentManagement() {
 
         {/* Document List */}
         <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
-            {filteredDocuments.map(doc => (
-              <button
-                key={doc.id}
-                onClick={() => setSelectedDoc(doc)}
-                className={`w-full flex items-start gap-3 p-3 rounded-lg transition-colors text-left ${
-                  selectedDoc?.id === doc.id
-                    ? 'bg-[#3B82F6] text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <FileText className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{doc.title}</div>
-                  <div className={`text-sm truncate ${
-                    selectedDoc?.id === doc.id ? 'text-blue-100' : 'text-muted-foreground'
-                  }`}>
-                    Updated {doc.lastUpdated}
-                  </div>
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="ml-2">Loading documents...</span>
+            </div>
+          ) : filteredDocuments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center">
+              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Documents Found</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {searchQuery 
+                  ? `No documents match "${searchQuery}"`
+                  : 'No documents have been uploaded yet'
+                }
+              </p>
+              {!searchQuery && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => {
+                    setUploadedFile(null);
+                    setShowUploadDialog(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  Upload First Document
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="p-2 space-y-1">
+              {filteredDocuments.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-sm">No documents found</p>
+                  {searchQuery ? (
+                    <p className="text-xs mt-1">Try adjusting your search terms</p>
+                  ) : (
+                    <p className="text-xs mt-1">Upload your first document to get started</p>
+                  )}
                 </div>
-              </button>
-            ))}
-          </div>
+              ) : (
+                filteredDocuments.map(doc => (
+                  <button
+                    key={doc.document_id}
+                    onClick={() => setSelectedDoc(doc)}
+                    className={`w-full flex items-start gap-3 p-3 rounded-lg transition-colors text-left ${
+                      selectedDoc?.document_id === doc.document_id
+                        ? 'bg-[#3B82F6] text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <FileText className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{doc.title}</div>
+                      <div className={`text-sm truncate ${
+                        selectedDoc?.document_id === doc.document_id ? 'text-blue-100' : 'text-muted-foreground'
+                      }`}>
+                        Updated {formatDate(doc.uploaded_at)}
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
         </ScrollArea>
       </div>
 
@@ -146,17 +291,8 @@ export function DocumentManagement() {
                     variant="outline" 
                     size="sm" 
                     className="gap-2"
-                    onClick={() => {
-                      if (selectedDoc) {
-                        setEditedTitle(selectedDoc.title);
-                        setShowEditDialog(true);
-                      }
-                    }}
+                    onClick={() => handleView(selectedDoc)}
                   >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-2">
                     <ExternalLink className="h-4 w-4" />
                     Open
                   </Button>
@@ -165,8 +301,13 @@ export function DocumentManagement() {
                     size="sm"
                     className="gap-2"
                     onClick={() => setShowDeleteDialog(true)}
+                    disabled={deleting}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    {deleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
                     Delete
                   </Button>
                 </div>
@@ -174,26 +315,30 @@ export function DocumentManagement() {
 
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Last Updated</div>
-                  <div>{selectedDoc.lastUpdated}</div>
+                  <div className="text-sm text-muted-foreground">Uploaded</div>
+                  <div>{formatDate(selectedDoc.uploaded_at)}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-sm text-muted-foreground">File Type</div>
-                  <div className="capitalize">{selectedDoc.fileType}</div>
+                  <div className="capitalize">{getFileType(selectedDoc.file_path)}</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">File Size</div>
-                  <div>{selectedDoc.fileSize}</div>
+                  <div className="text-sm text-muted-foreground">File Path</div>
+                  <div className="text-sm text-muted-foreground truncate">{selectedDoc.file_path}</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Author</div>
-                  <div>{selectedDoc.author}</div>
+                  <div className="text-sm text-muted-foreground">Document ID</div>
+                  <div>{selectedDoc.document_id}</div>
                 </div>
               </div>
 
               <div className="prose max-w-none">
-                <h3>Preview</h3>
-                <p>{selectedDoc.content}</p>
+                <h3>Content Preview</h3>
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <p className="text-sm text-muted-foreground">
+                    {selectedDoc.content || 'Document content will be displayed here after processing...'}
+                  </p>
+                </div>
               </div>
             </div>
           </ScrollArea>
@@ -203,7 +348,10 @@ export function DocumentManagement() {
               <FileText className="h-12 w-12 text-muted-foreground mx-auto" />
               <h3 className="font-medium">No Document Selected</h3>
               <p className="text-sm text-muted-foreground">
-                Select a document from the list to view its details
+                {documents.length === 0 
+                  ? 'Upload your first document to get started'
+                  : 'Select a document from the list to view its details'
+                }
               </p>
             </div>
           </div>
@@ -223,11 +371,19 @@ export function DocumentManagement() {
             <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={() => {
-              // Delete logic would go here
-              setShowDeleteDialog(false);
-            }}>
-              Delete
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -235,36 +391,85 @@ export function DocumentManagement() {
 
       {/* Upload Document Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Upload New Document</DialogTitle>
+            <DialogTitle>Upload Document</DialogTitle>
             <DialogDescription>
-              Upload a new document and provide its details below.
+              Select a document file and specify its intent for the knowledge base.
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            {/* Intent Selection */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
-              <Input
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                placeholder="Enter document title..."
-              />
+              <label className="text-sm font-medium text-red-600">Intent *</label>
+              <Select value={selectedIntent} onValueChange={setSelectedIntent}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an intent for this document" />
+                </SelectTrigger>
+                <SelectContent>
+                  {intents.map((intent) => (
+                    <SelectItem key={intent.intent_id} value={intent.intent_id.toString()}>
+                      {intent.intent_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {intents.length === 0 && (
+                <p className="text-xs text-muted-foreground">Loading intents...</p>
+              )}
             </div>
 
+            {/* Document Title */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Document File</label>
+              <label className="text-sm font-medium">Document Title</label>
+              <Input
+                type="text"
+                placeholder="Enter document title (optional)"
+                value={documentTitle}
+                onChange={(e) => setDocumentTitle(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave empty to use filename as title
+              </p>
+            </div>
+
+            {/* Category */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category</label>
+              <Input
+                type="text"
+                placeholder="Enter category (optional)"
+                value={documentCategory}
+                onChange={(e) => setDocumentCategory(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                e.g., FAQ, Guidelines, Procedures (defaults to 'general')
+              </p>
+            </div>
+
+            {/* File Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-red-600">Select Document File *</label>
               <div className="flex items-center gap-4">
                 <Input
                   type="file"
-                  accept=".pdf,.doc,.docx,.txt"
+                  accept=".pdf,.doc,.docx,.txt,.html,.xlsx,.pptx"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
+                      // Check file size (max 50MB)
+                      const maxSize = 50 * 1024 * 1024;
+                      if (file.size > maxSize) {
+                        toast.error('File size must be less than 50MB');
+                        e.target.value = '';
+                        return;
+                      }
+                      
                       setUploadedFile(file);
-                      if (!editedTitle) {
-                        setEditedTitle(file.name.split('.')[0]);
+                      // Auto-fill title if empty
+                      if (!documentTitle) {
+                        setDocumentTitle(file.name.split('.')[0]);
                       }
                     }
                   }}
@@ -272,109 +477,41 @@ export function DocumentManagement() {
                 />
               </div>
               {uploadedFile && (
-                <p className="text-sm text-muted-foreground">
-                  Selected file: {uploadedFile.name} ({(uploadedFile.size / 1024 / 1024).toFixed(2)} MB)
-                </p>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium">{uploadedFile.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Size: {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
               )}
+              <p className="text-xs text-muted-foreground">
+                Supported formats: PDF, DOC, DOCX, TXT, HTML, XLSX, PPTX (Max 50MB)
+              </p>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => {
-              setEditedTitle('');
               setUploadedFile(null);
+              setSelectedIntent('');
+              setDocumentTitle('');
+              setDocumentCategory('');
               setShowUploadDialog(false);
             }}>
               Cancel
             </Button>
             <Button 
-              onClick={() => {
-                // Upload logic would go here
-                setShowUploadDialog(false);
-              }}
-              disabled={!editedTitle || !uploadedFile}
+              onClick={handleUpload}
+              disabled={!uploadedFile || !selectedIntent || uploading}
             >
-              Upload Document
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Document Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Document</DialogTitle>
-            <DialogDescription>
-              Update the document details below.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
-              <Input
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                placeholder="Enter document title..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Replace File (Optional)</label>
-              <div className="flex items-center gap-4">
-                <Input
-                  type="file"
-                  accept=".pdf,.doc,.docx,.txt"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setUploadedFile(file);
-                    }
-                  }}
-                  className="flex-1"
-                />
-              </div>
-              {uploadedFile && (
-                <p className="text-sm text-muted-foreground">
-                  Selected file: {uploadedFile.name} ({(uploadedFile.size / 1024 / 1024).toFixed(2)} MB)
-                </p>
+              {uploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Uploading...
+                </>
+              ) : (
+                'Upload Document'
               )}
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowEditDialog(false);
-              setUploadedFile(null);
-            }}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={() => {
-                // Edit logic would go here
-                setShowEditDialog(false);
-              }}
-              disabled={!editedTitle}
-            >
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Draft Confirmation Dialog */}
-      <Dialog open={showDraftConfirmation} onOpenChange={setShowDraftConfirmation}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Draft Submitted for Review</DialogTitle>
-            <DialogDescription>
-              Your document has been submitted for review. A consultant leader will review and approve or reject your submission.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => setShowDraftConfirmation(false)}>
-              Close
             </Button>
           </DialogFooter>
         </DialogContent>

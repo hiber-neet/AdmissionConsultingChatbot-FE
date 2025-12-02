@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react';
-import { Input } from '../ui/system_users/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/system_users/select';
+import { Input } from '../../ui/system_users/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/system_users/select';
 import PropTypes from 'prop-types';
 
 export function UserFilters({ 

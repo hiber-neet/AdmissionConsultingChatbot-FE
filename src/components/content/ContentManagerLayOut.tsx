@@ -17,7 +17,13 @@ import {
   Users,
   Calendar,
   GraduationCap,
-  BookOpen
+  BookOpen,
+  Shield,
+  FileEdit,
+  Activity,
+  MessageSquareText,
+  MessageCircle,
+  Clock
 } from "lucide-react";
 
 import { Button } from "@/components/ui/system_users/button";
@@ -31,7 +37,7 @@ export default function ContentManagerLayOut() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, hasPermission, setUserLeadership, loginAs, logout } = useAuth();
+  const { user, hasPermission, setUserLeadership, loginAs, logout, activeRole, switchToRole, getAccessibleRoles } = useAuth();
   
   // Auto-login if no user is found (for content pages)
   useEffect(() => {
@@ -62,6 +68,64 @@ export default function ContentManagerLayOut() {
     { id: "profile" as ContentPage, label: "Profile", icon: User, path: "/content/profile", permission: "student" },
   ];
 
+  // Define navigation for all roles
+  const roleNavigations = {
+    SYSTEM_ADMIN: [
+      { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
+      { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
+      { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
+      { id: 'activity', label: 'Nhật Ký Hoạt Động', icon: Activity, path: '/admin/activity' },
+      { id: 'profile', label: 'Profile', icon: User, path: '/admin/profile' },
+    ],
+    CONTENT_MANAGER: navigation,
+    ADMISSION_OFFICER: [
+      { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard, path: '/admission/dashboard' },
+      { id: 'request-queue', label: 'Hàng Đợi Yêu Cầu', icon: Clock, badge: 8, path: '/admission/request-queue' },
+      { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admission/consultation' },
+      { id: 'knowledge-base', label: 'Cơ Sở Tri Thức', icon: BookOpen, path: '/admission/knowledge-base' },
+      { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
+      { id: 'profile', label: 'Profile', icon: User, path: '/admission/profile' },
+    ],
+    CONSULTANT: [
+      { id: 'overview', label: 'Dashboard Home', icon: LayoutDashboard, path: '/consultant/overview' },
+      { id: 'analytics', label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
+      { id: 'templates', label: 'Training Questions', icon: MessageSquareText, path: '/consultant/templates' },
+      { id: 'optimization', label: 'Content Optimization', icon: Lightbulb, path: '/consultant/optimization' },
+      ...(user?.isLeader ? [
+        { id: 'leader', label: 'Leader Review', icon: Database, path: '/consultant/leader' }
+      ] : []),
+      { id: 'profile', label: 'Profile', icon: User, path: '/consultant/profile' }
+    ],
+    STUDENT: [
+      { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
+    ]
+  };
+
+  // Get current navigation based on active role
+  const currentNavigation = roleNavigations[activeRole] || roleNavigations[user?.role] || [];
+  
+  // Get accessible roles for role switching
+  const accessibleRoles = getAccessibleRoles();
+  
+  // Role labels and icons for switching buttons
+  const roleLabels = {
+    SYSTEM_ADMIN: { label: 'Admin', icon: Shield, color: 'bg-red-100 text-red-700 border-red-200' },
+    CONTENT_MANAGER: { label: 'Content', icon: FileEdit, color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    ADMISSION_OFFICER: { label: 'Admission', icon: GraduationCap, color: 'bg-green-100 text-green-700 border-green-200' },
+    CONSULTANT: { label: 'Consultant', icon: TrendingUp, color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    STUDENT: { label: 'Student', icon: User, color: 'bg-gray-100 text-gray-700 border-gray-200' }
+  };
+
+  // Handle role switching
+  const handleRoleSwitch = (role) => {
+    switchToRole(role);
+    // Navigate to the main dashboard of the switched role
+    const navItems = roleNavigations[role];
+    if (navItems && navItems.length > 0) {
+      navigate(navItems[0].path);
+    }
+  };
+
   // Additional navigation sections for other permissions
   const additionalSections = [
     // Consultant section
@@ -70,7 +134,7 @@ export default function ContentManagerLayOut() {
       items: [
         { label: 'Consultant Dashboard', icon: LayoutDashboard, path: '/consultant/overview' },
         { label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
-        { label: 'Q&A Templates', icon: MessageSquare, path: '/consultant/templates' },
+        { label: 'Training Questions', icon: MessageSquare, path: '/consultant/templates' },
         { label: 'Content Optimization', icon: Lightbulb, path: '/consultant/optimization' },
         ...(user?.isLeader ? [
           { label: 'Leader Review', icon: Database, path: '/consultant/leader' }
@@ -152,16 +216,16 @@ export default function ContentManagerLayOut() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 p-2 space-y-3 overflow-y-auto">
-          {/* Main Content Manager Navigation */}
+        <nav className="flex-1 p-2 space-y-4 overflow-y-auto">
+          {/* Current Role Pages */}
           <div>
             {!sidebarCollapsed && (
               <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Content Manager
+                {roleLabels[activeRole || user?.role]?.label || 'Pages'}
               </div>
             )}
             <div className="space-y-1">
-              {navigation.map((item) => {
+              {currentNavigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = getCurrentRoute() === item.id;
                 return (
@@ -183,34 +247,40 @@ export default function ContentManagerLayOut() {
             </div>
           </div>
 
-          {/* Additional Permission Sections */}
-          {additionalSections.map((section, sectionIndex) => (
-            <div key={sectionIndex}>
-              {!sidebarCollapsed && (
-                <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                  {section.title}
-                </div>
-              )}
-              <div className="space-y-1">
-                {section.items.map((item, itemIndex) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={itemIndex}
-                      onClick={() => navigate(item.path)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-                      title={sidebarCollapsed ? item.label : undefined}
-                    >
-                      <Icon className="h-5 w-5 flex-shrink-0" />
-                      {!sidebarCollapsed && (
-                        <span className="text-sm">{item.label}</span>
-                      )}
-                    </button>
-                  );
-                })}
+          {/* Role Switching Buttons */}
+          {accessibleRoles.length > 1 && !sidebarCollapsed && (
+            <div className="space-y-2 border-t pt-4">
+              <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Switch Role
               </div>
+              {accessibleRoles.map((role) => {
+                const roleInfo = roleLabels[role];
+                const Icon = roleInfo.icon;
+                const isCurrentRole = role === (activeRole || user?.role);
+                
+                return (
+                  <button
+                    key={role}
+                    onClick={() => !isCurrentRole && handleRoleSwitch(role)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors border ${
+                      isCurrentRole
+                        ? `${roleInfo.color} font-medium border-opacity-50`
+                        : 'text-gray-600 hover:bg-gray-50 border-gray-200'
+                    } ${
+                      isCurrentRole ? 'cursor-default' : 'cursor-pointer'
+                    }`}
+                    disabled={isCurrentRole}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm">{roleInfo.label}</span>
+                    {isCurrentRole && (
+                      <span className="ml-auto text-xs opacity-70">Current</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-          ))}
+          )}
         </nav>
 
         {/* User */}
