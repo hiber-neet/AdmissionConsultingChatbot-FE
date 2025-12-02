@@ -2,6 +2,7 @@ import { BrowserRouter } from "react-router-dom";
 import "./styles/index.css";
 import Router from "./router/Router.jsx";
 import { AuthProvider } from "./contexts/Auth";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import { useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { ToastContainer } from 'react-toastify';
@@ -25,19 +26,21 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Router />
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-        />
+        <NotificationProvider>
+          <Router />
+          <ToastContainer
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+          />
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   );

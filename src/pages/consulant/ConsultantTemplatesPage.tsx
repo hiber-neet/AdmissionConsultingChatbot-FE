@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom';
-import { QATemplateManagement } from '../../components/consultant/QATemplateManagement';
+import { TrainingQuestionManagement } from '../../components/consultant/TrainingQuestionManagement';
 
 export function ConsultantTemplatesPage() {
   const location = useLocation();
@@ -11,7 +11,7 @@ export function ConsultantTemplatesPage() {
   };
 
   return (
-    <QATemplateManagement
+    <TrainingQuestionManagement
       prefilledQuestion={state?.question || null}
       templateAction={state?.action || null}
       onQuestionUsed={handleQuestionUsed}

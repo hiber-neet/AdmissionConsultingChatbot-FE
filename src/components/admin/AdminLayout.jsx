@@ -18,14 +18,15 @@ import {
   User,
   Calendar,
   GraduationCap,
-  BookOpen
+  BookOpen,
+  Clock
 } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
 import { useAuth } from '../../contexts/Auth';
 import { canAccessPage } from '../../constants/permissions';
 
 export function AdminLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, activeRole, switchToRole, getAccessibleRoles } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -35,77 +36,69 @@ export function AdminLayout() {
     return path || 'dashboard';
   };
 
-  const navigation = [
-    { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
-    { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
-    { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
-    { id: 'activity', label: 'Nhật Ký Hoạt Động', icon: Activity, path: '/admin/activity' },
-    { id: 'profile', label: 'Profile', icon: User, path: '/admin/profile' },
-  ];
+  // Define navigation for all roles
+  const roleNavigations = {
+    SYSTEM_ADMIN: [
+      { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
+      { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
+      { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
+      { id: 'activity', label: 'Nhật Ký Hoạt Động', icon: Activity, path: '/admin/activity' },
+      { id: 'profile', label: 'Profile', icon: User, path: '/admin/profile' },
+    ],
+    CONTENT_MANAGER: [
+      { id: "dashboard", label: "Tổng quan content", icon: LayoutDashboard, path: '/content/dashboard' },
+      { id: "articles", label: "All Articles", icon: FileText, path: '/content/articles' },
+      { id: "review", label: "Review Queue", icon: ListChecks, path: '/content/review' },
+      { id: "editor", label: "New Article", icon: PenSquare, path: '/content/editor' },
+      { id: "profile", label: "Profile", icon: User, path: '/content/profile' },
+    ],
+    ADMISSION_OFFICER: [
+      { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard, path: '/admission/dashboard' },
+      { id: 'request-queue', label: 'Hàng Đợi Yêu Cầu', icon: Clock, badge: 8, path: '/admission/request-queue' },
+      { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admission/consultation' },
+      { id: 'knowledge-base', label: 'Cơ Sở Tri Thức', icon: BookOpen, path: '/admission/knowledge-base' },
+      { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
+      { id: 'profile', label: 'Profile', icon: User, path: '/admission/profile' },
+    ],
+    CONSULTANT: [
+      { id: 'overview', label: 'Dashboard Home', icon: LayoutDashboard, path: '/consultant/overview' },
+      { id: 'analytics', label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
+      { id: 'templates', label: 'Training Questions', icon: MessageSquareText, path: '/consultant/templates' },
+      { id: 'optimization', label: 'Content Optimization', icon: Lightbulb, path: '/consultant/optimization' },
+      ...(user?.isLeader ? [
+        { id: 'leader', label: 'Leader Review', icon: Database, path: '/consultant/leader' }
+      ] : []),
+      { id: 'profile', label: 'Profile', icon: User, path: '/consultant/profile' }
+    ],
+    STUDENT: [
+      { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
+    ]
+  };
 
-  // Additional sections for other permissions
-  const additionalSections = [];
+  // Get current navigation based on active role
+  const currentNavigation = roleNavigations[activeRole] || roleNavigations[user?.role] || [];
+  
+  // Get accessible roles for role switching
+  const accessibleRoles = getAccessibleRoles();
+  
+  // Role labels and icons for switching buttons
+  const roleLabels = {
+    SYSTEM_ADMIN: { label: 'Admin', icon: Shield, color: 'bg-red-100 text-red-700 border-red-200' },
+    CONTENT_MANAGER: { label: 'Content', icon: FileEdit, color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    ADMISSION_OFFICER: { label: 'Admission', icon: GraduationCap, color: 'bg-green-100 text-green-700 border-green-200' },
+    CONSULTANT: { label: 'Consultant', icon: TrendingUp, color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    STUDENT: { label: 'Student', icon: User, color: 'bg-gray-100 text-gray-700 border-gray-200' }
+  };
 
-  // Content Manager Section
-  if (user?.permissions?.includes('content_manager')) {
-    additionalSections.push({
-      title: 'Content Manager',
-      items: [
-        { id: "dashboardcontent", label: "Tổng quan content", icon: LayoutDashboard, path: '/content/dashboard' },
-        { id: "articles", label: "All Articles", icon: FileText, path: '/content/articles' },
-        { id: "review", label: "Review Queue", icon: ListChecks, path: '/content/review' },
-        { id: "editor", label: "New Article", icon: PenSquare, path: '/content/editor' },
-      ]
-    });
-  }
-
-  // Consultant Section
-  if (user?.permissions?.includes('consultant')) {
-    additionalSections.push({
-      title: 'Consultant',
-      items: [
-        { id: 'overview', label: 'Tổng quan consultant', icon: LayoutDashboard, path: '/consultant/overview' },
-        { id: 'analytics', label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
-        { id: 'templates', label: 'Q&A Templates', icon: Database, path: '/consultant/templates' },
-        { id: 'optimization', label: 'Content Optimization', icon: Lightbulb, path: '/consultant/optimization' },
-        ...(user?.isLeader ? [
-          { id: 'leader', label: 'Leader Review', icon: Database, path: '/consultant/leader' }
-        ] : []),
-      ]
-    });
-  }
-
-  // Admission Officer Section
-  if (user?.permissions?.includes('admission_officer')) {
-    additionalSections.push({
-      title: 'Admission Officer',
-      items: [
-        { id: 'admissions', label: 'Tổng quan admission', icon: LayoutDashboard, path: '/admission/dashboard' },
-        { id: 'content', label: 'Quản Lý Nội Dung', icon: FileEdit, badge: 3, path: '/admission/content' },
-        { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admission/consultation' },
-        { id: 'insights', label: 'Thông Tin Học Sinh', icon: Users, path: '/admission/insights' },
-      ]
-    });
-  }
-
-  // Filter navigation based on user permissions
-  const allowedNav = useMemo(
-    () => navigation.filter(n => canAccessPage(user?.permissions, n.id)),
-    [user?.permissions]
-  );
-
-  // Redirect to first allowed route if current route is not accessible
-  useEffect(() => {
-    if (!user) return;
-    const currentRoute = getCurrentRoute();
-    const currentAllowed = canAccessPage(user.permissions, currentRoute);
-    if (!currentAllowed && allowedNav.length > 0) {
-      const fallback = allowedNav[0]?.path;
-      if (fallback) {
-        navigate(fallback, { replace: true });
-      }
+  // Handle role switching
+  const handleRoleSwitch = (role) => {
+    switchToRole(role);
+    // Navigate to the main dashboard of the switched role
+    const navigation = roleNavigations[role];
+    if (navigation && navigation.length > 0) {
+      navigate(navigation[0].path);
     }
-  }, [user, location.pathname, allowedNav, navigate]);
+  };
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
@@ -123,13 +116,13 @@ export function AdminLayout() {
           </div>
         </div>
         
-        <nav className="p-4 space-y-2 flex-grow overflow-y-auto">
-          {/* Main Admin Navigation */}
+        <nav className="p-4 space-y-4 flex-grow overflow-y-auto">
+          {/* Current Role Pages */}
           <div className="space-y-1">
             <h3 className="px-3 text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-              Admin
+              {roleLabels[activeRole || user?.role]?.label || 'Pages'}
             </h3>
-            {navigation.map((item) => {
+            {currentNavigation.map((item) => {
               const Icon = item.icon;
               const isActive = getCurrentRoute() === item.id;
               const allowed = canAccessPage(user?.permissions, item.id);
@@ -152,43 +145,50 @@ export function AdminLayout() {
                 >
                   <Icon className="h-5 w-5 flex-shrink-0" />
                   <span className="text-sm">{item.label}</span>
+                  {item.badge && (
+                    <span className="ml-auto bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
 
-          {/* Additional Permission Sections */}
-          {additionalSections.map((section, sectionIndex) => (
-            <div key={section.title} className="space-y-1 mt-6">
+          {/* Role Switching Buttons */}
+          {accessibleRoles.length > 1 && (
+            <div className="space-y-2 border-t pt-4">
               <h3 className="px-3 text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-                {section.title}
+                Switch Role
               </h3>
-              {section.items.map((item) => {
-                const Icon = item.icon;
-                const isActive = getCurrentRoute() === item.id;
-
+              {accessibleRoles.map((role) => {
+                const roleInfo = roleLabels[role];
+                const Icon = roleInfo.icon;
+                const isCurrentRole = role === (activeRole || user?.role);
+                
                 return (
                   <button
-                    key={item.id}
-                    onClick={() => navigate(item.path)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-[#3B82F6] text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
+                    key={role}
+                    onClick={() => !isCurrentRole && handleRoleSwitch(role)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors border ${
+                      isCurrentRole
+                        ? `${roleInfo.color} font-medium border-opacity-50`
+                        : 'text-gray-600 hover:bg-gray-50 border-gray-200'
+                    } ${
+                      isCurrentRole ? 'cursor-default' : 'cursor-pointer'
                     }`}
+                    disabled={isCurrentRole}
                   >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    <span className="text-sm">{item.label}</span>
-                    {item.badge && (
-                      <span className="ml-auto bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                        {item.badge}
-                      </span>
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm">{roleInfo.label}</span>
+                    {isCurrentRole && (
+                      <span className="ml-auto text-xs opacity-70">Current</span>
                     )}
                   </button>
                 );
               })}
             </div>
-          ))}
+          )}
         </nav>
 
         {/* Logout Button */}

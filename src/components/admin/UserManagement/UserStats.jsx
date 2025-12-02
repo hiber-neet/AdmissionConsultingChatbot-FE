@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/system_users/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/system_users/card';
 import PropTypes from 'prop-types';
 
 export function UserStats({ users }) {
