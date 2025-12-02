@@ -8,6 +8,8 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState("");
+  const [linkImage, setLinkImage] = useState("");
+  const [note, setNote] = useState("");
   const [majorId, setMajorId] = useState<number>(0);
   const [specializationId, setSpecializationId] = useState<number>(0);
   
@@ -141,6 +143,8 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
         title: title.trim(),
         description: description.trim(),
         url: url.trim(),
+        link_image: linkImage.trim() || null,
+        note: note.trim() || null,
         major_id: majorId === 0 ? null : majorId,
         specialization_id: specializationId
       };
@@ -158,6 +162,8 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
       setTitle('');
       setDescription('');
       setUrl('');
+      setLinkImage('');
+      setNote('');
       setMajorId(0);
       setSpecializationId(0);
       
@@ -196,7 +202,9 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
             <div><strong>Description:</strong> {createdArticle.description}</div>
             <div><strong>Created Date:</strong> {createdArticle.create_at}</div>
             <div><strong>URL:</strong> <a href={createdArticle.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{createdArticle.url}</a></div>
+            <div><strong>Link Image:</strong> {createdArticle.link_image || 'N/A'}</div>
             <div><strong>Author:</strong> {createdArticle.author_name || 'N/A'}</div>
+            <div><strong>Note:</strong> {createdArticle.note || 'N/A'}</div>
             <div><strong>Major ID:</strong> {createdArticle.major_id || 'N/A'}</div>
             <div><strong>Major Name:</strong> {createdArticle.major_name || 'N/A'}</div>
             <div><strong>Specialization ID:</strong> {createdArticle.specialization_id}</div>
@@ -242,6 +250,27 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
               onChange={(e) => setUrl(e.target.value)}
               className="w-full border rounded-md px-2 py-2 text-sm" 
               placeholder="https://example.com/article-url" 
+            />
+          </div>
+
+          <div>
+            <div className="text-sm text-gray-500 mb-1">Image URL</div>
+            <input 
+              value={linkImage}
+              onChange={(e) => setLinkImage(e.target.value)}
+              className="w-full border rounded-md px-2 py-2 text-sm" 
+              placeholder="https://example.com/image.jpg" 
+            />
+          </div>
+
+          <div>
+            <div className="text-sm text-gray-500 mb-1">Note</div>
+            <textarea 
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full border rounded-md px-2 py-2 text-sm resize-none" 
+              placeholder="Optional note about this article..."
+              rows={3}
             />
           </div>
 

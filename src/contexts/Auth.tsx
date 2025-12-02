@@ -33,11 +33,11 @@ type AuthCtx = {
 /** Tài khoản mẫu (có thể đổi sau này) */
 type Account = { email: string; password: string; name: string; role: Role; isLeader?: boolean };
 const ACCOUNTS: Account[] = [
-  { email: "admin@gmail.com",     password: "123",   name: "Admin User",   role: "SYSTEM_ADMIN", isLeader: true },
-  { email: "consultant@gmail.com",password: "123",    name: "Consultant User",       role: "CONSULTANT", isLeader: false },
-  { email: "content@gmail.com",   password: "123", name: "Content Manager",     role: "CONTENT_MANAGER", isLeader: false },
-  { email: "officer@gmail.com",   password: "123", name: "Admission Officer", role: "ADMISSION_OFFICER", isLeader: false },
-  { email: "student@gmail.com",   password: "123", name: "Student User", role: "STUDENT", isLeader: false },
+  { email: "admin@gmail.com",     password: "123",   name: "Admin User",   role: "Admin", isLeader: true },
+  { email: "consultant@gmail.com",password: "123",    name: "Consultant User",       role: "Consultant", isLeader: false },
+  { email: "content@gmail.com",   password: "123", name: "Content Manager",     role: "Content Manager", isLeader: false },
+  { email: "officer@gmail.com",   password: "123", name: "Admission Officer", role: "Admission Official", isLeader: false },
+  { email: "student@gmail.com",   password: "123", name: "Student User", role: "Student", isLeader: false },
 ];
 
 const AuthContext = createContext<AuthCtx | undefined>(undefined);
@@ -109,23 +109,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         
         // Temporary: Map email patterns to roles until backend profile endpoint is fixed
-        let appRole: Role = "STUDENT"; // default fallback
+        let appRole: Role = "Student"; // default fallback
         let isLeader = false;
         
         if (userEmail.includes('admin')) {
-          appRole = "SYSTEM_ADMIN";
+          appRole = "Admin";
           isLeader = true;
         } else if (userEmail.includes('consultant')) {
-          appRole = "CONSULTANT";
+          appRole = "Consultant";
           isLeader = false; // Can be updated based on your needs
         } else if (userEmail.includes('content')) {
-          appRole = "CONTENT_MANAGER";
+          appRole = "Content Manager";
           isLeader = false;
         } else if (userEmail.includes('officer')) {
-          appRole = "ADMISSION_OFFICER";
+          appRole = "Admission Official";
           isLeader = false;
         } else {
-          appRole = "STUDENT";
+          appRole = "Student";
         }
         
         if (userId) {
@@ -146,18 +146,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Map backend permissions to frontend permissions
               const mapBackendPermissionToFrontend = (backendPermission: string): Permission[] => {
                 const permissionMap: Record<string, Permission[]> = {
-                  'admin': ['admin', 'content_manager', 'admission_officer', 'consultant', 'student'],
-                  'content_manager': ['content_manager', 'student'],
-                  'admission_officer': ['admission_officer', 'student'],
-                  'consultant': ['consultant', 'student'],
-                  'student': ['student']
+                  'Admin': ['Admin', 'Content Manager', 'Admission Official', 'Consultant', 'Student'],
+                  'Content Manager': ['Content Manager', 'Student'],
+                  'Admission Official': ['Admission Official', 'Student'],
+                  'Consultant': ['Consultant', 'Student'],
+                  'Student': ['Student']
                 };
                 
-                return permissionMap[backendPermission.toLowerCase()] || ['student'];
+                return permissionMap[backendPermission] || ['Student'];
               };
               
               // Get permissions from profile
-              let userPermissions: Permission[] = ['student']; // default
+              let userPermissions: Permission[] = ['Student']; // default
               if (profileData.permission && Array.isArray(profileData.permission)) {
                 userPermissions = profileData.permission.flatMap((perm: string) => 
                   mapBackendPermissionToFrontend(perm)
@@ -169,16 +169,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               console.log('🔑 Mapped permissions:', userPermissions);
               
               // Determine role from permissions (highest permission becomes primary role)
-              if (userPermissions.includes('admin')) {
-                appRole = "SYSTEM_ADMIN";
-              } else if (userPermissions.includes('content_manager')) {
-                appRole = "CONTENT_MANAGER";
-              } else if (userPermissions.includes('admission_officer')) {
-                appRole = "ADMISSION_OFFICER";
-              } else if (userPermissions.includes('consultant')) {
-                appRole = "CONSULTANT";
+              if (userPermissions.includes('Admin')) {
+                appRole = "Admin";
+              } else if (userPermissions.includes('Content Manager')) {
+                appRole = "Content Manager";
+              } else if (userPermissions.includes('Admission Official')) {
+                appRole = "Admission Official";
+              } else if (userPermissions.includes('Consultant')) {
+                appRole = "Consultant";
               } else {
-                appRole = "STUDENT";
+                appRole = "Student";
               }
               
               // Get leadership status from profiles
@@ -242,10 +242,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData: User = {
         id: email, 
         name: email.split('@')[0],
-        role: "STUDENT", // Safe default
+        role: "Student", // Safe default
         email: email,
         isLeader: false,
-        permissions: getRolePermissions("STUDENT")
+        permissions: getRolePermissions("Student")
       };
 
       setUser(userData);
@@ -272,14 +272,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!tokenRole) return null;
     
     const roleMappings: Record<string, Role> = {
-      'admin': 'SYSTEM_ADMIN',
-      'system_admin': 'SYSTEM_ADMIN',
-      'consultant': 'CONSULTANT', 
-      'content_manager': 'CONTENT_MANAGER',
-      'content': 'CONTENT_MANAGER',
-      'admission_officer': 'ADMISSION_OFFICER',
-      'officer': 'ADMISSION_OFFICER',
-      'student': 'STUDENT'
+      'admin': 'Admin',
+      'system_admin': 'Admin',
+      'consultant': 'Consultant', 
+      'content_manager': 'Content Manager',
+      'content': 'Content Manager',
+      'admission_officer': 'Admission Official',
+      'officer': 'Admission Official',
+      'student': 'Student'
     };
     
     return roleMappings[tokenRole.toLowerCase()] || null;
@@ -288,11 +288,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Get default route based on user role
   const getDefaultRoute = (role: Role): string => {
     const roleRoutes: Record<Role, string> = {
-      'SYSTEM_ADMIN': '/admin/dashboard',
-      'CONTENT_MANAGER': '/content/dashboard',
-      'CONSULTANT': '/consultant',
-      'ADMISSION_OFFICER': '/admission/dashboard',
-      'STUDENT': '/profile'
+      'Admin': '/admin/dashboard',
+      'Content Manager': '/content/dashboard',
+      'Consultant': '/consultant',
+      'Admission Official': '/admission/dashboard',
+      'Student': '/profile',
+      'Parent': '/profile'
     };
     
     return roleRoutes[role] || '/';
@@ -441,11 +442,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const roles: Role[] = [];
     
     // Map permissions to roles
-    if (user.permissions.includes('admin')) roles.push('SYSTEM_ADMIN');
-    if (user.permissions.includes('content_manager')) roles.push('CONTENT_MANAGER');
-    if (user.permissions.includes('admission_officer')) roles.push('ADMISSION_OFFICER');
-    if (user.permissions.includes('consultant')) roles.push('CONSULTANT');
-    if (user.permissions.includes('student')) roles.push('STUDENT');
+    if (user.permissions.includes('Admin')) roles.push('Admin');
+    if (user.permissions.includes('Content Manager')) roles.push('Content Manager');
+    if (user.permissions.includes('Admission Official')) roles.push('Admission Official');
+    if (user.permissions.includes('Consultant')) roles.push('Consultant');
+    // NOTE: we intentionally do NOT add 'Student' here because
+    // the sidebar role-switch should not allow switching into Student.
     
     return roles;
   };

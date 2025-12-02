@@ -80,7 +80,7 @@ function getDefaultRouteForUser(user: any): string {
 // Convenience components for specific permissions
 export function AdminGuard({ children, fallbackRoute }: { children: JSX.Element; fallbackRoute?: string }) {
   return (
-    <PermissionGuard requiredPermission="admin" fallbackRoute={fallbackRoute}>
+    <PermissionGuard requiredPermission="Admin" fallbackRoute={fallbackRoute}>
       {children}
     </PermissionGuard>
   );
@@ -88,7 +88,7 @@ export function AdminGuard({ children, fallbackRoute }: { children: JSX.Element;
 
 export function ContentManagerGuard({ children, fallbackRoute }: { children: JSX.Element; fallbackRoute?: string }) {
   return (
-    <PermissionGuard requiredPermission="content_manager" fallbackRoute={fallbackRoute}>
+    <PermissionGuard requiredPermission="Content Manager" fallbackRoute={fallbackRoute}>
       {children}
     </PermissionGuard>
   );
@@ -96,7 +96,7 @@ export function ContentManagerGuard({ children, fallbackRoute }: { children: JSX
 
 export function ConsultantGuard({ children, fallbackRoute }: { children: JSX.Element; fallbackRoute?: string }) {
   return (
-    <PermissionGuard requiredPermission="consultant" fallbackRoute={fallbackRoute}>
+    <PermissionGuard requiredPermission="Consultant" fallbackRoute={fallbackRoute}>
       {children}
     </PermissionGuard>
   );
@@ -104,15 +104,16 @@ export function ConsultantGuard({ children, fallbackRoute }: { children: JSX.Ele
 
 export function AdmissionOfficerGuard({ children, fallbackRoute }: { children: JSX.Element; fallbackRoute?: string }) {
   return (
-    <PermissionGuard requiredPermission="admission_officer" fallbackRoute={fallbackRoute}>
+    <PermissionGuard requiredPermission="Admission Official" fallbackRoute={fallbackRoute}>
       {children}
     </PermissionGuard>
   );
 }
 
+// NOTE: StudentGuard kept functional but Student is not available for sidebar role switching
 export function StudentGuard({ children, fallbackRoute }: { children: JSX.Element; fallbackRoute?: string }) {
   return (
-    <PermissionGuard requiredPermission="student" fallbackRoute={fallbackRoute}>
+    <PermissionGuard requiredPermission="Student" fallbackRoute={fallbackRoute}>
       {children}
     </PermissionGuard>
   );
@@ -152,8 +153,10 @@ export function StaffGuard({ children, fallbackRoute }: { children: JSX.Element;
   const { user } = useAuth();
   const userPermissions = user?.permissions || [];
   
-  // Staff = anyone who's not just a student
-  const isStaff = userPermissions.some(p => p !== 'student');
+  // Staff = anyone who has any staff permissions (Admin, Content Manager, Admission Official, Consultant)
+  const isStaff = userPermissions.some(p => 
+    p === 'Admin' || p === 'Content Manager' || p === 'Admission Official' || p === 'Consultant'
+  );
   
   if (!isStaff) {
     return <Navigate to="/profile" replace />;

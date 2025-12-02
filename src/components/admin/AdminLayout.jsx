@@ -38,21 +38,21 @@ export function AdminLayout() {
 
   // Define navigation for all roles
   const roleNavigations = {
-    SYSTEM_ADMIN: [
+    Admin: [
       { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
       { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
       { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
       { id: 'activity', label: 'Nhật Ký Hoạt Động', icon: Activity, path: '/admin/activity' },
       { id: 'profile', label: 'Profile', icon: User, path: '/admin/profile' },
     ],
-    CONTENT_MANAGER: [
+    'Content Manager': [
       { id: "dashboard", label: "Tổng quan content", icon: LayoutDashboard, path: '/content/dashboard' },
       { id: "articles", label: "All Articles", icon: FileText, path: '/content/articles' },
       { id: "review", label: "Review Queue", icon: ListChecks, path: '/content/review' },
       { id: "editor", label: "New Article", icon: PenSquare, path: '/content/editor' },
       { id: "profile", label: "Profile", icon: User, path: '/content/profile' },
     ],
-    ADMISSION_OFFICER: [
+    'Admission Official': [
       { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard, path: '/admission/dashboard' },
       { id: 'request-queue', label: 'Hàng Đợi Yêu Cầu', icon: Clock, badge: 8, path: '/admission/request-queue' },
       { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admission/consultation' },
@@ -60,7 +60,7 @@ export function AdminLayout() {
       { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
       { id: 'profile', label: 'Profile', icon: User, path: '/admission/profile' },
     ],
-    CONSULTANT: [
+    Consultant: [
       { id: 'overview', label: 'Dashboard Home', icon: LayoutDashboard, path: '/consultant/overview' },
       { id: 'analytics', label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
       { id: 'templates', label: 'Training Questions', icon: MessageSquareText, path: '/consultant/templates' },
@@ -69,9 +69,6 @@ export function AdminLayout() {
         { id: 'leader', label: 'Leader Review', icon: Database, path: '/consultant/leader' }
       ] : []),
       { id: 'profile', label: 'Profile', icon: User, path: '/consultant/profile' }
-    ],
-    STUDENT: [
-      { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
     ]
   };
 
@@ -83,11 +80,11 @@ export function AdminLayout() {
   
   // Role labels and icons for switching buttons
   const roleLabels = {
-    SYSTEM_ADMIN: { label: 'Admin', icon: Shield, color: 'bg-red-100 text-red-700 border-red-200' },
-    CONTENT_MANAGER: { label: 'Content', icon: FileEdit, color: 'bg-blue-100 text-blue-700 border-blue-200' },
-    ADMISSION_OFFICER: { label: 'Admission', icon: GraduationCap, color: 'bg-green-100 text-green-700 border-green-200' },
-    CONSULTANT: { label: 'Consultant', icon: TrendingUp, color: 'bg-purple-100 text-purple-700 border-purple-200' },
-    STUDENT: { label: 'Student', icon: User, color: 'bg-gray-100 text-gray-700 border-gray-200' }
+    Admin: { label: 'Admin', icon: Shield, color: 'bg-red-100 text-red-700 border-red-200' },
+    'Content Manager': { label: 'Content', icon: FileEdit, color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    'Admission Official': { label: 'Admission', icon: GraduationCap, color: 'bg-green-100 text-green-700 border-green-200' },
+    Consultant: { label: 'Consultant', icon: TrendingUp, color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    Parent: { label: 'Parent', icon: User, color: 'bg-gray-100 text-gray-700 border-gray-200' }
   };
 
   // Handle role switching
@@ -163,6 +160,10 @@ export function AdminLayout() {
               </h3>
               {accessibleRoles.map((role) => {
                 const roleInfo = roleLabels[role];
+                if (!roleInfo) {
+                  console.warn('Role info not found for role:', role);
+                  return null;
+                }
                 const Icon = roleInfo.icon;
                 const isCurrentRole = role === (activeRole || user?.role);
                 
@@ -186,7 +187,7 @@ export function AdminLayout() {
                     )}
                   </button>
                 );
-              })}
+              }).filter(Boolean)}
             </div>
           )}
         </nav>

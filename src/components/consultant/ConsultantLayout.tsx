@@ -45,8 +45,8 @@ export function ConsultantLayout() {
   // Auto-login if no user is found (for consultant pages)
   useEffect(() => {
     if (!user) {
-      console.log('No user found in ConsultantLayout, auto-logging in as CONSULTANT');
-      loginAs('CONSULTANT');
+      console.log('No user found in ConsultantLayout, auto-logging in as Consultant');
+      loginAs('Consultant');
     }
   }, [user, loginAs]);
 
@@ -56,7 +56,7 @@ export function ConsultantLayout() {
     
     if (!user) {
       console.log('No user found, logging in as consultant');
-      loginAs('CONSULTANT');
+      loginAs('Consultant');
       return;
     }
     
@@ -80,21 +80,21 @@ export function ConsultantLayout() {
 
   // Define navigation for all roles
   const roleNavigations = {
-    SYSTEM_ADMIN: [
+    Admin: [
       { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
       { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
       { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
       { id: 'activity', label: 'Nhật Ký Hoạt Động', icon: Activity, path: '/admin/activity' },
       { id: 'profile', label: 'Profile', icon: User, path: '/admin/profile' },
     ],
-    CONTENT_MANAGER: [
+    'Content Manager': [
       { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/content/dashboard" },
       { id: "articles", label: "Article List", icon: FileText, path: "/content/articles" },
       { id: "editor", label: "Article Details", icon: PenSquare, path: "/content/editor" },
       { id: "review", label: "Review Queue", icon: ListChecks, path: "/content/review" },
       { id: "profile", label: "Profile", icon: User, path: "/content/profile" },
     ],
-    ADMISSION_OFFICER: [
+    'Admission Official': [
       { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard, path: '/admission/dashboard' },
       { id: 'request-queue', label: 'Hàng Đợi Yêu Cầu', icon: Clock, badge: 8, path: '/admission/request-queue' },
       { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admission/consultation' },
@@ -102,10 +102,7 @@ export function ConsultantLayout() {
       { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
       { id: 'profile', label: 'Profile', icon: User, path: '/admission/profile' },
     ],
-    CONSULTANT: navigation,
-    STUDENT: [
-      { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
-    ]
+    Consultant: navigation
   };
 
   // Get current navigation based on active role
@@ -116,11 +113,10 @@ export function ConsultantLayout() {
   
   // Role labels and icons for switching buttons
   const roleLabels = {
-    SYSTEM_ADMIN: { label: 'Admin', icon: Shield, color: 'bg-red-100 text-red-700 border-red-200' },
-    CONTENT_MANAGER: { label: 'Content', icon: FileEdit, color: 'bg-blue-100 text-blue-700 border-blue-200' },
-    ADMISSION_OFFICER: { label: 'Admission', icon: GraduationCap, color: 'bg-green-100 text-green-700 border-green-200' },
-    CONSULTANT: { label: 'Consultant', icon: TrendingUp, color: 'bg-purple-100 text-purple-700 border-purple-200' },
-    STUDENT: { label: 'Student', icon: User, color: 'bg-gray-100 text-gray-700 border-gray-200' }
+    Admin: { label: 'Admin', icon: Shield, color: 'bg-red-100 text-red-700 border-red-200' },
+    'Content Manager': { label: 'Content', icon: FileEdit, color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    'Admission Official': { label: 'Admission', icon: GraduationCap, color: 'bg-green-100 text-green-700 border-green-200' },
+    Consultant: { label: 'Consultant', icon: TrendingUp, color: 'bg-purple-100 text-purple-700 border-purple-200' }
   };
 
   // Handle role switching
@@ -206,6 +202,10 @@ export function ConsultantLayout() {
               </div>
               {accessibleRoles.map((role) => {
                 const roleInfo = roleLabels[role];
+                if (!roleInfo) {
+                  console.warn('Role info not found for role:', role);
+                  return null;
+                }
                 const Icon = roleInfo.icon;
                 const isCurrentRole = role === (activeRole || user?.role);
                 
@@ -229,7 +229,7 @@ export function ConsultantLayout() {
                     )}
                   </button>
                 );
-              })}
+              }).filter(Boolean)}
             </div>
           )}
 

@@ -8,7 +8,6 @@ import {
   UserPlus,
   AlertCircle,
   Globe,
-  MapPin,
   Calendar,
   Tag,
 } from 'lucide-react';
@@ -27,20 +26,19 @@ import {
 } from '../ui/system_users/select';
 import { Separator } from '../ui/system_users/separator';
 
-// QueueRequest object structure:
+// QueueRequest object structure (data available from backend):
 // {
 //   id: string,
-//   name: string,
-//   email: string,
-//   phone: string,
-//   studentType: 'international' | 'domestic',
-//   topic: string,
-//   message: string,
-//   priority: 'high' | 'normal' | 'low',
-//   waitTime: number (in minutes),
-//   requestedAt: string,
-//   avatar: string,
-//   location?: string
+//   name: string,           // Customer's full name
+//   email: string,          // Customer's email  
+//   phone: string,          // Customer's phone number
+//   studentType: 'international' | 'domestic',  // Default: 'domestic'
+//   topic: string,          // Default: 'Tư vấn tuyển sinh'
+//   message: string,        // Default message about consultation request
+//   priority: 'high' | 'normal' | 'low',  // Default: 'normal'
+//   waitTime: number,       // Calculated wait time in minutes
+//   requestedAt: string,    // When the request was created
+//   avatar: string,         // Generated from customer name initials
 // }
 
 // RequestQueue component props:
@@ -328,7 +326,7 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
 
                           <Separator className="my-3" />
 
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-muted-foreground">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
                               <User className="h-3 w-3" />
                               <span className="truncate">{request.email}</span>
@@ -337,12 +335,6 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
                               <MessageCircle className="h-3 w-3" />
                               <span>{request.phone}</span>
                             </div>
-                            {request.location && (
-                              <div className="flex items-center gap-2">
-                                <MapPin className="h-3 w-3" />
-                                <span className="truncate">{request.location}</span>
-                              </div>
-                            )}
                           </div>
 
                           <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">

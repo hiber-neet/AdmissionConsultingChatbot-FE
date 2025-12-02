@@ -42,8 +42,8 @@ export default function ContentManagerLayOut() {
   // Auto-login if no user is found (for content pages)
   useEffect(() => {
     if (!user) {
-      console.log('No user found in ContentManagerLayOut, auto-logging in as CONTENT_MANAGER');
-      loginAs('CONTENT_MANAGER');
+      console.log('No user found in ContentManagerLayOut, auto-logging in as Content Manager');
+      loginAs('Content Manager');
     }
   }, [user, loginAs]);
   
@@ -59,26 +59,26 @@ export default function ContentManagerLayOut() {
   };
 
   const navigation = [
-    { id: "dashboard" as ContentPage, label: "Dashboard", icon: LayoutDashboard, path: "/content/dashboard", permission: "content_manager" },
-    { id: "articles" as ContentPage, label: "Article List", icon: FileText, path: "/content/articles", permission: "content_manager" },
-    { id: "editor" as ContentPage, label: "Article Details", icon: PenSquare, path: "/content/editor", permission: "content_manager" },
-    ...(hasPermission("content_manager") ? [
-      { id: "review" as ContentPage, label: "Review Queue", icon: ListChecks, path: "/content/review", permission: "content_manager" }
+    { id: "dashboard" as ContentPage, label: "Dashboard", icon: LayoutDashboard, path: "/content/dashboard", permission: "Content Manager" },
+    { id: "articles" as ContentPage, label: "Article List", icon: FileText, path: "/content/articles", permission: "Content Manager" },
+    { id: "editor" as ContentPage, label: "Article Details", icon: PenSquare, path: "/content/editor", permission: "Content Manager" },
+    ...(hasPermission("Content Manager") ? [
+      { id: "review" as ContentPage, label: "Review Queue", icon: ListChecks, path: "/content/review", permission: "Content Manager" }
     ] : []),
-    { id: "profile" as ContentPage, label: "Profile", icon: User, path: "/content/profile", permission: "student" },
+    { id: "profile" as ContentPage, label: "Profile", icon: User, path: "/content/profile", permission: "Student" },
   ];
 
   // Define navigation for all roles
   const roleNavigations = {
-    SYSTEM_ADMIN: [
+    Admin: [
       { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
       { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
       { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
       { id: 'activity', label: 'Nhật Ký Hoạt Động', icon: Activity, path: '/admin/activity' },
       { id: 'profile', label: 'Profile', icon: User, path: '/admin/profile' },
     ],
-    CONTENT_MANAGER: navigation,
-    ADMISSION_OFFICER: [
+    'Content Manager': navigation,
+    'Admission Official': [
       { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard, path: '/admission/dashboard' },
       { id: 'request-queue', label: 'Hàng Đợi Yêu Cầu', icon: Clock, badge: 8, path: '/admission/request-queue' },
       { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admission/consultation' },
@@ -86,7 +86,7 @@ export default function ContentManagerLayOut() {
       { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
       { id: 'profile', label: 'Profile', icon: User, path: '/admission/profile' },
     ],
-    CONSULTANT: [
+    Consultant: [
       { id: 'overview', label: 'Dashboard Home', icon: LayoutDashboard, path: '/consultant/overview' },
       { id: 'analytics', label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
       { id: 'templates', label: 'Training Questions', icon: MessageSquareText, path: '/consultant/templates' },
@@ -95,9 +95,6 @@ export default function ContentManagerLayOut() {
         { id: 'leader', label: 'Leader Review', icon: Database, path: '/consultant/leader' }
       ] : []),
       { id: 'profile', label: 'Profile', icon: User, path: '/consultant/profile' }
-    ],
-    STUDENT: [
-      { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
     ]
   };
 
@@ -109,11 +106,11 @@ export default function ContentManagerLayOut() {
   
   // Role labels and icons for switching buttons
   const roleLabels = {
-    SYSTEM_ADMIN: { label: 'Admin', icon: Shield, color: 'bg-red-100 text-red-700 border-red-200' },
-    CONTENT_MANAGER: { label: 'Content', icon: FileEdit, color: 'bg-blue-100 text-blue-700 border-blue-200' },
-    ADMISSION_OFFICER: { label: 'Admission', icon: GraduationCap, color: 'bg-green-100 text-green-700 border-green-200' },
-    CONSULTANT: { label: 'Consultant', icon: TrendingUp, color: 'bg-purple-100 text-purple-700 border-purple-200' },
-    STUDENT: { label: 'Student', icon: User, color: 'bg-gray-100 text-gray-700 border-gray-200' }
+    Admin: { label: 'Admin', icon: Shield, color: 'bg-red-100 text-red-700 border-red-200' },
+    'Content Manager': { label: 'Content', icon: FileEdit, color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    'Admission Official': { label: 'Admission', icon: GraduationCap, color: 'bg-green-100 text-green-700 border-green-200' },
+    Consultant: { label: 'Consultant', icon: TrendingUp, color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    Parent: { label: 'Parent', icon: User, color: 'bg-gray-100 text-gray-700 border-gray-200' }
   };
 
   // Handle role switching
@@ -129,7 +126,7 @@ export default function ContentManagerLayOut() {
   // Additional navigation sections for other permissions
   const additionalSections = [
     // Consultant section
-    ...(user?.permissions?.includes('consultant') ? [{
+    ...(user?.permissions?.includes('Consultant') ? [{
       title: 'Consultant',
       items: [
         { label: 'Consultant Dashboard', icon: LayoutDashboard, path: '/consultant/overview' },
@@ -143,7 +140,7 @@ export default function ContentManagerLayOut() {
     }] : []),
     
     // Admission Officer section  
-    ...(user?.permissions?.includes('admission_officer') ? [{
+    ...(user?.permissions?.includes('Admission Official') ? [{
       title: 'Admission Officer',
       items: [
         { label: 'Admission Dashboard', icon: LayoutDashboard, path: '/admission/dashboard' },
@@ -154,7 +151,7 @@ export default function ContentManagerLayOut() {
     }] : []),
     
     // Admin section
-    ...(user?.permissions?.includes('admin') ? [{
+    ...(user?.permissions?.includes('Admin') ? [{
       title: 'Administration',
       items: [
         { label: 'Admin Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
@@ -170,7 +167,7 @@ export default function ContentManagerLayOut() {
     
     if (!user) {
       console.log('No user found, logging in as content manager');
-      loginAs('CONTENT_MANAGER');
+      loginAs('Content Manager');
       return;
     }
     
@@ -255,6 +252,10 @@ export default function ContentManagerLayOut() {
               </div>
               {accessibleRoles.map((role) => {
                 const roleInfo = roleLabels[role];
+                if (!roleInfo) {
+                  console.warn('Role info not found for role:', role);
+                  return null;
+                }
                 const Icon = roleInfo.icon;
                 const isCurrentRole = role === (activeRole || user?.role);
                 
@@ -278,7 +279,7 @@ export default function ContentManagerLayOut() {
                     )}
                   </button>
                 );
-              })}
+              }).filter(Boolean)}
             </div>
           )}
         </nav>
