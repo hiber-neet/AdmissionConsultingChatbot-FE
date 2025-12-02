@@ -1,13 +1,14 @@
-// Define Role type locally to avoid circular dependency
-export type Role = "SYSTEM_ADMIN" | "CONSULTANT" | "CONTENT_MANAGER" | "ADMISSION_OFFICER" | "STUDENT";
+// Define Role type to match backend roles (with spaces as they appear in backend)
+export type Role = "Admin" | "Consultant" | "Content Manager" | "Admission Official" | "Student" | "Parent";
 
-/** All possible permissions in the system - simplified to match roles */
+/** All possible permissions in the system - matching backend permission names exactly */
 export type Permission = 
-  | "admin"
-  | "content_manager" 
-  | "admission_officer"
-  | "consultant"
-  | "student";
+  | "Admin"
+  | "Consultant" 
+  | "Content Manager"
+  | "Admission Official"
+  | "Student"
+  | "Parent";
 
 /** Page/Component identifiers that need permission checks */
 export type PagePermission = 
@@ -25,51 +26,53 @@ export type PagePermission =
 /** Map each page to its required permission */
 export const PAGE_PERMISSIONS: Record<PagePermission, Permission> = {
   // Admin-only pages
-  "dashboard": "admin",
-  "templates": "admin", 
-  "users": "admin",
-  "activity": "admin",
+  "dashboard": "Admin",
+  "templates": "Admin", 
+  "users": "Admin",
+  "activity": "Admin",
   
-  // Admission Officer pages
-  "admissions": "admission_officer",
-  "content": "admission_officer", 
-  "consultation": "admission_officer",
-  "insights": "admission_officer",
+  // Admission Official pages
+  "admissions": "Admission Official",
+  "content": "Admission Official", 
+  "consultation": "Admission Official",
+  "insights": "Admission Official",
   
   // Consultant pages
-  "overview": "consultant",
-  "analytics": "consultant",
-  "knowledge": "consultant", 
-  "optimization": "consultant",
+  "overview": "Consultant",
+  "analytics": "Consultant",
+  "knowledge": "Consultant", 
+  "optimization": "Consultant",
   
   // Content Manager pages
-  "dashboardcontent": "content_manager",
-  "articles": "content_manager",
-  "review": "content_manager", 
-  "editor": "content_manager",
+  "dashboardcontent": "Content Manager",
+  "articles": "Content Manager",
+  "review": "Content Manager", 
+  "editor": "Content Manager",
   
-  // Shared pages (accessible by all roles)
-  "profile": "student", // Minimum permission level
-  "riasec": "student",
-  "chatbot": "student"
+  // Shared pages (accessible by all roles - no specific permission required)
+  "profile": "Admission Official", // Minimum staff permission level
+  "riasec": "Admission Official",
+  "chatbot": "Admission Official"
 };
 
 /** Base permissions for each role */
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
-  SYSTEM_ADMIN: ["admin", "content_manager", "admission_officer", "consultant", "student"],
-  CONTENT_MANAGER: ["content_manager", "student"],
-  ADMISSION_OFFICER: ["admission_officer", "student"], 
-  CONSULTANT: ["consultant", "student"],
-  STUDENT: ["student"]
+  Admin: ["Admin", "Content Manager", "Admission Official", "Consultant"],
+  "Content Manager": ["Content Manager"],
+  "Admission Official": ["Admission Official"], 
+  Consultant: ["Consultant"],
+  Student: [], // Students don't have staff permissions (kept for auth, but not for sidebar switching)
+  Parent: [] // Parents don't have staff permissions
 };
 
 /** Permission hierarchy - higher levels include lower levels */
 export const PERMISSION_HIERARCHY: Record<Permission, Permission[]> = {
-  "admin": ["admin", "content_manager", "admission_officer", "consultant", "student"],
-  "content_manager": ["content_manager", "student"],
-  "admission_officer": ["admission_officer", "student"],
-  "consultant": ["consultant", "student"], 
-  "student": ["student"]
+  "Admin": ["Admin", "Content Manager", "Admission Official", "Consultant"],
+  "Content Manager": ["Content Manager"],
+  "Admission Official": ["Admission Official"],
+  "Consultant": ["Consultant"],
+  "Student": ["Student"], // Kept for auth, but not for sidebar switching
+  "Parent": ["Parent"]
 };
 
 /** Check if a user has access to a specific page */
@@ -102,7 +105,7 @@ export function hasPermission(
 
 /** Get all permissions for a role */
 export function getRolePermissions(role: Role, isLeader: boolean = false): Permission[] {
-  return ROLE_PERMISSIONS[role] || ["student"];
+  return ROLE_PERMISSIONS[role] || [];
 }
 
 // Legacy function for backward compatibility with existing code that checks roles

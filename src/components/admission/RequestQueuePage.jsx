@@ -21,14 +21,14 @@ export function RequestQueuePage() {
       name: item.customer?.full_name || `Customer ${item.customer_id}`,
       email: item.customer?.email || 'N/A',
       phone: item.customer?.phone_number || 'N/A',
-      studentType: 'domestic', // Default for now - would need customer profile data
-      topic: 'General Consultation', // Default - could be enhanced with topic classification
-      message: 'Customer requesting live chat consultation', // Default message
-      priority: 'normal', // Could be based on wait time or other factors
-      waitTime: Math.floor((new Date() - new Date(item.created_at)) / (1000 * 60)), // Calculate wait time in minutes
+      studentType: 'domestic', // Default for now - we can enhance this later if customer profile data is needed
+      topic: 'Tư vấn tuyển sinh', // Default topic since we don't have specific topic data
+      message: 'Khách hàng yêu cầu tư vấn trực tiếp qua chat', // Default message since we don't have specific message content
+      priority: 'normal', // Default priority - could be enhanced based on wait time or other business logic
+      waitTime: Math.floor((new Date() - new Date(item.created_at)) / (1000 * 60)), // Calculate actual wait time in minutes
       requestedAt: item.created_at,
       avatar: item.customer?.full_name ? item.customer.full_name.split(' ').map(n => n[0]).join('').toUpperCase() : `C${item.customer_id}`,
-      location: 'Vietnam' // Default
+      // Remove location since it's not available in backend data
     }));
   };
 
@@ -131,8 +131,22 @@ export function RequestQueuePage() {
         return;
       }
       
-      // Success case - check if we got a session_id back
-      if (response && response.session_id) {
+      // Success case - handle ChatSession object response
+      if (response && response.chat_session_id) {
+        // New response format: ChatSession object with chat_session_id
+        console.log('🎉 Got chat_session_id, navigating to consultation:', response.chat_session_id);
+        toast.success('✅ Request accepted successfully! Redirecting to consultation...');
+        
+        // Navigate to consultation page with session info
+        navigate('/admission/consultation', { 
+          state: { 
+            sessionId: response.chat_session_id,
+            officialId: officialId,
+            queueId: queueId
+          } 
+        });
+      } else if (response && response.session_id) {
+        // Legacy response format: { session_id: number }
         console.log('🎉 Got session_id, navigating to consultation:', response.session_id);
         toast.success('✅ Request accepted successfully! Redirecting to consultation...');
         

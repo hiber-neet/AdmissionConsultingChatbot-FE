@@ -189,11 +189,10 @@ export interface LiveChatQueueItem {
   admission_official_id: number;
   status: 'waiting' | 'accepted' | 'rejected';
   created_at: string;
-  // Customer information will need to be joined from User table
-  customer?: {
-    name?: string;
-    email?: string;
-    phone?: string;
+  customer: {
+    full_name: string;
+    email: string;
+    phone_number: string;
   };
 }
 
@@ -204,6 +203,13 @@ export interface ChatSessionMessage {
   message_text: string;
   timestamp: string;
   is_from_bot: boolean;
+}
+
+export interface ChatSession {
+  chat_session_id: number;
+  session_type: string;
+  start_time: string;
+  end_time?: string;
 }
 
 export interface ActiveChatSession {
@@ -227,7 +233,7 @@ export const liveChatAPI = {
 
   // Accept a queue request
   acceptRequest: (officialId: number, queueId: number) => 
-    fastAPIClient.post(`/live_chat/livechat/admission_official/accept?official_id=${officialId}&queue_id=${queueId}`, {}),
+    fastAPIClient.post<ChatSession>(`/live_chat/livechat/admission_official/accept?official_id=${officialId}&queue_id=${queueId}`, {}),
 
   // Reject a queue request
   rejectRequest: (officialId: number, queueId: number, reason: string) => 
