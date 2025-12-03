@@ -13,6 +13,8 @@ export type User = {
   role: Role;
   email: string;
   isLeader?: boolean;
+  consultantIsLeader?: boolean; // Specific consultant leadership flag
+  contentManagerIsLeader?: boolean; // Specific content manager leadership flag
   permissions?: Permission[];
 };
 
@@ -158,10 +160,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 appRole = "Student";
               }
               
-              // Get leadership status from profiles
-              if (profileData.consultant_profile?.is_leader) isLeader = true;
-              if (profileData.content_manager_profile?.is_leader) isLeader = true;
-              if (profileData.role_name === 'admin') isLeader = true; // Admins are always leaders
+              // Get leadership status from explicit flags
+              if (profileData.consultant_is_leader === true) {
+                isLeader = true;
+              }
+              if (profileData.content_manager_is_leader === true) {
+                isLeader = true;
+              }
+              if (profileData.role_name === 'admin') {
+                isLeader = true; // Admins are always leaders
+              }
               
               const userData: User = {
                 id: userId.toString(),
@@ -169,6 +177,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 role: appRole,
                 email: profileData.email || userEmail,
                 isLeader: isLeader,
+                consultantIsLeader: profileData.consultant_is_leader === true,
+                contentManagerIsLeader: profileData.content_manager_is_leader === true,
                 permissions: userPermissions // Use dynamic permissions from backend
               };
 
@@ -199,6 +209,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: appRole,
               email: userEmail,
               isLeader: isLeader,
+              consultantIsLeader: false, // Default to false when profile fails
+              contentManagerIsLeader: false, // Default to false when profile fails
               permissions: getRolePermissions(appRole) // Fallback to hardcoded permissions
             };
 
@@ -341,8 +353,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Admin bypasses leader check (same as backend)
     if (checkUserPermission('Admin')) return true;
     
-    // Must be Content Manager AND have leadership status
-    return checkUserPermission('Content Manager') && user.isLeader === true;
+    // Must be Content Manager AND have content manager leadership status
+    return checkUserPermission('Content Manager') && user.contentManagerIsLeader === true;
   };
 
   // Function to switch active role for navigation

@@ -31,13 +31,6 @@ export function RoleSelector({ selectedRole, onRoleChange, isEditing = false }) 
       description: 'Manages student admissions and profiles',
       icon: GraduationCap,
       color: 'text-purple-500'
-    },
-    {
-      id: 'CUSTOMER',
-      label: 'Customer',
-      description: 'Regular user/student accessing services',
-      icon: User,
-      color: 'text-gray-500'
     }
   ];
 

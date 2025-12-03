@@ -86,7 +86,9 @@ const transformUserData = (apiUser) => {
     lastActive: 'Recently', // API doesn't provide this, so we use a default
     createdAt: new Date().toISOString().split('T')[0], // API doesn't provide this
     isBanned: !apiUser.status, // If status is false, user is banned
-    banReason: !apiUser.status ? 'Banned by admin' : null
+    banReason: !apiUser.status ? 'Banned by admin' : null,
+    consultant_is_leader: apiUser.consultant_is_leader || false,
+    content_manager_is_leader: apiUser.content_manager_is_leader || false,
   };
 };
 
@@ -201,6 +203,8 @@ export function UserManagement() {
     phone_number: '',
     interest_desired_major: '',
     interest_region: '',
+    consultant_is_leader: false,
+    content_manager_is_leader: false,
   });
 
   // Fetch users from API
@@ -513,7 +517,9 @@ export function UserManagement() {
       permissions: [], 
       phone_number: '', 
       interest_desired_major: '', 
-      interest_region: '' 
+      interest_region: '',
+      consultant_is_leader: false,
+      content_manager_is_leader: false,
     });
     setIsDialogOpen(true);
   };
@@ -544,13 +550,9 @@ export function UserManagement() {
         const permissionsChanged = JSON.stringify(currentPermissions.sort()) !== JSON.stringify(newPermissions.sort());
         
         if (permissionsChanged) {
-          // Determine leadership flags based on role and permissions
-          // In this simplified system, leadership is determined by having multiple permissions
-          // or having admin/content_manager permissions along with consultant role, etc.
-          const consultantIsLeader = formData.role === 'CONSULTANT' && 
-            (newPermissions.includes('admin') || newPermissions.includes('content_manager') || newPermissions.length > 1);
-          const contentManagerIsLeader = formData.role === 'CONTENT_MANAGER' && 
-            (newPermissions.includes('admin') || newPermissions.includes('consultant') || newPermissions.length > 1);
+          // Use leadership flags from form data
+          const consultantIsLeader = formData.consultant_is_leader || false;
+          const contentManagerIsLeader = formData.content_manager_is_leader || false;
           
           await updateUserPermissions(
             editingUser.id, 
@@ -598,11 +600,9 @@ export function UserManagement() {
           .map(permName => PERMISSION_NAME_TO_ID[permName])
           .filter(id => id !== undefined); // Remove any unmapped permissions
         
-        // Determine leadership flags
-        const consultantIsLeader = formData.role === 'CONSULTANT' && 
-          (formData.permissions.includes('admin') || formData.permissions.includes('content_manager') || formData.permissions.length > 1);
-        const contentManagerIsLeader = formData.role === 'CONTENT_MANAGER' && 
-          (formData.permissions.includes('admin') || formData.permissions.includes('consultant') || formData.permissions.length > 1);
+        // Determine leadership flags from form data
+        const consultantIsLeader = formData.consultant_is_leader || false;
+        const contentManagerIsLeader = formData.content_manager_is_leader || false;
         
         // Prepare API request body
         const requestBody = {
@@ -645,7 +645,9 @@ export function UserManagement() {
         permissions: [], 
         phone_number: '', 
         interest_desired_major: '', 
-        interest_region: '' 
+        interest_region: '',
+        consultant_is_leader: false,
+        content_manager_is_leader: false,
       });
       setEditingUser(null);
       setIsDialogOpen(false);
@@ -667,6 +669,8 @@ export function UserManagement() {
       phone_number: user.phone_number || '',
       interest_desired_major: '',
       interest_region: '',
+      consultant_is_leader: user.consultant_is_leader || false,
+      content_manager_is_leader: user.content_manager_is_leader || false,
     });
     setIsDialogOpen(true);
   };

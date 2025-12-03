@@ -64,13 +64,13 @@ export default function PermissionGuard({
 function getDefaultRouteForUser(user: any): string {
   const permissions = user.permissions || [];
   
-  if (permissions.includes('admin')) {
+  if (permissions.includes('Admin')) {
     return '/admin/dashboard';
-  } else if (permissions.includes('content_manager')) {
+  } else if (permissions.includes('Content Manager')) {
     return '/content/dashboard';
-  } else if (permissions.includes('consultant')) {
+  } else if (permissions.includes('Consultant')) {
     return '/consultant';
-  } else if (permissions.includes('admission_officer')) {
+  } else if (permissions.includes('Admission Official')) {
     return '/admission/dashboard';
   } else {
     return '/profile';

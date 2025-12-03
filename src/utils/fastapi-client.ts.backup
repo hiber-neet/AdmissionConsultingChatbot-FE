@@ -197,9 +197,24 @@ export interface TrainingQuestion {
   created_at: string;
 }
 
-// Intent types
 export interface Intent {
   intent_id: number;
   intent_name: string;
   description?: string;
+}
+
+export interface TemplateField {
+  field_name: string;
+  order_field: number;
+  field_type: string;
+  template_field_id: number;
+  template_id: number;
+}
+
+export interface Template {
+  template_name: string;
+  template_id: number;
+  is_active: boolean;
+  created_by: number;
+  template_fields: TemplateField[];
 }

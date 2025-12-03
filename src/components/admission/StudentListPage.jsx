@@ -4,12 +4,10 @@ import { StudentList } from './StudentList';
 export function StudentListPage() {
   const navigate = useNavigate();
 
-  const handleSelectStudent = (studentId) => {
-    // Navigate to student profile with the student ID
-    navigate(`/admission/students/${studentId}`);
-  };
+  // Remove the handleSelectStudent function since StudentList now handles this internally
+  // The StudentList component will show the detail dialog with real API data
 
   return (
-    <StudentList onSelectStudent={handleSelectStudent} />
+    <StudentList onSelectStudent={null} />
   );
 }

@@ -1,66 +1,109 @@
 import { useEffect, useState } from "react";
-import { Check, X, MessageSquare, Edit3 } from "lucide-react";
-
-type Item = {
-  title: string;
-  author: string;
-  submitted: string;
-  category: string;
-  tags: string[];
-  summary: string;
-};
-
-const items: Item[] = [
-  {
-    title: "Financial Aid Checklist – Complete FAFSA Guide",
-    author: "Michael Torres",
-    category: "Financial Aid",
-    submitted: "2024-10-03",
-    tags: ["Financial Aid", "FAFSA", "Scholarships"],
-    summary:
-      "Step-by-step walkthrough of the FAFSA application process with important deadlines and required documentation.",
-  },
-  {
-    title: "International Student Visa Guide – F-1 Process",
-    author: "Michael Torres",
-    category: "International",
-    submitted: "2024-10-02",
-    tags: ["International", "Visa", "F-1"],
-    summary:
-      "Complete guide for international students on obtaining F-1 student visa including documentation and interview preparation.",
-  },
-];
+import { Check, X } from "lucide-react";
+import { toast } from "react-toastify";
+import { articlesAPI } from "../../services/fastapi";
+import { ReviewArticle } from "../../types/review.types";
 
 export default function ReviewQueue() {
-  const empty = false;
-
-  // state cho modal "Request Changes"
-  const [openFor, setOpenFor] = useState<Item | null>(null);
+  const [articles, setArticles] = useState<ReviewArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [openFor, setOpenFor] = useState<ReviewArticle | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
-  //   đóng modal  
+  // Fetch articles for review on component mount
+  useEffect(() => {
+    fetchReviewQueue();
+  }, []);
+
+  const fetchReviewQueue = async () => {
+    setLoading(true);
+    try {
+      const data = await articlesAPI.getReviewQueue();
+      setArticles(data);
+    } catch (error) {
+      console.error('Failed to fetch review queue:', error);
+      toast.error('Failed to load articles for review. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle approval
+  const handleApprove = async (article: ReviewArticle) => {
+    setActionLoading(true);
+    try {
+      await articlesAPI.updateStatus(article.article_id, {
+        status: "published",
+        note: "Approved"
+      });
+      toast.success(`Article "${article.title}" has been approved and published!`);
+      await fetchReviewQueue(); // Refresh the list
+    } catch (error) {
+      console.error('Failed to approve article:', error);
+      toast.error('Failed to approve article. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle rejection with mandatory reason
+  const handleReject = (article: ReviewArticle) => {
+    setOpenFor(article);
+    setFeedback("");
+  };
+
+  // Submit rejection with reason
+  const submitFeedback = async () => {
+    if (!feedback.trim()) {
+      toast.error("Please provide a reason for rejection.");
+      return;
+    }
+    
+    if (!openFor) return;
+
+    setActionLoading(true);
+    try {
+      await articlesAPI.updateStatus(openFor.article_id, {
+        status: "rejected",
+        note: feedback
+      });
+      toast.success(`Article "${openFor.title}" has been rejected.`);
+      setFeedback("");
+      setOpenFor(null);
+      await fetchReviewQueue(); // Refresh the list
+    } catch (error) {
+      console.error('Failed to reject article:', error);
+      toast.error('Failed to reject article. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle escape key for modal
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenFor(null);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const submitFeedback = () => {
-    if (!feedback.trim()) {
-      alert("Vui lòng nhập nội dung phản hồi.");
-      return;
-    }
-    
-    alert(`Đã gửi phản hồi cho: ${openFor?.title}\n\n${feedback}`);
-    setFeedback("");
-    setOpenFor(null);
-  };
-
-  if (empty) {
+  if (loading) {
     return (
       <div className="p-6">
         <div className="text-xl font-semibold">Review Queue</div>
-        <div className="text-sm text-gray-500 mb-6">0 articles awaiting</div>
+        <div className="text-sm text-gray-500 mb-6">Loading...</div>
+        <div className="bg-white border rounded-2xl p-12 text-center text-gray-500">
+          <div className="text-lg">Loading articles for review...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (articles.length === 0) {
+    return (
+      <div className="p-6">
+        <div className="text-xl font-semibold">Review Queue</div>
+        <div className="text-sm text-gray-500 mb-6">0 articles awaiting review</div>
         <div className="bg-white border rounded-2xl p-12 text-center text-gray-500">
           <div className="text-5xl mb-4">✓</div>
           No Articles In Review — Great work!
@@ -74,16 +117,16 @@ export default function ReviewQueue() {
       {/* Header */}
       <div className="mb-2 text-xl font-semibold">Review Queue</div>
       <div className="text-sm text-gray-500 mb-6">
-        {items.length} articles awaiting <span className="ml-1">review</span>
+        {articles.length} articles awaiting <span className="ml-1">review</span>
       </div>
 
       <div className="space-y-6">
-        {items.map((i, idx) => (
-          <div key={idx} className="bg-white border rounded-2xl p-5 shadow-sm/5">
+        {articles.map((article) => (
+          <div key={article.article_id} className="bg-white border rounded-2xl p-5 shadow-sm/5">
             {/* Title + badge */}
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold leading-6">{i.title}</h3>
+                <h3 className="font-semibold leading-6">{article.title}</h3>
                 <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-700 text-xs px-2 py-0.5">
                   In Review
                 </span>
@@ -92,61 +135,72 @@ export default function ReviewQueue() {
 
             {/* Meta line */}
             <div className="mt-2 text-xs text-gray-600 flex flex-wrap items-center gap-2">
-              <span>By {i.author}</span>
+              <span>By {article.author_name || 'Unknown Author'}</span>
               <span className="mx-1">•</span>
               <span>
-                <span className="text-gray-500">Category:</span> {i.category}
+                <span className="text-gray-500">Category:</span> {article.major_name || 'General'}
               </span>
               <span className="mx-1">•</span>
               <span>
-                <span className="text-gray-500">Submitted:</span> {i.submitted}
+                <span className="text-gray-500">Submitted:</span> {new Date(article.create_at).toLocaleDateString()}
               </span>
             </div>
 
             {/* Tags */}
             <div className="mt-3 flex flex-wrap gap-2">
-              {i.tags.map((t) => (
-                <span
-                  key={t}
-                  className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700"
-                >
-                  {t}
+              {article.major_name && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                  {article.major_name}
                 </span>
-              ))}
+              )}
+              {article.specialization_name && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                  {article.specialization_name}
+                </span>
+              )}
+              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                {article.status}
+              </span>
             </div>
 
             {/* Summary box */}
             <div className="mt-4 rounded-lg bg-gray-50 text-gray-700 text-sm px-4 py-3">
-              {i.summary}
+              {article.description}
             </div>
+
+            {/* URL if available */}
+            {article.url && (
+              <div className="mt-2 text-sm">
+                <span className="text-gray-500">URL:</span>{" "}
+                <a 
+                  href={article.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  {article.url}
+                </a>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button className="inline-flex items-center gap-2 rounded-md bg-green-600 text-white text-sm px-3 py-2 hover:opacity-90">
+              <button 
+                onClick={() => handleApprove(article)}
+                disabled={actionLoading}
+                className="inline-flex items-center gap-2 rounded-md bg-green-600 text-white text-sm px-3 py-2 hover:opacity-90 disabled:opacity-50"
+              >
                 <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-white/15">
                   <Check className="h-3.5 w-3.5" />
                 </span>
-                Approve & Publish
+                {actionLoading ? 'Processing...' : 'Approve & Publish'}
               </button>
 
-              {/* NEW: mở modal */}
-              <button
-                onClick={() => {
-                  setOpenFor(i);
-                  setFeedback("");
-                }}
-                className="inline-flex items-center gap-2 rounded-md border text-sm px-3 py-2 hover:bg-gray-50"
+              <button 
+                onClick={() => handleReject(article)}
+                disabled={actionLoading}
+                className="inline-flex items-center gap-2 rounded-md bg-red-600 text-white text-sm px-3 py-2 hover:opacity-90 disabled:opacity-50"
               >
-                <MessageSquare className="h-4 w-4" />
-                Request Changes
-              </button>
-
-              <button className="inline-flex items-center gap-2 rounded-md border text-sm px-3 py-2 hover:bg-gray-50">
-                <Edit3 className="h-4 w-4" />
-                Open to Edit
-              </button>
-
-              <button className="inline-flex items-center gap-2 rounded-md border text-sm px-3 py-2 hover:bg-gray-50">
                 <X className="h-4 w-4" />
                 Reject
               </button>
@@ -155,7 +209,7 @@ export default function ReviewQueue() {
         ))}
       </div>
 
-      {/* NEW: Modal Request Changes */}
+      {/* Rejection Reason Modal */}
       {openFor && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center"
@@ -174,9 +228,9 @@ export default function ReviewQueue() {
             <div className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold">Request Changes</h2>
+                  <h2 className="text-xl font-semibold">Reject Article</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    Provide feedback for the author about what needs to be revised
+                    Please provide a reason for rejecting this article
                   </p>
                 </div>
                 <button
@@ -193,28 +247,34 @@ export default function ReviewQueue() {
                   <span className="font-medium text-gray-900">Article: </span>
                   {openFor.title}
                 </div>
+                <div className="text-gray-700 mt-1">
+                  <span className="font-medium text-gray-900">Author: </span>
+                  {openFor.author_name || 'Unknown Author'}
+                </div>
 
                 <textarea
                   rows={5}
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Explain what changes are needed..."
-                  className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-black/60"
+                  placeholder="Please explain why this article is being rejected..."
+                  className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
               <div className="mt-6 flex items-center justify-end gap-3">
                 <button
                   onClick={() => setOpenFor(null)}
-                  className="px-4 py-2 rounded-xl border hover:bg-gray-50"
+                  disabled={actionLoading}
+                  className="px-4 py-2 rounded-xl border hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={submitFeedback}
-                  className="px-5 py-2 rounded-xl bg-black text-white hover:opacity-90"
+                  disabled={actionLoading || !feedback.trim()}
+                  className="px-5 py-2 rounded-xl bg-red-600 text-white hover:opacity-90 disabled:opacity-50"
                 >
-                  Send Feedback
+                  {actionLoading ? 'Rejecting...' : 'Reject Article'}
                 </button>
               </div>
             </div>

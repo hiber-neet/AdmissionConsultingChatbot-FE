@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Settings, Crown, Plus, Minus, Check, X, Users, FileText, MessageCircle, GraduationCap, User } from 'lucide-react';
+import { Settings, Crown, Plus, Minus, Check, X, FileText, MessageCircle, GraduationCap, User } from 'lucide-react';
 import { Label } from '../ui/system_users/label';
 import { Checkbox } from '../ui/system_users/checkbox';
 import { Button } from '../ui/system_users/button';
@@ -18,7 +17,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
       color: 'bg-purple-100 text-purple-800 border-purple-200'
     },
     {
-      id: 'CONTENT_MANAGER', 
+      id: 'CONTENT_MANAGER',
       name: 'Content Manager',
       description: 'Content creation and management - articles, reviews, publishing',
       icon: FileText,
@@ -26,7 +25,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
     },
     {
       id: 'CONSULTANT',
-      name: 'Consultant', 
+      name: 'Consultant',
       description: 'Consultation services - analytics, knowledge base, Q&A templates',
       icon: MessageCircle,
       color: 'bg-green-100 text-green-800 border-green-200'
@@ -50,7 +49,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
   const handlePermissionToggle = (permissionId) => {
     const currentPermissions = selectedPermissions || [];
     const isSelected = currentPermissions.includes(permissionId);
-    
+
     let newPermissions;
     if (isSelected) {
       // Remove permission
@@ -59,7 +58,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
       // Add permission
       newPermissions = [...currentPermissions, permissionId];
     }
-    
+
     onPermissionsChange(newPermissions);
   };
 
@@ -92,7 +91,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
           </Button>
           <Button
             type="button"
-            variant="outline" 
+            variant="outline"
             size="sm"
             onClick={clearAllPermissions}
             className="text-xs"
@@ -115,7 +114,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
         <div className="bg-gray-50 p-3 rounded-lg">
           <div className="text-sm font-medium text-gray-700 mb-2">Primary Role</div>
           <div className="text-xs text-gray-600">
-            This user's primary role is <span className="font-medium">{role}</span>. 
+            This user's primary role is <span className="font-medium">{role}</span>.
             Additional permissions below grant access to other role capabilities.
           </div>
         </div>
@@ -131,11 +130,10 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
           return (
             <div
               key={permission.id}
-              className={`border rounded-lg p-4 transition-all ${
-                isSelected 
-                  ? `${permission.color} border-2` 
-                  : 'border-gray-200 hover:border-gray-300'
-              } ${isPrimaryRole ? 'ring-2 ring-blue-200' : ''}`}
+              className={`border rounded-lg p-4 transition-all ${isSelected
+                ? `${permission.color} border-2`
+                : 'border-gray-200 hover:border-gray-300'
+                } ${isPrimaryRole ? 'ring-2 ring-blue-200' : ''}`}
             >
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0">

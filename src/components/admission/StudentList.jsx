@@ -27,24 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/system_users/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/system_users/tabs';
 import { toast } from 'react-toastify';
-
-// Student object structure:
-// {
-//   id: string,
-//   name: string,
-//   email: string,
-//   phone: string,
-//   location: string,
-//   appliedDate: string,
-//   program: string,
-//   status: 'pending' | 'approved' | 'rejected' | 'reviewing',
-//   gpa: number,
-//   uploadedFiles: number,
-//   avatar?: string,
-//   testScore?: number
-// }
+import { StudentDetailDialog } from './StudentDetailDialog';
 
 const mockStudents = [
   {
@@ -160,11 +144,33 @@ export function StudentList({ onSelectStudent }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [programFilter, setProgramFilter] = useState('all');
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+
+  // Handle student selection
+  const handleStudentClick = (studentId) => {
+    console.log('🔍 Selected student:', studentId);
+    
+    // Find the actual user_id for the API call
+    const student = students.find(s => s.id === studentId);
+    const actualUserId = student?.actualUserId || studentId;
+    
+    console.log('🔢 Using actual user ID for API:', actualUserId);
+    
+    setSelectedStudentId(actualUserId); // Pass actual user_id to dialog
+    setIsDetailDialogOpen(true);
+    
+    // Also call the parent callback if provided (but dialog takes priority)
+    if (onSelectStudent && typeof onSelectStudent === 'function') {
+      onSelectStudent(studentId);
+    }
+  };
 
   // Function to transform API student data to component format
   const transformStudentData = (apiStudent) => {
     return {
       id: `ST${String(apiStudent.user_id || 0).padStart(3, '0')}`,
+      actualUserId: apiStudent.user_id, // Store the actual user_id for API calls
       name: apiStudent.full_name || 'Unknown Name',
       email: apiStudent.email || '',
       phone: apiStudent.phone_number || 'N/A',
@@ -332,53 +338,6 @@ export function StudentList({ onSelectStudent }) {
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="border-l-4 border-l-blue-500">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-muted-foreground">
-                Tổng Học Sinh
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl">{stats.total}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-green-500">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-muted-foreground">
-                Đã Duyệt
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl">{stats.approved}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-orange-500">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-muted-foreground">
-                Đang Xét
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl">{stats.reviewing}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-purple-500">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-muted-foreground">
-                Chờ Xử Lý
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl">{stats.pending}</div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Filters */}
         <Card>
           <CardContent className="pt-6">
@@ -446,7 +405,7 @@ export function StudentList({ onSelectStudent }) {
                 filteredStudents.map((student) => (
                   <button
                     key={student.id}
-                    onClick={() => onSelectStudent(student.id)}
+                    onClick={() => handleStudentClick(student.id)}
                     className="w-full p-4 hover:bg-accent transition-colors text-left"
                   >
                     <div className="flex items-center gap-4">
@@ -519,6 +478,13 @@ export function StudentList({ onSelectStudent }) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Student Detail Dialog */}
+        <StudentDetailDialog
+          isOpen={isDetailDialogOpen}
+          onClose={() => setIsDetailDialogOpen(false)}
+          userId={selectedStudentId}
+        />
       </div>
     </ScrollArea>
   );

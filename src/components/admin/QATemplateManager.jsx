@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Copy, MoreVertical } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
 import { Input } from '../ui/system_users/input';
@@ -10,134 +10,156 @@ import { ScrollArea } from '../ui/system_users/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/system_users/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/system_users/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/system_users/select';
+import { toast } from 'react-toastify';
+import { templateAPI } from '../../services/fastapi';
 
-import PropTypes from 'prop-types';
-
-const initialTemplates = [
-  {
-    id: '1',
-    question: 'What are the application deadlines?',
-    answer: 'For Fall 2025 admission: Early Decision - November 15, 2025, Regular Decision - January 15, 2025, Transfer Students - March 1, 2025',
-    category: 'Admissions',
-    tags: ['deadlines', 'important'],
-    usageCount: 342,
-    lastModified: '2024-10-01',
-  },
-  {
-    id: '2',
-    question: 'What financial aid options are available?',
-    answer: 'We offer merit-based scholarships, need-based grants, federal student loans, and work-study programs. Financial aid packages are customized based on your academic profile and financial need.',
-    category: 'Financial Aid',
-    tags: ['scholarships', 'grants', 'popular'],
-    usageCount: 289,
-    lastModified: '2024-09-28',
-  },
-  {
-    id: '3',
-    question: 'How do I schedule a campus tour?',
-    answer: 'You can schedule a campus tour through our virtual tour platform (available 24/7) or book an in-person tour Monday-Friday, 10am-4pm. Special open house events are held on select Saturdays.',
-    category: 'Campus Life',
-    tags: ['tours', 'visit'],
-    usageCount: 201,
-    lastModified: '2024-09-25',
-  },
-  {
-    id: '4',
-    question: 'What GPA do I need for admission?',
-    answer: 'The average admitted student has a GPA of 3.7, but we review applications holistically. Strong test scores, extracurriculars, and essays can compensate for a lower GPA.',
-    category: 'Admissions',
-    tags: ['requirements', 'gpa'],
-    usageCount: 412,
-    lastModified: '2024-09-20',
-  },
-];
 
 const categories = ['All Categories', 'Admissions', 'Financial Aid', 'Campus Life', 'Academics', 'Student Services'];
 
 export function QATemplateManager() {
-  const [templates, setTemplates] = useState(initialTemplates);
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
 
   const [formData, setFormData] = useState({
-    question: '',
-    answer: '',
-    category: 'Admissions',
-    tags: '',
+    template_name: '',
+    template_fields: [
+      {
+        field_name: 'question',
+        order_field: 1,
+        field_type: 'text'
+      },
+      {
+        field_name: 'answer',
+        order_field: 2,
+        field_type: 'textarea'
+      }
+    ]
   });
 
+  // Fetch templates on component mount
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+
+  const fetchTemplates = async () => {
+    setLoading(true);
+    try {
+      const data = await templateAPI.getTemplates();
+      setTemplates(data);
+    } catch (error) {
+      console.error('Failed to fetch templates:', error);
+      toast.error('Failed to load templates. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredTemplates = templates.filter((template) => {
-    const matchesSearch = template.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         template.answer.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All Categories' || template.category === selectedCategory;
+    const templateName = template.template_name?.toLowerCase() || '';
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = templateName.includes(searchLower);
+    
+    // For now, show all templates regardless of category since backend doesn't have categories
+    const matchesCategory = selectedCategory === 'All Categories';
+    
     return matchesSearch && matchesCategory;
   });
 
-  const handleCreateOrUpdate = () => {
-    if (!formData.question || !formData.answer) return;
-
-    const tags = formData.tags.split(',').map(tag => tag.trim()).filter(Boolean);
-
-    if (editingTemplate) {
-      // Update existing template
-      setTemplates(templates.map(t => 
-        t.id === editingTemplate.id 
-          ? {
-              ...t,
-              question: formData.question,
-              answer: formData.answer,
-              category: formData.category,
-              tags,
-              lastModified: new Date().toISOString().split('T')[0],
-            }
-          : t
-      ));
-    } else {
-      // Create new template
-      const newTemplate = {
-        id: Date.now().toString(),
-        question: formData.question,
-        answer: formData.answer,
-        category: formData.category,
-        tags,
-        usageCount: 0,
-        lastModified: new Date().toISOString().split('T')[0],
-      };
-      setTemplates([newTemplate, ...templates]);
+  const handleCreateOrUpdate = async () => {
+    if (!formData.template_name) {
+      toast.error('Please enter a template name');
+      return;
     }
 
-    // Reset form
-    setFormData({ question: '', answer: '', category: 'Admissions', tags: '' });
-    setEditingTemplate(null);
-    setIsDialogOpen(false);
+    setLoading(true);
+    try {
+      if (editingTemplate) {
+        // Update existing template
+        await templateAPI.updateTemplate(editingTemplate.template_id, formData);
+        toast.success('Template updated successfully');
+      } else {
+        // Create new template
+        await templateAPI.createTemplate(formData);
+        toast.success('Template created successfully');
+      }
+
+      // Refresh templates list
+      await fetchTemplates();
+      
+      // Reset form
+      setFormData({
+        template_name: '',
+        template_fields: [
+          {
+            field_name: 'question',
+            order_field: 1,
+            field_type: 'text'
+          },
+          {
+            field_name: 'answer',
+            order_field: 2,
+            field_type: 'textarea'
+          }
+        ]
+      });
+      setEditingTemplate(null);
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to save template:', error);
+      toast.error(`Failed to ${editingTemplate ? 'update' : 'create'} template. Please try again.`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = (template) => {
     setEditingTemplate(template);
     setFormData({
-      question: template.question,
-      answer: template.answer,
-      category: template.category,
-      tags: template.tags.join(', '),
+      template_name: template.template_name,
+      template_fields: template.template_fields || []
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id) => {
-    setTemplates(templates.filter(t => t.id !== id));
+  const handleDelete = async (templateId) => {
+    if (!window.confirm('Are you sure you want to delete this template?')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await templateAPI.deleteTemplates([templateId]);
+      toast.success('Template deleted successfully');
+      await fetchTemplates();
+    } catch (error) {
+      console.error('Failed to delete template:', error);
+      toast.error('Failed to delete template. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDuplicate = (template) => {
-    const newTemplate = {
-      ...template,
-      id: Date.now().toString(),
-      question: `${template.question} (Copy)`,
-      usageCount: 0,
-      lastModified: new Date().toISOString().split('T')[0],
+  const handleDuplicate = async (template) => {
+    const duplicatedTemplate = {
+      template_name: `${template.template_name} (Copy)`,
+      template_fields: template.template_fields || []
     };
-    setTemplates([newTemplate, ...templates]);
+
+    setLoading(true);
+    try {
+      await templateAPI.createTemplate(duplicatedTemplate);
+      toast.success('Template duplicated successfully');
+      await fetchTemplates();
+    } catch (error) {
+      console.error('Failed to duplicate template:', error);
+      toast.error('Failed to duplicate template. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -146,113 +168,165 @@ export function QATemplateManager() {
       <div className="border-b px-6 py-4 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2>Q&A Template Manager</h2>
-            <p className="text-muted-foreground">Create and manage response templates for common questions</p>
+            <h2>Template Manager</h2>
+            <p className="text-muted-foreground">Create and manage form templates with custom fields</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => {
                 setEditingTemplate(null);
-                setFormData({ question: '', answer: '', category: 'Admissions', tags: '' });
+                setFormData({
+                  template_name: '',
+                  template_fields: [
+                    {
+                      field_name: 'question',
+                      order_field: 1,
+                      field_type: 'text'
+                    },
+                    {
+                      field_name: 'answer',
+                      order_field: 2,
+                      field_type: 'textarea'
+                    }
+                  ]
+                });
               }}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Template
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-3xl">
               <DialogHeader>
                 <DialogTitle>{editingTemplate ? 'Edit Template' : 'Create New Template'}</DialogTitle>
                 <DialogDescription>
-                  {editingTemplate ? 'Update the Q&A template' : 'Add a new Q&A template to the knowledge base'}
+                  {editingTemplate ? 'Update the template configuration' : 'Create a new template with custom fields'}
                 </DialogDescription>
               </DialogHeader>
               
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="question">Question</Label>
+                  <Label htmlFor="template_name">Template Name</Label>
                   <Input
-                    id="question"
-                    value={formData.question}
-                    onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                    placeholder="Enter the question..."
+                    id="template_name"
+                    value={formData.template_name}
+                    onChange={(e) => setFormData({ ...formData, template_name: e.target.value })}
+                    placeholder="Enter template name..."
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="answer">Answer</Label>
-                  <Textarea
-                    id="answer"
-                    value={formData.answer}
-                    onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-                    placeholder="Enter the answer..."
-                    rows={5}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                      <SelectTrigger id="category">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.filter(c => c !== 'All Categories').map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <Label>Template Fields</Label>
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {formData.template_fields.map((field, index) => (
+                      <div key={index} className="grid grid-cols-12 gap-2 p-3 border rounded-lg">
+                        <div className="col-span-4">
+                          <Input
+                            value={field.field_name}
+                            onChange={(e) => {
+                              const newFields = [...formData.template_fields];
+                              newFields[index].field_name = e.target.value;
+                              setFormData({ ...formData, template_fields: newFields });
+                            }}
+                            placeholder="Field name"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="number"
+                            value={field.order_field}
+                            onChange={(e) => {
+                              const newFields = [...formData.template_fields];
+                              newFields[index].order_field = parseInt(e.target.value) || 1;
+                              setFormData({ ...formData, template_fields: newFields });
+                            }}
+                            placeholder="Order"
+                            min="1"
+                          />
+                        </div>
+                        <div className="col-span-4">
+                          <Select
+                            value={field.field_type}
+                            onValueChange={(value) => {
+                              const newFields = [...formData.template_fields];
+                              newFields[index].field_type = value;
+                              setFormData({ ...formData, template_fields: newFields });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Field type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="text">Text</SelectItem>
+                              <SelectItem value="textarea">Textarea</SelectItem>
+                              <SelectItem value="select">Select</SelectItem>
+                              <SelectItem value="number">Number</SelectItem>
+                              <SelectItem value="email">Email</SelectItem>
+                              <SelectItem value="date">Date</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="col-span-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newFields = formData.template_fields.filter((_, i) => i !== index);
+                              setFormData({ ...formData, template_fields: newFields });
+                            }}
+                            className="w-full"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tags">Tags (comma-separated)</Label>
-                    <Input
-                      id="tags"
-                      value={formData.tags}
-                      onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                      placeholder="e.g., important, deadlines"
-                    />
-                  </div>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const newField = {
+                        field_name: '',
+                        order_field: formData.template_fields.length + 1,
+                        field_type: 'text'
+                      };
+                      setFormData({
+                        ...formData,
+                        template_fields: [...formData.template_fields, newField]
+                      });
+                    }}
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Field
+                  </Button>
                 </div>
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={loading}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateOrUpdate}>
-                  {editingTemplate ? 'Update' : 'Create'} Template
+                <Button onClick={handleCreateOrUpdate} disabled={loading}>
+                  {loading ? 'Saving...' : editingTemplate ? 'Update' : 'Create'} Template
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
 
-        {/* Search and Filter */}
+        {/* Search */}
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search templates..."
+              placeholder="Search templates by name..."
               className="pl-10"
             />
           </div>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         {/* Stats */}
@@ -260,19 +334,29 @@ export function QATemplateManager() {
           <span>Total Templates: {templates.length}</span>
           <span>•</span>
           <span>Showing: {filteredTemplates.length}</span>
+          <span>•</span>
+          <span>Active: {templates.filter(t => t.is_active).length}</span>
         </div>
       </div>
 
       {/* Template List */}
       <ScrollArea className="flex-1">
         <div className="p-6 pb-8 space-y-4">
-          {filteredTemplates.map((template) => (
-            <Card key={template.id}>
+          {loading && (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>Loading templates...</p>
+            </div>
+          )}
+          
+          {!loading && filteredTemplates.map((template) => (
+            <Card key={template.template_id}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <CardTitle className="text-base">{template.question}</CardTitle>
-                    <CardDescription className="mt-2">{template.answer}</CardDescription>
+                    <CardTitle className="text-base">{template.template_name}</CardTitle>
+                    <CardDescription className="mt-2">
+                      {template.template_fields?.length || 0} fields configured
+                    </CardDescription>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -290,7 +374,7 @@ export function QATemplateManager() {
                         Duplicate
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => handleDelete(template.id)}
+                        onClick={() => handleDelete(template.template_id)}
                         className="text-destructive"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
@@ -302,26 +386,39 @@ export function QATemplateManager() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <Badge variant="secondary">{template.category}</Badge>
-                    {template.tags.map((tag) => (
-                      <Badge key={tag} variant="outline">{tag}</Badge>
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant={template.is_active ? "default" : "secondary"}>
+                      {template.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                    {template.template_fields?.slice(0, 3).map((field, index) => (
+                      <Badge key={index} variant="outline">
+                        {field.field_name} ({field.field_type})
+                      </Badge>
                     ))}
+                    {template.template_fields?.length > 3 && (
+                      <Badge variant="outline">
+                        +{template.template_fields.length - 3} more
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex gap-4 text-sm text-muted-foreground">
-                    <span>Used {template.usageCount} times</span>
-                    <span>•</span>
-                    <span>Modified {template.lastModified}</span>
+                    <span>ID: {template.template_id}</span>
+                    {template.created_by && (
+                      <>
+                        <span>•</span>
+                        <span>Created by: {template.created_by}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
 
-          {filteredTemplates.length === 0 && (
+          {!loading && filteredTemplates.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <p>No templates found.</p>
-              <p className="text-sm">Try adjusting your search or filters.</p>
+              <p className="text-sm">Create your first template or adjust your search.</p>
             </div>
           )}
         </div>

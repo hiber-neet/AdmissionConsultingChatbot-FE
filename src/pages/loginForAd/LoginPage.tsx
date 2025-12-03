@@ -1,6 +1,6 @@
 // src/components/auth/LoginPage.tsx
 import { useState } from "react";
-import { useAuth } from "@/contexts/Auth";
+import { useAuth, type Role } from "@/contexts/Auth";
 import { Shield } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import bgImage from "@/assets/images/toiyeufpt.jpg";
@@ -28,25 +28,39 @@ export default function LoginPage() {
     // After successful login, get the user from Auth context and navigate to their default route
     // Use a small delay to ensure the Auth context has been updated
     setTimeout(() => {
-      const currentUser = JSON.parse(sessionStorage.getItem("demo_user") || "null");
-      if (currentUser && currentUser.role) {
-        const defaultRoute = getDefaultRoute(currentUser.role);
-        console.log(`Redirecting ${currentUser.role} to ${defaultRoute}`);
-        navigate(defaultRoute, { replace: true });
+      // Get user from Auth context instead of sessionStorage
+      const authToken = localStorage.getItem("access_token");
+      if (authToken) {
+        try {
+          // Decode JWT token to get user role
+          const payload = JSON.parse(atob(authToken.split(".")[1]));
+          const userEmail = payload.sub;
+          
+          // Map email to role (same logic as Auth context)
+          let userRole: Role = "Student"; // default fallback
+          if (userEmail.includes('admin')) {
+            userRole = "Admin";
+          } else if (userEmail.includes('consultant')) {
+            userRole = "Consultant";
+          } else if (userEmail.includes('content')) {
+            userRole = "Content Manager";
+          } else if (userEmail.includes('officer')) {
+            userRole = "Admission Official";
+          }
+          
+          const defaultRoute = getDefaultRoute(userRole);
+          console.log(`Redirecting ${userRole} to ${defaultRoute}`);
+          navigate(defaultRoute, { replace: true });
+        } catch (error) {
+          console.error('Error parsing token:', error);
+          navigate("/", { replace: true });
+        }
       } else {
-        // Fallback to home if no user data
+        // Fallback to home if no token
         navigate("/", { replace: true });
       }
     }, 100);
   };
-
-  // Quick-fill cho account mẫu
-  const presets = [
-    { label: "System Admin", email: "admin@gmail.com", password: "123" },
-    { label: "Consultant", email: "consultant@gmail.com", password: "123" },
-    { label: "Content Manager", email: "content@gmail.com", password: "123" },
-    { label: "Admission Officer", email: "officer@gmail.com", password: "123" },
-  ];
 
   return (
     <div className="min-h-screen grid place-items-center bg-cover bg-center p-4"

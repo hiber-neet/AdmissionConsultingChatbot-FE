@@ -1,10 +1,33 @@
-import { FileText, Eye, Tag } from 'lucide-react';
+import { FileText, Download, Tag } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/system_users/card';
 import { Badge } from '../../ui/system_users/badge';
 import { Button } from '../../ui/system_users/button';
 import { Separator } from '../../ui/system_users/separator';
 
 export function DocumentList({ filteredDocuments }) {
+  const handleDownload = (doc) => {
+    if (doc.file_path) {
+      // Create a download link
+      const link = document.createElement('a');
+      link.href = doc.file_path;
+      link.download = doc.title;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      // If no file path, show content as text file
+      const blob = new Blob([doc.content || doc.description], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${doc.title}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }
+  };
   if (filteredDocuments.length === 0) {
     return (
       <Card>
@@ -45,7 +68,7 @@ export function DocumentList({ filteredDocuments }) {
                 <span>{doc.size}</span>
               </div>
               <div className="flex items-center gap-1">
-                <Eye className="h-3 w-3" />
+                <Download className="h-3 w-3" />
                 <span>{doc.viewCount}</span>
               </div>
             </div>
@@ -61,9 +84,14 @@ export function DocumentList({ filteredDocuments }) {
             <div className="text-xs text-muted-foreground">
               Tải lên: {new Date(doc.uploadedDate).toLocaleDateString('vi-VN')}
             </div>
-            <Button variant="outline" size="sm" className="w-full gap-2">
-              <Eye className="h-4 w-4" />
-              Xem Tài Liệu
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full gap-2"
+              onClick={() => handleDownload(doc)}
+            >
+              <Download className="h-4 w-4" />
+              Tải Xuống
             </Button>
           </CardContent>
         </Card>
