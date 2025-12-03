@@ -168,18 +168,105 @@ export const riasecAPI = {
   getResults: (id: number) => fastAPIClient.get(`/riasec/results/${id}`),
 };
 
-// Analytics API
-export const analyticsAPI = {
+// Content Analytics types
+export interface ContentStatistics {
+  overview: {
+    total_articles: number;
+    published_articles: number;
+    draft_articles: number;
+    review_articles: number;
+    my_articles: number;
+  };
+  recent_articles: Array<{
+    article_id: number;
+    title: string;
+    author: string;
+    status: string;
+    created_at: string;
+    major_id?: number;
+    specialization_id?: number;
+  }>;
+  popular_articles: Array<{
+    article_id: number;
+    title: string;
+    author: string;
+    created_at: string;
+    view_count: number;
+    url?: string;
+  }>;
+  articles_by_major: Array<{
+    major_name: string;
+    article_count: number;
+  }>;
+  monthly_trends: Array<{
+    month: string;
+    total_articles: number;
+    published_articles: number;
+  }>;
+  status_distribution: Record<string, number>;
+  generated_at: string;
+}
+
+// Content Analytics API
+export const contentAnalyticsAPI = {
+  getStatistics: () => 
+    fastAPIClient.get<{ success: boolean; data: ContentStatistics }>('/content-analytics/content/statistics'),
+  getMyArticlesStatistics: () =>
+    fastAPIClient.get<{ success: boolean; data: any }>('/content-analytics/content/statistics/my-articles')
+};
+
+// Consultant Analytics types
+export interface ConsultantStatistics {
+  overview_stats: {
+    total_queries: number;
+    queries_growth: number;
+    accuracy_rate: number;
+    accuracy_improvement: number;
+    most_active_time: string;
+    unanswered_queries: number;
+  };
+  questions_over_time: Array<{
+    date: string;
+    queries: number;
+  }>;
+  question_categories: Array<{
+    name: string;
+    value: number;
+    color: string;
+  }>;
+  last_updated: string;
+}
+
+export interface UnansweredQuestion {
+  id: number;
+  question: string;
+  frequency: number;
+  priority: 'high' | 'medium' | 'low';
+  category: string;
+  suggestedAction: string;
+  last_asked: string;
+  first_asked: string;
+  question_span_days: number;
+  match_score: number;
+  in_grace_period: boolean;
+}
+
+// Consultant Analytics API
+export const consultantAnalyticsAPI = {
+  getStatistics: () => 
+    fastAPIClient.get<{ status: string; data: ConsultantStatistics; message: string }>('/consultant-analytics/consultant/statistics'),
+  getUnansweredQuestions: (days: number = 7, limit: number = 5) =>
+    fastAPIClient.get<{ status: string; data: UnansweredQuestion[]; message: string }>(`/consultant-analytics/consultant/unanswered-questions?days=${days}&limit=${limit}`),
   getKnowledgeGaps: (days?: number, minFrequency?: number) => 
-    fastAPIClient.get<KnowledgeGap[]>(`/analytics/knowledge-gaps?days=${days || 30}&min_frequency=${minFrequency || 3}`),
+    fastAPIClient.get<{ status: string; data: KnowledgeGap[]; message: string }>(`/consultant-analytics/consultant/knowledge-gaps?days=${days || 30}&min_frequency=${minFrequency || 3}`),
   getLowSatisfactionAnswers: (threshold?: number, minUsage?: number) =>
-    fastAPIClient.get<LowSatisfactionAnswer[]>(`/analytics/low-satisfaction-answers?threshold=${threshold || 3.5}&min_usage=${minUsage || 5}`),
+    fastAPIClient.get<{ status: string; data: LowSatisfactionAnswer[]; message: string }>(`/consultant-analytics/consultant/low-satisfaction-answers?threshold=${threshold || 3.5}&min_usage=${minUsage || 5}`),
   getTrendingTopics: (days?: number, minQuestions?: number) =>
-    fastAPIClient.get<TrendingTopic[]>(`/analytics/trending-topics?days=${days || 14}&min_questions=${minQuestions || 5}`),
+    fastAPIClient.get<{ status: string; data: TrendingTopic[]; message: string }>(`/consultant-analytics/consultant/trending-topics?days=${days || 14}&min_questions=${minQuestions || 5}`),
   getAnalyticsSummary: () =>
-    fastAPIClient.get<AnalyticsSummary>('/analytics/analytics-summary'),
+    fastAPIClient.get<{ status: string; data: AnalyticsSummary; message: string }>('/consultant-analytics/consultant/analytics-summary'),
   getCategoryStatistics: (days?: number) =>
-    fastAPIClient.get<CategoryStatistic[]>(`/analytics/category-statistics?days=${days || 30}`)
+    fastAPIClient.get<{ status: string; data: CategoryStatistic[]; message: string }>(`/consultant-analytics/consultant/category-statistics?days=${days || 30}`)
 };
 
 // Live Chat types
@@ -268,7 +355,7 @@ export {
   chatAPI as fastAPIChat,
   knowledgeAPI as fastAPIKnowledge,
   riasecAPI as fastAPIRiasec,
-  analyticsAPI as fastAPIAnalytics,
+  contentAnalyticsAPI as fastAPIContentAnalytics,
   liveChatAPI as fastAPILiveChat,
   intentAPI as fastAPIIntent,
 };

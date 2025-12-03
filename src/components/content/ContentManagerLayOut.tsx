@@ -37,15 +37,15 @@ export default function ContentManagerLayOut() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, hasPermission, setUserLeadership, loginAs, logout, activeRole, switchToRole, getAccessibleRoles } = useAuth();
+  const { user, hasPermission, isContentManagerLeader, logout, activeRole, switchToRole, getAccessibleRoles } = useAuth();
   
-  // Auto-login if no user is found (for content pages)
+  // Redirect to login if no user is found
   useEffect(() => {
     if (!user) {
-      console.log('No user found in ContentManagerLayOut, auto-logging in as Content Manager');
-      loginAs('Content Manager');
+      console.log('No user found in ContentManagerLayOut, redirecting to login');
+      navigate('/loginprivate');
     }
-  }, [user, loginAs]);
+  }, [user, navigate]);
   
   // Get current route for active state
   const getCurrentRoute = (): ContentPage => {
@@ -62,7 +62,7 @@ export default function ContentManagerLayOut() {
     { id: "dashboard" as ContentPage, label: "Dashboard", icon: LayoutDashboard, path: "/content/dashboard", permission: "Content Manager" },
     { id: "articles" as ContentPage, label: "Article List", icon: FileText, path: "/content/articles", permission: "Content Manager" },
     { id: "editor" as ContentPage, label: "Article Details", icon: PenSquare, path: "/content/editor", permission: "Content Manager" },
-    ...(hasPermission("Content Manager") ? [
+    ...(isContentManagerLeader() ? [
       { id: "review" as ContentPage, label: "Review Queue", icon: ListChecks, path: "/content/review", permission: "Content Manager" }
     ] : []),
     { id: "profile" as ContentPage, label: "Profile", icon: User, path: "/content/profile", permission: "Student" },
@@ -160,22 +160,6 @@ export default function ContentManagerLayOut() {
       ]
     }] : [])
   ];
-
-  // Toggle button will appear in the sidebar footer for testing
-  const toggleRole = () => {
-    console.log('Toggle clicked in ContentManager. Current user:', user);
-    
-    if (!user) {
-      console.log('No user found, logging in as content manager');
-      loginAs('Content Manager');
-      return;
-    }
-    
-    console.log('Current isLeader:', user?.isLeader);
-    const newLeaderStatus = !(user?.isLeader);
-    console.log('Setting isLeader to:', newLeaderStatus);
-    setUserLeadership(newLeaderStatus);
-  };
 
   return (
      <div className="min-h-screen flex bg-[#F8FAFC]">
@@ -308,31 +292,8 @@ export default function ContentManagerLayOut() {
               </div>
             )}
           </div>
-          {/* TESTING: Role toggle button */}
-          <div className="mt-2 space-y-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleRole}
-              className={`w-full text-xs font-medium border ${ 
-                user?.isLeader 
-                ? 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200' 
-                : 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200'
-              }`}
-              disabled={!user}
-            >
-              {!sidebarCollapsed && (
-                !user ? '🔄 Loading...' : user?.isLeader ? '👑 Leader Mode' : '👤 Regular Mode'
-              )}
-            </Button>
-            
-            {/* Debug info */}
-            {!sidebarCollapsed && (
-              <div className="text-xs text-gray-500 p-1 bg-gray-50 rounded">
-                Debug: {!user ? 'No User' : user?.isLeader ? 'Leader' : 'Regular'} | {user?.permissions?.length || 0} perms
-              </div>
-            )}
-            
+          {/* User info and logout */}
+          <div className="mt-2 space-y-1">            
             {/* Logout Button */}
             <Button
               variant="ghost"
@@ -342,7 +303,7 @@ export default function ContentManagerLayOut() {
                   logout();
                 }
               }}
-              className="w-full text-xs font-medium border bg-red-100 text-red-700 border-red-300 hover:bg-red-200 mt-2"
+              className="w-full text-xs font-medium border bg-red-100 text-red-700 border-red-300 hover:bg-red-200"
             >
               <LogOut className="h-3 w-3" />
               {!sidebarCollapsed && (

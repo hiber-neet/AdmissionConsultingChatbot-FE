@@ -21,42 +21,19 @@ type AuthCtx = {
   isAuthenticated: boolean;
   activeRole: Role | null; // Current active role for navigation
   login: (email: string, password: string) => Promise<{ ok: boolean; message?: string; token?: string }>;
-  loginAs: (role: Role) => void; // demo switch nhanh (giữ lại)
   logout: () => void;
   hasPermission: (permission: Permission) => boolean;
-  setUserLeadership: (isLeader: boolean) => void; // for testing leadership
+  isContentManagerLeader: () => boolean; // Check if user is Content Manager Leader
   getDefaultRoute: (role: Role) => string; // Add this new function
   switchToRole: (role: Role) => void; // Switch active role for navigation
   getAccessibleRoles: () => Role[]; // Get all roles user can switch to
 };
-
-/** Tài khoản mẫu (có thể đổi sau này) */
-type Account = { email: string; password: string; name: string; role: Role; isLeader?: boolean };
-const ACCOUNTS: Account[] = [
-  { email: "admin@gmail.com",     password: "123",   name: "Admin User",   role: "Admin", isLeader: true },
-  { email: "consultant@gmail.com",password: "123",    name: "Consultant User",       role: "Consultant", isLeader: false },
-  { email: "content@gmail.com",   password: "123", name: "Content Manager",     role: "Content Manager", isLeader: false },
-  { email: "officer@gmail.com",   password: "123", name: "Admission Officer", role: "Admission Official", isLeader: false },
-  { email: "student@gmail.com",   password: "123", name: "Student User", role: "Student", isLeader: false },
-];
 
 const AuthContext = createContext<AuthCtx | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [activeRole, setActiveRole] = useState<Role | null>(null);
-
-  // khôi phục từ sessionStorage cho demo
-  useEffect(() => {
-    const raw = sessionStorage.getItem("demo_user");
-    if (raw) {
-      const storedUser = JSON.parse(raw);
-      console.log('Loading user from sessionStorage:', storedUser);
-      setUser(storedUser);
-      // Set active role to user's primary role
-      setActiveRole(storedUser.role);
-    }
-  }, []);
 
   const login = async (email: string, password: string) => {
     try {
@@ -197,7 +174,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
               setUser(userData);
               setActiveRole(userData.role); // Set active role to primary role
-              sessionStorage.setItem("demo_user", JSON.stringify(userData));
 
               console.log("LOGIN SUCCESS with dynamic permissions!");
               console.log("User Info:", {
@@ -228,7 +204,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             setUser(userData);
             setActiveRole(userData.role); // Set active role to primary role
-            sessionStorage.setItem("demo_user", JSON.stringify(userData));
 
             console.log("⚠️ LOGIN SUCCESS with fallback permissions!");
             return { ok: true, token: access_token };
@@ -250,7 +225,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(userData);
       setActiveRole(userData.role); // Set active role to primary role
-      sessionStorage.setItem("demo_user", JSON.stringify(userData));
 
       console.log("⚠️ LOGIN SUCCESS (with fallback role)");
       return { ok: true, token: access_token };
@@ -299,36 +273,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return roleRoutes[role] || '/';
   };
 
-  // Giữ lại tiện ích "loginAs(role)" để test nhanh
-  const loginAs = (role: Role) => {
-    const acc = ACCOUNTS.find((a) => a.role === role)!;
-    
-    const userPermissions = getRolePermissions(acc.role, acc.isLeader);
-    
-    const u: User = { 
-      id: crypto.randomUUID(), 
-      name: acc.name, 
-      role: acc.role, 
-      email: acc.email,
-      isLeader: acc.isLeader,
-      permissions: userPermissions
-    };
-    setUser(u);
-    setActiveRole(u.role); // Set active role to primary role
-    sessionStorage.setItem("demo_user", JSON.stringify(u));
-
-    // Log demo login info to console
-    console.log("🎭 DEMO LOGIN!");
-    console.log("👤 Demo User Info:", {
-      name: u.name,
-      email: u.email,
-      role: u.role,
-      isLeader: u.isLeader,
-      permissions: u.permissions
-    });
-    console.log("🚀 Default route:", getDefaultRoute(u.role));
-  };
-
   const logout = () => {
     console.log('🚪 Logging out user...');
     
@@ -349,7 +293,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("token_type");
     
     // Clear user session data
-    sessionStorage.removeItem("demo_user");
     sessionStorage.removeItem("token"); // Legacy token storage
     
     // Clear user-specific RIASEC data (if any)
@@ -391,34 +334,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return checkPermission(user.permissions, permission);
   };
 
-  // Function to toggle leadership for testing
-  const setUserLeadership = (isLeader: boolean) => {
-    console.log('setUserLeadership called with:', isLeader);
-    console.log('Current user before update:', user);
+  // Check if user is Content Manager Leader
+  const isContentManagerLeader = (): boolean => {
+    if (!user) return false;
     
-    if (!user) {
-      console.log('No user found, cannot toggle leadership');
-      return;
-    }
+    // Admin bypasses leader check (same as backend)
+    if (checkUserPermission('Admin')) return true;
     
-    // In the simplified system, use role-based permissions
-    const updatedPermissions = getRolePermissions(user.role, isLeader);
-    
-    const updatedUser = { 
-      ...user, 
-      isLeader, 
-      permissions: updatedPermissions 
-    };
-    
-    console.log('Toggling role:', { 
-      from: { isLeader: user.isLeader, permissions: user.permissions?.length || 0 },
-      to: { isLeader, permissions: updatedPermissions.length }
-    });
-    
-    console.log('Setting updated user:', updatedUser);
-    setUser(updatedUser);
-    sessionStorage.setItem("demo_user", JSON.stringify(updatedUser));
-    console.log('User updated and saved to sessionStorage');
+    // Must be Content Manager AND have leadership status
+    return checkUserPermission('Content Manager') && user.isLeader === true;
   };
 
   // Function to switch active role for navigation
@@ -458,10 +382,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!user, 
       activeRole,
       login, 
-      loginAs, 
       logout, 
       hasPermission: checkUserPermission,
-      setUserLeadership,
+      isContentManagerLeader,
       getDefaultRoute,
       switchToRole,
       getAccessibleRoles

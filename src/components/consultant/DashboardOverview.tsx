@@ -27,25 +27,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { analyticsAPI, KnowledgeGap } from '../../services/fastapi';
-
-const questionsOverTimeData = [
-  { date: 'Oct 1', queries: 245 },
-  { date: 'Oct 2', queries: 310 },
-  { date: 'Oct 3', queries: 278 },
-  { date: 'Oct 4', queries: 325 },
-  { date: 'Oct 5', queries: 290 },
-  { date: 'Oct 6', queries: 180 },
-  { date: 'Oct 7', queries: 150 },
-];
-
-const categoryData = [
-  { name: 'Tuition Fees', value: 420, color: '#3B82F6' },
-  { name: 'Programs', value: 280, color: '#10B981' },
-  { name: 'Admission Requirements', value: 210, color: '#F59E0B' },
-  { name: 'Financial Aid', value: 180, color: '#8B5CF6' },
-  { name: 'Other', value: 90, color: '#6B7280' },
-];
+import { consultantAnalyticsAPI, ConsultantStatistics, UnansweredQuestion } from '../../services/fastapi';
 
 interface DashboardOverviewProps {
   onNavigateToTemplates?: (question: string, action: 'add') => void;
@@ -54,34 +36,39 @@ interface DashboardOverviewProps {
 export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewProps = {}) {
   const [timeRange, setTimeRange] = useState<'today' | 'week'>('week');
   
-  // API state for unanswered questions
-  const [unansweredQuestions, setUnansweredQuestions] = useState<KnowledgeGap[]>([]);
-  const [loading, setLoading] = useState(false);
+  // API state for dashboard statistics
+  const [stats, setStats] = useState<ConsultantStatistics | null>(null);
+  const [unansweredQuestions, setUnansweredQuestions] = useState<UnansweredQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch unanswered questions (knowledge gaps)
+  // Fetch dashboard statistics and unanswered questions
   useEffect(() => {
-    const fetchUnansweredQuestions = async () => {
+    const fetchDashboardData = async () => {
       try {
         setLoading(true);
         setError(null);
-        // Get knowledge gaps from last 7 days, minimum frequency 1 to get more recent questions
-        const response = await analyticsAPI.getKnowledgeGaps(7, 1);
-        // Sort by last_asked date (most recent first) and take only 5
-        const sortedGaps = (response || [])
-          .filter(gap => gap.last_asked) // Only include items with last_asked date
-          .sort((a, b) => new Date(b.last_asked!).getTime() - new Date(a.last_asked!).getTime())
-          .slice(0, 5);
-        setUnansweredQuestions(sortedGaps);
+        
+        // Fetch both statistics and unanswered questions in parallel
+        const [statsResponse, questionsResponse] = await Promise.all([
+          consultantAnalyticsAPI.getStatistics(),
+          consultantAnalyticsAPI.getUnansweredQuestions(7, 5)
+        ]);
+        
+        console.log('Dashboard statistics:', statsResponse);
+        console.log('Unanswered questions:', questionsResponse);
+        
+        setStats(statsResponse.data);
+        setUnansweredQuestions(questionsResponse.data);
       } catch (err: any) {
-        console.error('Error fetching unanswered questions:', err);
-        setError(err.response?.data?.detail || 'Failed to fetch unanswered questions');
+        console.error('Error fetching dashboard data:', err);
+        setError(err.response?.data?.detail || 'Failed to fetch dashboard data');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUnansweredQuestions();
+    fetchDashboardData();
   }, []);
 
   // Helper function to format relative time
@@ -99,6 +86,50 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
       return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
     }
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <ScrollArea className="min-h-screen h-full">
+        <div className="p-6 pb-8 space-y-6">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-3 text-muted-foreground">Loading dashboard data...</span>
+          </div>
+        </div>
+      </ScrollArea>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <ScrollArea className="min-h-screen h-full">
+        <div className="p-6 pb-8 space-y-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <p className="text-destructive font-medium">Failed to load dashboard data</p>
+              <p className="text-sm text-muted-foreground mt-2">{error}</p>
+            </div>
+          </div>
+        </div>
+      </ScrollArea>
+    );
+  }
+
+  // No data state
+  if (!stats) {
+    return (
+      <ScrollArea className="min-h-screen h-full">
+        <div className="p-6 pb-8 space-y-6">
+          <div className="flex items-center justify-center h-64">
+            <p className="text-muted-foreground">No dashboard data available</p>
+          </div>
+        </div>
+      </ScrollArea>
+    );
+  }
 
   return (
     <ScrollArea className="min-h-screen h-full">
@@ -123,9 +154,11 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl">1,778</div>
+              <div className="text-3xl">{stats.overview_stats.total_queries.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                <span className="text-[#10B981]">↑ 12%</span> from last {timeRange === 'today' ? 'hour' : 'week'}
+                <span className={stats.overview_stats.queries_growth >= 0 ? "text-[#10B981]" : "text-[#EF4444]"}>
+                  {stats.overview_stats.queries_growth >= 0 ? '↑' : '↓'} {Math.abs(stats.overview_stats.queries_growth)}%
+                </span> from last {timeRange === 'today' ? 'hour' : 'week'}
               </p>
             </CardContent>
           </Card>
@@ -140,9 +173,9 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl">94%</div>
+              <div className="text-3xl">{stats.overview_stats.accuracy_rate}%</div>
               <p className="text-xs text-muted-foreground mt-1">
-                <span className="text-[#10B981]">↑ 2%</span> improvement
+                <span className="text-[#10B981]">↑ {stats.overview_stats.accuracy_improvement}%</span> improvement
               </p>
             </CardContent>
           </Card>
@@ -157,7 +190,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl">2-4 PM</div>
+              <div className="text-3xl">{stats.overview_stats.most_active_time}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 Peak engagement hours
               </p>
@@ -174,7 +207,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl">23</div>
+              <div className="text-3xl">{stats.overview_stats.unanswered_queries}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 Requires attention
               </p>
@@ -185,14 +218,14 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Questions Over Time Chart */}
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-full">
             <CardHeader>
               <CardTitle>Questions Over Time</CardTitle>
               <CardDescription>Daily query volume for the last 7 days</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={questionsOverTimeData}>
+                <LineChart data={stats.questions_over_time}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                   <XAxis 
                     dataKey="date" 
@@ -224,7 +257,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
           </Card>
 
           {/* Top Question Categories */}
-          <Card>
+          <Card className="lg:col-span-full">
             <CardHeader>
               <CardTitle>Top Question Categories</CardTitle>
               <CardDescription>Distribution by topic</CardDescription>
@@ -233,7 +266,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={categoryData}
+                    data={stats.question_categories}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -242,7 +275,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {categoryData.map((entry, index) => (
+                    {stats.question_categories.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -272,24 +305,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             </div>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                <span>Loading unanswered questions...</span>
-              </div>
-            ) : error ? (
-              <div className="text-center py-8 text-red-600">
-                <p>Error: {error}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2"
-                  onClick={() => window.location.reload()}
-                >
-                  Retry
-                </Button>
-              </div>
-            ) : unansweredQuestions.length === 0 ? (
+            {unansweredQuestions.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No recent unanswered questions found.</p>

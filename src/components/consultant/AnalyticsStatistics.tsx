@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '../ui/system_users/table';
-import { analyticsAPI, CategoryStatistic } from '../../services/fastapi';
+import { consultantAnalyticsAPI, CategoryStatistic } from '../../services/fastapi';
 
 interface QuestionData {
   id: number;
@@ -123,8 +123,8 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
         setLoading(true);
         setError(null);
         const days = getDaysFromRange(dateRange);
-        const response = await analyticsAPI.getCategoryStatistics(days);
-        setCategoryStats(response || []);
+        const response = await consultantAnalyticsAPI.getCategoryStatistics(days);
+        setCategoryStats(response.data || []);
       } catch (err: any) {
         console.error('Error fetching category statistics:', err);
         setError(err.response?.data?.detail || 'Failed to fetch category statistics');

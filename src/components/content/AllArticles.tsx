@@ -9,7 +9,9 @@ import {
   DropdownMenuTrigger,
 } from '../ui/system_users/dropdown-menu';
 import { fastAPIArticles } from '../../services/fastapi';
-import { Article } from '../../utils/fastapi-client';
+import { majorsAPI } from '../../services/fastapi';
+import { Article, Major } from '../../utils/fastapi-client';
+import { ARTICLE_STATUSES } from '../../constants/status';
 
 export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateToEditorWithData }: { 
   onCreate?: () => void; 
@@ -19,7 +21,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("All Status");
-  const [categoryFilter, setCategoryFilter] = useState<string>("All Categories");
+  const [categoryFilter, setCategoryFilter] = useState<string>("All Majors");
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
@@ -28,6 +30,8 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [articleDetailsLoading, setArticleDetailsLoading] = useState(false);
   const [articleDetailsError, setArticleDetailsError] = useState<string | null>(null);
+  const [majors, setMajors] = useState<Major[]>([]);
+  const [majorsLoading, setMajorsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fetch articles from FastAPI
@@ -47,6 +51,24 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
     };
 
     fetchArticles();
+  }, []);
+
+  // Fetch majors from FastAPI
+  useEffect(() => {
+    const fetchMajors = async () => {
+      try {
+        setMajorsLoading(true);
+        const data = await majorsAPI.getAll();
+        setMajors(data);
+      } catch (err) {
+        console.error('Error fetching majors:', err);
+        // Don't set error state for majors, just log it
+      } finally {
+        setMajorsLoading(false);
+      }
+    };
+
+    fetchMajors();
   }, []);
 
   // Close dropdowns when clicking outside
@@ -71,8 +93,8 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         (statusFilter === "Drafted" && article.status === "draft") ||
         (statusFilter === "Rejected" && article.status === "rejected") ||
         (statusFilter === "Published" && article.status === "published");
-      const matchesCategory = categoryFilter === "All Categories" || 
-        article.major_name.toLowerCase().includes(categoryFilter.toLowerCase());
+      const matchesCategory = categoryFilter === "All Majors" || 
+        article.major_name === categoryFilter;
       return matchesSearch && matchesStatus && matchesCategory;
     }),
     [articles, q, statusFilter, categoryFilter]
@@ -99,27 +121,8 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
     setArticleDetailsError(null);
     
     try {
-      // Call the GET /articles/{article_id} endpoint
-      const response = await fetch(`http://localhost:8000/articles/${articleId}`, {
-        method: 'GET',
-        headers: {
-          'accept': 'application/json'
-        }
-      });
-
-      console.log('📡 Article details API response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Article details API error:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText
-        });
-        throw new Error(`Failed to fetch article: ${response.status} ${response.statusText}`);
-      }
-
-      const articleDetails = await response.json();
+      // Use the FastAPI client which automatically includes Bearer token
+      const articleDetails = await fastAPIArticles.getById(articleId);
       console.log('✅ Article details fetched successfully:', articleDetails);
       
       setSelectedArticle(articleDetails);
@@ -212,7 +215,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
           </button>
           {showStatusDropdown && (
             <div className="absolute top-full left-0 mt-1 w-40 bg-white border rounded-md shadow-lg z-10">
-              {["All Status", "Drafted", "Rejected", "Published"].map((status) => (
+              {ARTICLE_STATUSES.map((status) => (
                 <button
                   key={status}
                   onClick={() => {
@@ -239,18 +242,33 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
           </button>
           {showCategoryDropdown && (
             <div className="absolute top-full left-0 mt-1 w-48 bg-white border rounded-md shadow-lg z-10">
-              {["All Categories", "Admission Requirements", "Financial Aid", "Tuition Fees"].map((category) => (
-                <button
-                  key={category}
-                  onClick={() => {
-                    setCategoryFilter(category);
-                    setShowCategoryDropdown(false);
-                  }}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md last:rounded-b-md"
-                >
-                  {category}
-                </button>
-              ))}
+              <button
+                onClick={() => {
+                  setCategoryFilter("All Majors");
+                  setShowCategoryDropdown(false);
+                }}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md"
+              >
+                All Majors
+              </button>
+              {majorsLoading ? (
+                <div className="px-3 py-2 text-sm text-gray-500">
+                  Loading majors...
+                </div>
+              ) : (
+                majors.map((major) => (
+                  <button
+                    key={major.major_id}
+                    onClick={() => {
+                      setCategoryFilter(major.major_name);
+                      setShowCategoryDropdown(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 last:rounded-b-md"
+                  >
+                    {major.major_name}
+                  </button>
+                ))
+              )}
             </div>
           )}
         </div>

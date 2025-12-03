@@ -12,7 +12,7 @@ import { ScrollArea } from '../ui/system_users/scroll-area';
 import { Badge } from '../ui/system_users/badge';
 import { Progress } from '../ui/system_users/progress';
 import { useState, useEffect } from 'react';
-import { analyticsAPI, KnowledgeGap, LowSatisfactionAnswer, TrendingTopic, AnalyticsSummary } from '../../services/fastapi';
+import { consultantAnalyticsAPI, KnowledgeGap, LowSatisfactionAnswer, TrendingTopic, AnalyticsSummary } from '../../services/fastapi';
 
 export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateToKnowledgeBase?: (question: string) => void }) {
   const [knowledgeGaps, setKnowledgeGaps] = useState<KnowledgeGap[]>([]);
@@ -33,18 +33,18 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
         setLoading(true);
         setError(null);
         
-        // Fetch all analytics data in parallel
+        // Fetch all analytics data in parallel using unified consultant analytics API
         const [gapsData, answersData, topicsData, summaryData] = await Promise.all([
-          analyticsAPI.getKnowledgeGaps(),
-          analyticsAPI.getLowSatisfactionAnswers(),
-          analyticsAPI.getTrendingTopics(),
-          analyticsAPI.getAnalyticsSummary()
+          consultantAnalyticsAPI.getKnowledgeGaps(),
+          consultantAnalyticsAPI.getLowSatisfactionAnswers(),
+          consultantAnalyticsAPI.getTrendingTopics(),
+          consultantAnalyticsAPI.getAnalyticsSummary()
         ]);
         
-        setKnowledgeGaps(gapsData);
-        setConfusingAnswers(answersData);
-        setTrendingTopics(topicsData);
-        setSummary(summaryData);
+        setKnowledgeGaps(gapsData.data);
+        setConfusingAnswers(answersData.data);
+        setTrendingTopics(topicsData.data);
+        setSummary(summaryData.data);
       } catch (error) {
         console.error('Error fetching analytics data:', error);
         setError('Failed to load analytics data. Please try again.');
