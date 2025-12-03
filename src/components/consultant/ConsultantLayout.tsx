@@ -32,7 +32,7 @@ import { Avatar, AvatarFallback } from '../ui/system_users/avatar';
 
 export function ConsultantLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { user, hasPermission, setUserLeadership, loginAs, logout, activeRole, switchToRole, getAccessibleRoles } = useAuth();
+  const { user, hasPermission, logout, activeRole, switchToRole, getAccessibleRoles } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -42,29 +42,13 @@ export function ConsultantLayout() {
     return path || 'overview';
   };
 
-  // Auto-login if no user is found (for consultant pages)
+  // Redirect to login if no user is found
   useEffect(() => {
     if (!user) {
-      console.log('No user found in ConsultantLayout, auto-logging in as Consultant');
-      loginAs('Consultant');
+      console.log('No user found in ConsultantLayout, redirecting to login');
+      navigate('/loginprivate');
     }
-  }, [user, loginAs]);
-
-  // Toggle button will appear in the sidebar footer for testing
-  const toggleRole = () => {
-    console.log('Toggle clicked. Current user:', user);
-    
-    if (!user) {
-      console.log('No user found, logging in as consultant');
-      loginAs('Consultant');
-      return;
-    }
-    
-    console.log('Current isLeader:', user?.isLeader);
-    const newLeaderStatus = !(user?.isLeader);
-    console.log('Setting isLeader to:', newLeaderStatus);
-    setUserLeadership(newLeaderStatus);
-  };
+  }, [user, navigate]);
 
   const navigation = [
     { id: 'overview', label: 'Dashboard Home', icon: LayoutDashboard, path: '/consultant/overview' },
@@ -255,31 +239,8 @@ export function ConsultantLayout() {
               </div>
             )}
           </div>
-          {/* TESTING: Role toggle button */}
-          <div className="mt-2 space-y-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleRole}
-              className={`w-full text-xs font-medium border ${ 
-                user?.isLeader 
-                ? 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200' 
-                : 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200'
-              }`}
-              disabled={!user}
-            >
-              {!sidebarCollapsed && (
-                !user ? '🔄 Loading...' : user?.isLeader ? '👑 Leader Mode' : '👤 Regular Mode'
-              )}
-            </Button>
-            
-            {/* Debug info */}
-            {!sidebarCollapsed && (
-              <div className="text-xs text-gray-500 p-1 bg-gray-50 rounded">
-                Debug: {!user ? 'No User' : user?.isLeader ? 'Leader' : 'Regular'} | {user?.permissions?.length || 0} perms
-              </div>
-            )}
-            
+          {/* User info and logout */}
+          <div className="mt-2 space-y-1">            
             {/* Logout Button */}
             <Button
               variant="ghost"
@@ -289,7 +250,7 @@ export function ConsultantLayout() {
                   logout();
                 }
               }}
-              className="w-full text-xs font-medium border bg-red-100 text-red-700 border-red-300 hover:bg-red-200 mt-2"
+              className="w-full text-xs font-medium border bg-red-100 text-red-700 border-red-300 hover:bg-red-200"
             >
               <LogOut className="h-3 w-3" />
               {!sidebarCollapsed && (

@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import bgImage from "@/assets/images/toiyeufpt.jpg";
 
 export default function LoginPage() {
-  const { login, loginAs, getDefaultRoute, user } = useAuth();
+  const { login, getDefaultRoute, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState("");
