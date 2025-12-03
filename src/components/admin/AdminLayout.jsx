@@ -1,4 +1,3 @@
-import { useState, useMemo, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { 
   FileText, 
@@ -7,21 +6,17 @@ import {
   Lightbulb,
   Database,
   TrendingUp, 
-  BarChart3,
   MessageCircle, 
   FileEdit,
   LayoutDashboard, 
   MessageSquareText, 
   Users, 
   Shield,
-  Activity,
   User,
-  Calendar,
   GraduationCap,
   BookOpen,
   Clock
 } from 'lucide-react';
-import { Button } from '../ui/system_users/button';
 import { useAuth } from '../../contexts/Auth';
 import { canAccessPage } from '../../constants/permissions';
 
@@ -42,7 +37,6 @@ export function AdminLayout() {
       { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
       { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
       { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
-      { id: 'activity', label: 'Nhật Ký Hoạt Động', icon: Activity, path: '/admin/activity' },
       { id: 'profile', label: 'Profile', icon: User, path: '/admin/profile' },
     ],
     'Content Manager': [

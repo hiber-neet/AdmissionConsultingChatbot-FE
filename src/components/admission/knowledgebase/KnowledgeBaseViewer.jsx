@@ -1,19 +1,128 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ScrollArea } from '../../ui/system_users/scroll-area';
 import StatsCards from './StatsCards';
 import SearchAndFilter from './SearchAndFilter';
 import QATemplateList from './QATemplateList';
 import DocumentList from './DocumentList';
 import QADetailDialog from './QADetailDialog';
-import { qaTemplates, documents, categories } from './mockData';
+import { knowledgeAPI } from '../../../services/fastapi';
 
 export function KnowledgeBaseViewer() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Tất Cả Danh Mục');
   const [selectedQA, setSelectedQA] = useState(null);
   const [isQADialogOpen, setIsQADialogOpen] = useState(false);
+  const [trainingQuestions, setTrainingQuestions] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredQATemplates = qaTemplates.filter((template) => {
+  // Static categories for filtering
+  const categories = [
+    'Tất Cả Danh Mục',
+    'Tuyển Sinh',
+    'Học Thuật',
+    'Hỗ Trợ Tài Chính',
+    'Cuộc Sống Khu Học Xá',
+    'Khác'
+  ];
+
+  // Fetch data from APIs
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch training questions
+        console.log('📚 Fetching training questions...');
+        const trainingResponse = await knowledgeAPI.getTrainingQuestions();
+        console.log('📚 Training response:', trainingResponse);
+        
+        // Handle different response structures
+        const trainingData = trainingResponse.data || trainingResponse || [];
+        console.log('📚 Training data:', trainingData);
+        
+        const transformedQuestions = Array.isArray(trainingData) 
+          ? trainingData.map((question, index) => ({
+              id: question.question_id?.toString() || index.toString(),
+              question: question.question || 'No question',
+              answer: question.answer || 'No answer',
+              category: 'Tuyển Sinh', // Default category, could be enhanced
+              tags: extractTags(question.question || ''), // Extract tags from question
+              usageCount: Math.floor(Math.random() * 500), // Mock usage count
+              lastModified: question.created_at || new Date().toISOString().split('T')[0]
+            }))
+          : [];
+
+        // Fetch documents
+        console.log('📄 Fetching documents...');
+        const documentsResponse = await knowledgeAPI.getDocuments();
+        console.log('📄 Documents response:', documentsResponse);
+        
+        // Handle different response structures
+        const documentsData = documentsResponse.data || documentsResponse || [];
+        console.log('📄 Documents data:', documentsData);
+        
+        const transformedDocuments = Array.isArray(documentsData)
+          ? documentsData.map((doc, index) => ({
+              id: doc.document_id?.toString() || `D${index + 1}`,
+              title: doc.title || 'Untitled Document',
+              description: doc.content ? doc.content.substring(0, 150) + '...' : 'Không có mô tả',
+              category: 'Tài Liệu', // Default category
+              fileType: getFileType(doc.file_path || ''),
+              size: '1.5 MB', // Mock size
+              uploadedDate: doc.uploaded_at || doc.created_at || new Date().toISOString().split('T')[0],
+              tags: extractTags(doc.title || ''),
+              viewCount: Math.floor(Math.random() * 1000), // Mock view count
+              file_path: doc.file_path,
+              content: doc.content
+            }))
+          : [];
+
+        console.log('✅ Transformed questions:', transformedQuestions.length);
+        console.log('✅ Transformed documents:', transformedDocuments.length);
+
+        setTrainingQuestions(transformedQuestions);
+        setDocuments(transformedDocuments);
+      } catch (error) {
+        console.error('❌ Error fetching knowledge base data:', error);
+        console.error('❌ Error details:', error.response || error.message);
+        
+        // Set empty arrays on error to prevent crashes
+        setTrainingQuestions([]);
+        setDocuments([]);
+        
+        // Show user-friendly error message
+        if (error.response?.status === 403) {
+          console.error('🔒 Access denied - insufficient permissions');
+        } else if (error.response?.status === 401) {
+          console.error('🔐 Authentication required');
+        } else {
+          console.error('🔥 Network or server error');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Helper functions
+  const extractTags = (text) => {
+    const keywords = text.toLowerCase().split(' ');
+    const commonTags = ['tuyển sinh', 'học bổng', 'hồ sơ', 'yêu cầu', 'thông tin'];
+    return commonTags.filter(tag => 
+      keywords.some(keyword => keyword.includes(tag) || tag.includes(keyword))
+    ).slice(0, 3);
+  };
+
+  const getFileType = (filePath) => {
+    if (!filePath) return 'PDF';
+    const extension = filePath.split('.').pop()?.toUpperCase();
+    return extension || 'PDF';
+  };
+
+  const filteredQATemplates = trainingQuestions.filter((template) => {
     const matchesSearch = 
       template.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
       template.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -36,8 +145,29 @@ export function KnowledgeBaseViewer() {
     setIsQADialogOpen(true);
   };
 
-  const totalUsage = qaTemplates.reduce((sum, t) => sum + t.usageCount, 0);
-  const totalViews = documents.reduce((sum, d) => sum + d.viewCount, 0);
+  const totalUsage = trainingQuestions.reduce((sum, t) => sum + (t.usageCount || 0), 0);
+  const totalViews = documents.reduce((sum, d) => sum + (d.viewCount || 0), 0);
+
+  if (loading) {
+    return (
+      <ScrollArea className="h-full">
+        <div className="p-6 pb-8 space-y-6">
+          <div>
+            <h2>Cơ Sở Tri Thức</h2>
+            <p className="text-muted-foreground">
+              Xem các mẫu câu hỏi & câu trả lời và tài liệu hướng dẫn (Chỉ Đọc)
+            </p>
+          </div>
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Đang tải dữ liệu...</p>
+            </div>
+          </div>
+        </div>
+      </ScrollArea>
+    );
+  }
 
   return (
     <ScrollArea className="h-full">
@@ -52,7 +182,7 @@ export function KnowledgeBaseViewer() {
 
         {/* Stats Cards */}
         <StatsCards 
-          qaTemplatesCount={qaTemplates.length}
+          qaTemplatesCount={trainingQuestions.length}
           documentsCount={documents.length}
           totalUsage={totalUsage}
           totalViews={totalViews}

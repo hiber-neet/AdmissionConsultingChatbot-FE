@@ -21,7 +21,6 @@ import {
   TrendingUp,
   Database,
   Lightbulb,
-  Activity,
   MessageSquareText,
   Shield
 } from 'lucide-react';
@@ -60,7 +59,6 @@ export function AdmissionOfficerLayout() {
       { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
       { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
       { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
-      { id: 'activity', label: 'Nhật Ký Hoạt Động', icon: Activity, path: '/admin/activity' },
       { id: 'profile', label: 'Profile', icon: User, path: '/admin/profile' },
     ],
     'Content Manager': [

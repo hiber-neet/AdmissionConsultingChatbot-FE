@@ -1,15 +1,17 @@
-import { 
-  fastAPIClient, 
-  Article, 
-  User, 
-  Major, 
-  Specialization, 
-  ChatMessage, 
+import {
+  fastAPIClient,
+  Article,
+  User,
+  Major,
+  Specialization,
+  ChatMessage,
   ChatRequest,
   KnowledgeDocument,
   TrainingQuestion,
-  Intent
+  Intent,
 } from '../utils/fastapi-client';
+import { Template, TemplateCreate, TemplateUpdate } from '../types/template.types';
+import { ReviewArticle, ArticleStatusUpdate } from '../types/review.types';
 import { API_CONFIG } from '../config/api.js';
 
 import { LoginResponse } from '../utils/fastapi-client';
@@ -71,6 +73,11 @@ export const articlesAPI = {
   create: (data: Partial<Article>) => fastAPIClient.post<Article>('/articles', data),
   update: (id: number, data: Partial<Article>) => fastAPIClient.put<Article>(`/articles/${id}`, data),
   delete: (id: number) => fastAPIClient.delete(`/articles/${id}`),
+  
+  // Review APIs for Content Manager Leaders
+  getReviewQueue: () => fastAPIClient.get<ReviewArticle[]>('/articles/review'),
+  updateStatus: (articleId: number, data: ArticleStatusUpdate) => 
+    fastAPIClient.put<ReviewArticle>(`/articles/${articleId}/status`, data),
 };
 
 // Users API
@@ -84,8 +91,8 @@ export const usersAPI = {
 
 // Authentication API
 export const authAPI = {
-  login: (credentials: { email: string; password: string }) => 
-      fastAPIClient.post<LoginResponse>('/auth/login', credentials),
+  login: (credentials: { email: string; password: string }) =>
+    fastAPIClient.post<LoginResponse>('/auth/login', credentials),
   register: (userData: { username: string; email: string; password: string; full_name: string }) =>
     fastAPIClient.post('/auth/register', userData),
   logout: () => fastAPIClient.post('/auth/logout', {}),
@@ -130,14 +137,14 @@ export const knowledgeAPI = {
     // For file uploads, we need to handle FormData differently
     const token = localStorage.getItem("access_token");
     const headers: HeadersInit = {};
-    
+
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
-    
+
     // Add intend_id as query parameter
     const url = `${API_CONFIG.FASTAPI_BASE_URL}/knowledge/upload/document?intend_id=${intendId}`;
-    
+
     return fetch(url, {
       method: 'POST',
       headers,
@@ -149,13 +156,13 @@ export const knowledgeAPI = {
       return response.json();
     });
   },
-  
+
   uploadTrainingQuestion: (data: { question: string; answer: string }) =>
     fastAPIClient.post<TrainingQuestion>('/knowledge/upload/training_question', data),
-    
+
   getDocuments: () => fastAPIClient.get<KnowledgeDocument[]>('/knowledge/documents'),
   getTrainingQuestions: () => fastAPIClient.get<TrainingQuestion[]>('/knowledge/training_questions'),
-  
+
   deleteDocument: (id: number) => fastAPIClient.delete(`/knowledge/documents/${id}`),
   deleteTrainingQuestion: (id: number) => fastAPIClient.delete(`/knowledge/training_questions/${id}`),
 };
@@ -209,7 +216,7 @@ export interface ContentStatistics {
 
 // Content Analytics API
 export const contentAnalyticsAPI = {
-  getStatistics: () => 
+  getStatistics: () =>
     fastAPIClient.get<{ success: boolean; data: ContentStatistics }>('/content-analytics/content/statistics'),
   getMyArticlesStatistics: () =>
     fastAPIClient.get<{ success: boolean; data: any }>('/content-analytics/content/statistics/my-articles')
@@ -253,11 +260,11 @@ export interface UnansweredQuestion {
 
 // Consultant Analytics API
 export const consultantAnalyticsAPI = {
-  getStatistics: () => 
+  getStatistics: () =>
     fastAPIClient.get<{ status: string; data: ConsultantStatistics; message: string }>('/consultant-analytics/consultant/statistics'),
   getUnansweredQuestions: (days: number = 7, limit: number = 5) =>
     fastAPIClient.get<{ status: string; data: UnansweredQuestion[]; message: string }>(`/consultant-analytics/consultant/unanswered-questions?days=${days}&limit=${limit}`),
-  getKnowledgeGaps: (days?: number, minFrequency?: number) => 
+  getKnowledgeGaps: (days?: number, minFrequency?: number) =>
     fastAPIClient.get<{ status: string; data: KnowledgeGap[]; message: string }>(`/consultant-analytics/consultant/knowledge-gaps?days=${days || 30}&min_frequency=${minFrequency || 3}`),
   getLowSatisfactionAnswers: (threshold?: number, minUsage?: number) =>
     fastAPIClient.get<{ status: string; data: LowSatisfactionAnswer[]; message: string }>(`/consultant-analytics/consultant/low-satisfaction-answers?threshold=${threshold || 3.5}&min_usage=${minUsage || 5}`),
@@ -311,27 +318,27 @@ export interface ActiveChatSession {
 // Live Chat API functions
 export const liveChatAPI = {
   // Get queue list for admission official
-  getQueueList: (officialId: number) => 
+  getQueueList: (officialId: number) =>
     fastAPIClient.get<LiveChatQueueItem[]>(`/live_chat/livechat/admission_official/queue/list/${officialId}`),
 
   // Get active sessions for admission official
-  getActiveSessions: (officialId: number) => 
+  getActiveSessions: (officialId: number) =>
     fastAPIClient.get<ActiveChatSession[]>(`/live_chat/livechat/admission_official/active_sessions/${officialId}`),
 
   // Accept a queue request
-  acceptRequest: (officialId: number, queueId: number) => 
+  acceptRequest: (officialId: number, queueId: number) =>
     fastAPIClient.post<ChatSession>(`/live_chat/livechat/admission_official/accept?official_id=${officialId}&queue_id=${queueId}`, {}),
 
   // Reject a queue request
-  rejectRequest: (officialId: number, queueId: number, reason: string) => 
+  rejectRequest: (officialId: number, queueId: number, reason: string) =>
     fastAPIClient.post(`/live_chat/livechat/admission_official/reject?official_id=${officialId}&queue_id=${queueId}&reason=${encodeURIComponent(reason)}`, {}),
 
   // Get messages for a session
-  getSessionMessages: (sessionId: number) => 
+  getSessionMessages: (sessionId: number) =>
     fastAPIClient.get<ChatSessionMessage[]>(`/live_chat/livechat/session/${sessionId}/messages`),
 
   // End session
-  endSession: (sessionId: number, endedBy: number) => 
+  endSession: (sessionId: number, endedBy: number) =>
     fastAPIClient.post(`/live_chat/livechat/live-chat/end?session_id=${sessionId}&ended_by=${endedBy}`, {})
 };
 
@@ -339,10 +346,31 @@ export const liveChatAPI = {
 export const intentAPI = {
   // Get all intents
   getIntents: () => fastAPIClient.get<Intent[]>('/intent'),
-  
+
   // Get specific intent
   getIntent: (intentId: number) => fastAPIClient.get<Intent>(`/intent/${intentId}`)
 };
+
+// Template API functions
+export const templateAPI = {
+  // Get all templates
+  getTemplates: () => fastAPIClient.get<Template[]>('/template'),
+
+  // Get specific template
+  getTemplate: (templateId: number) => fastAPIClient.get<Template>(`/template/${templateId}`),
+
+  // Create new template
+  createTemplate: (data: TemplateCreate) => fastAPIClient.post<Template>('/template', data),
+
+  // Update existing template
+  updateTemplate: (templateId: number, data: TemplateUpdate) => 
+    fastAPIClient.put<Template>(`/template/${templateId}`, data),
+
+  // Delete templates (soft delete)
+  deleteTemplates: (templateIds: number[]) => 
+    fastAPIClient.delete('/template', { data: { template_ids: templateIds } })
+};
+
 
 // Export all APIs
 export {
@@ -358,4 +386,5 @@ export {
   contentAnalyticsAPI as fastAPIContentAnalytics,
   liveChatAPI as fastAPILiveChat,
   intentAPI as fastAPIIntent,
+  templateAPI as fastAPITemplate,
 };

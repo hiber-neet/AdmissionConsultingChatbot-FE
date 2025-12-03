@@ -20,7 +20,6 @@ import { AdminLayout } from "../components/admin/AdminLayout.jsx";
 import { AdminDashboardPage } from "../pages/admin/AdminDashboardPage.tsx";
 import { QATemplateManagerPage } from "../pages/admin/QATemplateManagerPage.tsx";
 import { UserManagementPage } from "../pages/admin/UserManagementPage.tsx";
-import { ActivityLogPage } from "../pages/admin/ActivityLogPage.tsx";
 import { AdminAdmissionDashboardPage } from "../pages/admin/AdminAdmissionDashboardPage.tsx";
 import { AdminConsultationPage } from "../pages/admin/AdminConsultationPage.tsx";
 import { AdminStudentInsightsPage } from "../pages/admin/AdminStudentInsightsPage.tsx";
@@ -130,7 +129,6 @@ export default function Router() {
         <Route path="dashboard" element={<AdminDashboardPage />} />
         <Route path="templates" element={<QATemplateManagerPage />} />
         <Route path="users" element={<UserManagementPage />} />
-        <Route path="activity" element={<ActivityLogPage />} />
         {/* Admission Management Routes */}
         <Route path="admissions" element={<AdminAdmissionDashboardPage />} />
         <Route path="content" element={<AdminContentManagerDashboardPage />} />

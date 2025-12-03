@@ -5,7 +5,7 @@ import { Input } from '../ui/system_users/input';
 import { Button } from '../ui/system_users/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/system_users/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/system_users/dialog';
-import { fastAPIClient, KnowledgeDocument, Intent } from '../../utils/fastapi-client';
+import { KnowledgeDocument, Intent } from '../../utils/fastapi-client';
 import { knowledgeAPI, intentAPI } from '../../services/fastapi';
 import { useAuth } from '../../contexts/Auth';
 import { API_CONFIG } from '../../config/api.js';
