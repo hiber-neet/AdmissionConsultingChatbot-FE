@@ -1,5 +1,5 @@
 // src/components/header/Header.jsx
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { GraduationCap, Menu, X, User as UserIcon, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/Auth";

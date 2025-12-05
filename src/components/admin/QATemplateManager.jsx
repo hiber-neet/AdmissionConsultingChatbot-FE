@@ -1,29 +1,15 @@
-import { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, Copy, MoreVertical } from 'lucide-react';
-import { Button } from '../ui/system_users/button';
-import { Input } from '../ui/system_users/input';
-import { Label } from '../ui/system_users/label';
-import { Textarea } from '../ui/system_users/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/system_users/card';
-import { Badge } from '../ui/system_users/badge';
-import { ScrollArea } from '../ui/system_users/scroll-area';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/system_users/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/system_users/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/system_users/select';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { templateAPI } from '../../services/fastapi';
 
-
-const categories = ['All Categories', 'Admissions', 'Financial Aid', 'Campus Life', 'Academics', 'Student Services'];
-
-export function QATemplateManager() {
+const QATemplateManager = () => {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
 
+  // Simple form data matching backend schema
   const [formData, setFormData] = useState({
     template_name: '',
     template_fields: [
@@ -40,7 +26,7 @@ export function QATemplateManager() {
     ]
   });
 
-  // Fetch templates on component mount
+  // Fetch templates on mount
   useEffect(() => {
     fetchTemplates();
   }, []);
@@ -52,25 +38,14 @@ export function QATemplateManager() {
       setTemplates(data);
     } catch (error) {
       console.error('Failed to fetch templates:', error);
-      toast.error('Failed to load templates. Please try again.');
+      toast.error('Failed to load templates');
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredTemplates = templates.filter((template) => {
-    const templateName = template.template_name?.toLowerCase() || '';
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = templateName.includes(searchLower);
-    
-    // For now, show all templates regardless of category since backend doesn't have categories
-    const matchesCategory = selectedCategory === 'All Categories';
-    
-    return matchesSearch && matchesCategory;
-  });
-
   const handleCreateOrUpdate = async () => {
-    if (!formData.template_name) {
+    if (!formData.template_name.trim()) {
       toast.error('Please enter a template name');
       return;
     }
@@ -78,39 +53,19 @@ export function QATemplateManager() {
     setLoading(true);
     try {
       if (editingTemplate) {
-        // Update existing template
         await templateAPI.updateTemplate(editingTemplate.template_id, formData);
         toast.success('Template updated successfully');
       } else {
-        // Create new template
         await templateAPI.createTemplate(formData);
         toast.success('Template created successfully');
       }
 
-      // Refresh templates list
       await fetchTemplates();
-      
-      // Reset form
-      setFormData({
-        template_name: '',
-        template_fields: [
-          {
-            field_name: 'question',
-            order_field: 1,
-            field_type: 'text'
-          },
-          {
-            field_name: 'answer',
-            order_field: 2,
-            field_type: 'textarea'
-          }
-        ]
-      });
-      setEditingTemplate(null);
+      resetForm();
       setIsDialogOpen(false);
     } catch (error) {
       console.error('Failed to save template:', error);
-      toast.error(`Failed to ${editingTemplate ? 'update' : 'create'} template. Please try again.`);
+      toast.error('Failed to save template');
     } finally {
       setLoading(false);
     }
@@ -120,309 +75,294 @@ export function QATemplateManager() {
     setEditingTemplate(template);
     setFormData({
       template_name: template.template_name,
-      template_fields: template.template_fields || []
+      template_fields: template.template_fields || [
+        { field_name: 'question', order_field: 1, field_type: 'text' },
+        { field_name: 'answer', order_field: 2, field_type: 'textarea' }
+      ]
     });
     setIsDialogOpen(true);
   };
 
   const handleDelete = async (templateId) => {
-    if (!window.confirm('Are you sure you want to delete this template?')) {
-      return;
-    }
+    if (!window.confirm('Are you sure you want to delete this template?')) return;
 
-    setLoading(true);
     try {
-      await templateAPI.deleteTemplates([templateId]);
+      await templateAPI.deleteTemplate(templateId);
       toast.success('Template deleted successfully');
       await fetchTemplates();
     } catch (error) {
       console.error('Failed to delete template:', error);
-      toast.error('Failed to delete template. Please try again.');
-    } finally {
-      setLoading(false);
+      toast.error('Failed to delete template');
     }
   };
 
-  const handleDuplicate = async (template) => {
-    const duplicatedTemplate = {
-      template_name: `${template.template_name} (Copy)`,
-      template_fields: template.template_fields || []
-    };
-
-    setLoading(true);
-    try {
-      await templateAPI.createTemplate(duplicatedTemplate);
-      toast.success('Template duplicated successfully');
-      await fetchTemplates();
-    } catch (error) {
-      console.error('Failed to duplicate template:', error);
-      toast.error('Failed to duplicate template. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  const resetForm = () => {
+    setFormData({
+      template_name: '',
+      template_fields: [
+        { field_name: 'question', order_field: 1, field_type: 'text' },
+        { field_name: 'answer', order_field: 2, field_type: 'textarea' }
+      ]
+    });
+    setEditingTemplate(null);
   };
+
+  const addField = () => {
+    const newOrder = formData.template_fields.length + 1;
+    setFormData({
+      ...formData,
+      template_fields: [
+        ...formData.template_fields,
+        {
+          field_name: `field_${newOrder}`,
+          order_field: newOrder,
+          field_type: 'text'
+        }
+      ]
+    });
+  };
+
+  const updateField = (index, property, value) => {
+    const newFields = [...formData.template_fields];
+    newFields[index][property] = value;
+    
+    // Update order when changing field position
+    if (property === 'order_field') {
+      newFields.sort((a, b) => a.order_field - b.order_field);
+    }
+    
+    setFormData({ ...formData, template_fields: newFields });
+  };
+
+  const removeField = (index) => {
+    if (formData.template_fields.length <= 1) {
+      toast.error('Template must have at least one field');
+      return;
+    }
+    
+    const newFields = formData.template_fields.filter((_, i) => i !== index);
+    // Reorder fields
+    newFields.forEach((field, idx) => {
+      field.order_field = idx + 1;
+    });
+    
+    setFormData({ ...formData, template_fields: newFields });
+  };
+
+  const filteredTemplates = templates.filter(template =>
+    template.template_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const fieldTypeOptions = [
+    { value: 'text', label: 'Text Input' },
+    { value: 'textarea', label: 'Text Area' },
+    { value: 'number', label: 'Number' },
+    { value: 'date', label: 'Date' },
+    { value: 'email', label: 'Email' },
+    { value: 'file', label: 'File Upload' },
+    { value: 'select', label: 'Dropdown' },
+    { value: 'checkbox', label: 'Checkbox' },
+    { value: 'radio', label: 'Radio Button' }
+  ];
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="border-b px-6 py-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2>Template Manager</h2>
-            <p className="text-muted-foreground">Create and manage form templates with custom fields</p>
-          </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => {
-                setEditingTemplate(null);
-                setFormData({
-                  template_name: '',
-                  template_fields: [
-                    {
-                      field_name: 'question',
-                      order_field: 1,
-                      field_type: 'text'
-                    },
-                    {
-                      field_name: 'answer',
-                      order_field: 2,
-                      field_type: 'textarea'
-                    }
-                  ]
-                });
-              }}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Template
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl">
-              <DialogHeader>
-                <DialogTitle>{editingTemplate ? 'Edit Template' : 'Create New Template'}</DialogTitle>
-                <DialogDescription>
-                  {editingTemplate ? 'Update the template configuration' : 'Create a new template with custom fields'}
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="template_name">Template Name</Label>
-                  <Input
-                    id="template_name"
-                    value={formData.template_name}
-                    onChange={(e) => setFormData({ ...formData, template_name: e.target.value })}
-                    placeholder="Enter template name..."
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Template Fields</Label>
-                  <div className="space-y-3 max-h-60 overflow-y-auto">
-                    {formData.template_fields.map((field, index) => (
-                      <div key={index} className="grid grid-cols-12 gap-2 p-3 border rounded-lg">
-                        <div className="col-span-4">
-                          <Input
-                            value={field.field_name}
-                            onChange={(e) => {
-                              const newFields = [...formData.template_fields];
-                              newFields[index].field_name = e.target.value;
-                              setFormData({ ...formData, template_fields: newFields });
-                            }}
-                            placeholder="Field name"
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <Input
-                            type="number"
-                            value={field.order_field}
-                            onChange={(e) => {
-                              const newFields = [...formData.template_fields];
-                              newFields[index].order_field = parseInt(e.target.value) || 1;
-                              setFormData({ ...formData, template_fields: newFields });
-                            }}
-                            placeholder="Order"
-                            min="1"
-                          />
-                        </div>
-                        <div className="col-span-4">
-                          <Select
-                            value={field.field_type}
-                            onValueChange={(value) => {
-                              const newFields = [...formData.template_fields];
-                              newFields[index].field_type = value;
-                              setFormData({ ...formData, template_fields: newFields });
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Field type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="text">Text</SelectItem>
-                              <SelectItem value="textarea">Textarea</SelectItem>
-                              <SelectItem value="select">Select</SelectItem>
-                              <SelectItem value="number">Number</SelectItem>
-                              <SelectItem value="email">Email</SelectItem>
-                              <SelectItem value="date">Date</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="col-span-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const newFields = formData.template_fields.filter((_, i) => i !== index);
-                              setFormData({ ...formData, template_fields: newFields });
-                            }}
-                            className="w-full"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      const newField = {
-                        field_name: '',
-                        order_field: formData.template_fields.length + 1,
-                        field_type: 'text'
-                      };
-                      setFormData({
-                        ...formData,
-                        template_fields: [...formData.template_fields, newField]
-                      });
-                    }}
-                    className="w-full"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Field
-                  </Button>
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={loading}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateOrUpdate} disabled={loading}>
-                  {loading ? 'Saving...' : editingTemplate ? 'Update' : 'Create'} Template
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {/* Search */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search templates by name..."
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="flex gap-4 text-sm text-muted-foreground">
-          <span>Total Templates: {templates.length}</span>
-          <span>•</span>
-          <span>Showing: {filteredTemplates.length}</span>
-          <span>•</span>
-          <span>Active: {templates.filter(t => t.is_active).length}</span>
-        </div>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Q&A Template Manager</h2>
+        <button
+          onClick={() => {
+            resetForm();
+            setIsDialogOpen(true);
+          }}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+        >
+          Create Template
+        </button>
       </div>
 
-      {/* Template List */}
-      <ScrollArea className="flex-1">
-        <div className="p-6 pb-8 space-y-4">
-          {loading && (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>Loading templates...</p>
-            </div>
-          )}
-          
-          {!loading && filteredTemplates.map((template) => (
-            <Card key={template.template_id}>
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <CardTitle className="text-base">{template.template_name}</CardTitle>
-                    <CardDescription className="mt-2">
-                      {template.template_fields?.length || 0} fields configured
-                    </CardDescription>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEdit(template)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDuplicate(template)}>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => handleDelete(template.template_id)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-2 flex-wrap">
-                    <Badge variant={template.is_active ? "default" : "secondary"}>
-                      {template.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                    {template.template_fields?.slice(0, 3).map((field, index) => (
-                      <Badge key={index} variant="outline">
-                        {field.field_name} ({field.field_type})
-                      </Badge>
-                    ))}
-                    {template.template_fields?.length > 3 && (
-                      <Badge variant="outline">
-                        +{template.template_fields.length - 3} more
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex gap-4 text-sm text-muted-foreground">
-                    <span>ID: {template.template_id}</span>
-                    {template.created_by && (
-                      <>
-                        <span>•</span>
-                        <span>Created by: {template.created_by}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+      {/* Search */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search templates..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
 
-          {!loading && filteredTemplates.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>No templates found.</p>
-              <p className="text-sm">Create your first template or adjust your search.</p>
+      {/* Templates List */}
+      {loading ? (
+        <div className="text-center py-8">Loading templates...</div>
+      ) : (
+        <div className="grid gap-4">
+          {filteredTemplates.map((template) => (
+            <div key={template.template_id} className="bg-white p-4 rounded-lg border shadow-sm">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-semibold">{template.template_name}</h3>
+                  <p className="text-gray-600">
+                    {template.template_fields?.length || 0} field(s)
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(template)}
+                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(template.template_id)}
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+              
+              {/* Show field names */}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {template.template_fields?.map((field, idx) => (
+                  <span key={idx} className="bg-gray-100 px-2 py-1 rounded text-sm">
+                    {field.field_name} ({field.field_type})
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+          
+          {filteredTemplates.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No templates found
             </div>
           )}
         </div>
-      </ScrollArea>
+      )}
+
+      {/* Create/Edit Dialog */}
+      {isDialogOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold">
+                {editingTemplate ? 'Edit Template' : 'Create Template'}
+              </h3>
+              <button
+                onClick={() => setIsDialogOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Template Name */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Template Name *
+              </label>
+              <input
+                type="text"
+                value={formData.template_name}
+                onChange={(e) => setFormData({ ...formData, template_name: e.target.value })}
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter template name"
+              />
+            </div>
+
+            {/* Fields */}
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Template Fields
+                </label>
+                <button
+                  onClick={addField}
+                  className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                >
+                  Add Field
+                </button>
+              </div>
+
+              {formData.template_fields.map((field, index) => (
+                <div key={index} className="border p-3 rounded mb-2 bg-gray-50">
+                  <div className="grid grid-cols-12 gap-2 items-end">
+                    {/* Field Name */}
+                    <div className="col-span-5">
+                      <label className="block text-xs text-gray-600 mb-1">Field Name</label>
+                      <input
+                        type="text"
+                        value={field.field_name}
+                        onChange={(e) => updateField(index, 'field_name', e.target.value)}
+                        className="w-full p-2 border rounded text-sm"
+                        placeholder="field name"
+                      />
+                    </div>
+
+                    {/* Field Type */}
+                    <div className="col-span-4">
+                      <label className="block text-xs text-gray-600 mb-1">Type</label>
+                      <select
+                        value={field.field_type}
+                        onChange={(e) => updateField(index, 'field_type', e.target.value)}
+                        className="w-full p-2 border rounded text-sm"
+                      >
+                        {fieldTypeOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Order */}
+                    <div className="col-span-2">
+                      <label className="block text-xs text-gray-600 mb-1">Order</label>
+                      <input
+                        type="number"
+                        value={field.order_field}
+                        onChange={(e) => updateField(index, 'order_field', parseInt(e.target.value))}
+                        className="w-full p-2 border rounded text-sm"
+                        min="1"
+                      />
+                    </div>
+
+                    {/* Remove Button */}
+                    <div className="col-span-1">
+                      <button
+                        onClick={() => removeField(index)}
+                        className="w-full bg-red-500 text-white p-2 rounded text-sm hover:bg-red-600"
+                        title="Remove field"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Buttons */}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setIsDialogOpen(false)}
+                className="px-4 py-2 border rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateOrUpdate}
+                disabled={loading}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : (editingTemplate ? 'Update' : 'Create')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default QATemplateManager;

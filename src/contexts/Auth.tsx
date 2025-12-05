@@ -330,11 +330,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       }).catch(err => console.warn('Cache cleanup failed:', err));
     }
+
+    // Determine redirect URL based on user role
+    const staffRoles = ['Admin', 'Consultant', 'Content Manager', 'Admission Official'];
+    const redirectUrl = user?.role && staffRoles.includes(user.role) ? '/loginforad' : '/loginprivate';
     
     // Force reload to clear any remaining application state
     // Optional: Only if you want to completely refresh the app
     setTimeout(() => {
-      window.location.href = '/loginprivate';
+      window.location.href = redirectUrl;
     }, 100);
     
     console.log('Logout complete - all user data cleared');

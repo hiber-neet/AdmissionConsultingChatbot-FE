@@ -1,9 +1,9 @@
+import React, { useEffect } from 'react';
 import { BrowserRouter } from "react-router-dom";
 import "./styles/index.css";
 import Router from "./router/Router.jsx";
 import { AuthProvider } from "./contexts/Auth";
 import { NotificationProvider } from "./contexts/NotificationContext";
-import { useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';

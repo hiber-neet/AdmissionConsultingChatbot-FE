@@ -59,7 +59,9 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
         console.log('Unanswered questions:', questionsResponse);
         
         setStats(statsResponse.data);
-        setUnansweredQuestions(questionsResponse.data);
+        // Handle case where questionsResponse might be an array directly or have .data property
+        const questionsData = Array.isArray(questionsResponse) ? questionsResponse : questionsResponse?.data || [];
+        setUnansweredQuestions(questionsData);
       } catch (err: any) {
         console.error('Error fetching dashboard data:', err);
         setError(err.response?.data?.detail || 'Failed to fetch dashboard data');
@@ -305,7 +307,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             </div>
           </CardHeader>
           <CardContent>
-            {unansweredQuestions.length === 0 ? (
+            {!unansweredQuestions || unansweredQuestions.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No recent unanswered questions found.</p>

@@ -124,7 +124,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
         setError(null);
         const days = getDaysFromRange(dateRange);
         const response = await consultantAnalyticsAPI.getCategoryStatistics(days);
-        setCategoryStats(response.data || []);
+        setCategoryStats(Array.isArray(response) ? response : response?.data || []);
       } catch (err: any) {
         console.error('Error fetching category statistics:', err);
         setError(err.response?.data?.detail || 'Failed to fetch category statistics');
@@ -154,7 +154,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
     });
 
   // Sort category data from API
-  const sortedCategoryData = [...categoryStats].sort((a, b) => {
+  const sortedCategoryData = [...(categoryStats || [])].sort((a, b) => {
     const aVal = a[categorySortField];
     const bVal = b[categorySortField];
     
