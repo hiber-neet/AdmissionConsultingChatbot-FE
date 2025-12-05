@@ -9,12 +9,17 @@ import { useAuth } from "@/contexts/Auth";
 import {
   joinQueue,
   getQueueStatus,
-  sendSessionMessage,
   endSession,
   getSessionMessages,
 } from "@/services/liveChat";
 
-// import { BASE } from "@/configs/base";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+
+const authHeaders = () => {
+  const token = localStorage.getItem("access_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 const SidebarItem = ({ active, icon, label, onClick }) => (
   <button
@@ -34,92 +39,8 @@ const GENDERS = [
   { value: "other", label: "Khác" },
 ];
 
-const GRADES = [
-  "10",
-  "11",
-  "12",
-  "Đã tốt nghiệp",
-];
+const GRADES = ["10", "11", "12", "Đã tốt nghiệp"];
 
-const UserProfile = () => {
-      const { user, isAuthenticated  } = useAuth();
-  const [tab, setTab] = useState("profile");
-  const [editing, setEditing] = useState(false);
-
- 
-
-
-//hoc ba
-const [files, setFiles] = useState([]);        // File[] chờ upload
-const [uploading, setUploading] = useState(false);
-const [uploaded, setUploaded] = useState([]);  // danh sách đã upload (mock)
-
-const ACCEPTED = ["application/pdf", "image/jpeg", "image/png"];
-const MAX_MB = 10;
-
-// chọn file
-const onPickFiles = (e) => {
-  const picked = Array.from(e.target.files || []);
-  const valid = [];
-  const errors = [];
-
-  picked.forEach((file) => {
-    if (!ACCEPTED.includes(file.type)) {
-      errors.push(`File ${file.name} định dạng không hỗ trợ (PDF/JPG/PNG).`);
-      return;
-    }
-    if (file.size > MAX_MB * 1024 * 1024) {
-      errors.push(`File ${file.name}: vượt quá ${MAX_MB}MB.`);
-      return;
-    }
-    valid.push(file);
-  });
-
-  if (errors.length) alert(errors.join("\n"));
-  if (valid.length) setFiles((prev) => [...prev, ...valid]);
-
-  // cho phép chọn lại cùng file
-  e.target.value = "";
-};
-
-// xóa file khỏi hàng chờ
-const removeFile = (index) => {
-  setFiles((prev) => prev.filter((_, i) => i !== index));
-};
-
-// upload (mock). TODO: thay bằng gọi API backend với FormData nếu có.
-const uploadTranscript = async () => {
-  if (!files.length) {
-    alert("Vui lòng chọn tối thiểu 1 file.");
-    return;
-  }
-  try {
-    setUploading(true);
-    const results = files.map((f) => ({
-      name: f.name,
-      size: f.size,
-      type: f.type,
-      preview: f.type.startsWith("image/") ? URL.createObjectURL(f) : null,
-    }));
-    setUploaded((prev) => [...prev, ...results]);
-    setFiles([]);
-    alert("Tải lên học bạ thành công!");
-  } catch (e) {
-    console.error(e);
-    alert("Tải lên thất bại, thử lại sau.");
-  } finally {
-    setUploading(false);
-  }
-};
-
-// dọn URL tạm để tránh leak khi rời trang
-useEffect(() => {
-  return () => {
-    uploaded.forEach((u) => u.preview && URL.revokeObjectURL(u.preview));
-  };
-}, [uploaded]);
-
-  const LS_KEY = "chat_conversations_v1";
 const newConv = () => ({
   id: crypto.randomUUID(),
   title: "Cuộc trò chuyện mới",
@@ -128,18 +49,302 @@ const newConv = () => ({
   updatedAt: Date.now(),
 });
 
-const [convs, setConvs] = useState(() => {
-  const raw = localStorage.getItem(LS_KEY);
-  if (raw) {
-    try { return JSON.parse(raw); } catch {}
-  }
-  return [newConv()];
-});
+const UserProfile = () => {
+  const { user, isAuthenticated } = useAuth();
+  const [tab, setTab] = useState("profile");
+  const [editing, setEditing] = useState(false);
 
-const [activeId, setActiveId] = useState(convs[0]?.id || null);
+  // ====== HỌC BẠ (giữ nguyên) ======
+  const [files, setFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploaded, setUploaded] = useState([]);
 
-  // Chatbot states
+  const ACCEPTED = ["application/pdf", "image/jpeg", "image/png"];
+  const MAX_MB = 10;
+
+  const onPickFiles = (e) => {
+    const picked = Array.from(e.target.files || []);
+    const valid = [];
+    const errors = [];
+
+    picked.forEach((file) => {
+      if (!ACCEPTED.includes(file.type)) {
+        errors.push(`File ${file.name} định dạng không hỗ trợ (PDF/JPG/PNG).`);
+        return;
+      }
+      if (file.size > MAX_MB * 1024 * 1024) {
+        errors.push(`File ${file.name}: vượt quá ${MAX_MB}MB.`);
+        return;
+      }
+      valid.push(file);
+    });
+
+    if (errors.length) alert(errors.join("\n"));
+    if (valid.length) setFiles((prev) => [...prev, ...valid]);
+    e.target.value = "";
+  };
+
+  const removeFile = (index) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadTranscript = async () => {
+    if (!files.length) {
+      alert("Vui lòng chọn tối thiểu 1 file.");
+      return;
+    }
+    try {
+      setUploading(true);
+      const results = files.map((f) => ({
+        name: f.name,
+        size: f.size,
+        type: f.type,
+        preview: f.type.startsWith("image/") ? URL.createObjectURL(f) : null,
+      }));
+      setUploaded((prev) => [...prev, ...results]);
+      setFiles([]);
+      alert("Tải lên học bạ thành công!");
+    } catch (e) {
+      console.error(e);
+      alert("Tải lên thất bại, thử lại sau.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+// --- helper: build payload from scores state ---
+const buildAcademicPayload = () => {
+  const subjects = [...subjectsLeft, ...subjectsRight];
+  const entries = subjects.map((subject) => {
+    const s = scores[subject] || {};
+    // normalize empty -> null so backend can ignore empty
+    return {
+      subject,
+      grade_11: s["11"] ? String(s["11"]) : null,
+      grade_12: s["12"] ? String(s["12"]) : null,
+    };
+  }).filter(e => e.grade_11 !== null || e.grade_12 !== null); // keep only filled subjects
+
+  return {
+    // adjust field names if backend expects different ones
+    customer_id: user.id,
+    entries, // array of { subject, grade_11, grade_12 }
+  };
+};
+
+// --- Save academic scores to backend ---
+ const saveAcademicScores = async (e) => {
+    e?.preventDefault?.();
+
+    // Build payload đúng format BE: { math, literature, ... }
+    const payload = {};
+
+    Object.entries(SUBJECT_API_FIELDS).forEach(([label, apiField]) => {
+      const s = scores[label] || {};
+      const v11 = parseFloat(s["11"]);
+      const v12 = parseFloat(s["12"]);
+
+      let val = null;
+
+      if (!isNaN(v11) && !isNaN(v12)) {
+        // nếu nhập cả 2 cột thì lấy trung bình, làm tròn 1 số lẻ
+        val = Number(((v11 + v12) / 2).toFixed(1));
+      } else if (!isNaN(v11)) {
+        val = v11;
+      } else if (!isNaN(v12)) {
+        val = v12;
+      }
+
+      if (val !== null) {
+        payload[apiField] = val;
+      }
+    });
+
+    const filledSubjects = Object.keys(payload).length;
+    if (filledSubjects < 6) {
+      alert("Cần nhập tối thiểu 06 môn.");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/academic-score/upload`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...authHeaders(),
+          },
+        }
+      );
+
+      console.log("Uploaded OK:", res.data);
+      alert("Lưu học bạ thành công!");
+    } catch (err) {
+      console.error("Upload error:", err);
+      console.error("Server message:", err?.response?.data);
+      alert("Lưu thất bại, vui lòng kiểm tra lại.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+
+// call once when tab/transcript visible or when user changes
+useEffect(() => {
+    if (!user) return;
+
+    const fetchScores = async () => {
+      try {
+        const res = await axios.get(
+          `${API_BASE_URL}/academic-score/users/${user.id}/academic-scores`,
+          { headers: authHeaders() }
+        );
+
+        const data = res.data;
+        if (!data) return;
+
+        // Map từ object BE -> state scores của UI
+        const next = {};
+        Object.entries(SUBJECT_API_FIELDS).forEach(([label, apiField]) => {
+          const v = data[apiField];
+          if (v !== null && v !== undefined) {
+            // cho hiển thị cả 2 cột giống nhau,
+            // hoặc bạn muốn thì chỉ gán vào 1 cột cũng được
+            next[label] = {
+              "11": v.toString(),
+              "12": v.toString(),
+            };
+          }
+        });
+
+        setScores(next);
+      } catch (err) {
+        const status = err?.response?.status;
+
+        // 404 hoặc 500: coi như chưa có điểm => không log đỏ, không alert
+        if (status === 404 || status === 500) {
+          console.log(
+            "Không load được học bạ (chưa có hoặc BE trả lỗi).",
+            status,
+            err?.response?.data
+          );
+          return;
+        }
+
+        // các lỗi khác vẫn log để biết
+        console.error("fetch academic scores", err);
+      }
+    };
+
+    fetchScores();
+  }, [user]);
+
+  useEffect(() => {
+    return () => {
+      uploaded.forEach((u) => u.preview && URL.revokeObjectURL(u.preview));
+    };
+  }, [uploaded]);
+
+  // =======================
+  // CHATBOT – FE quản lý list phiên, BE chỉ là WebSocket
+  // =======================
+  const [convs, setConvs] = useState(() => [newConv()]);
+  const [activeId, setActiveId] = useState(() =>
+    convs.length ? convs[0].id : null
+  );
+  const liveWsRef = useRef(null);
+  const convsRef = useRef(convs);
+  useEffect(() => {
+    convsRef.current = convs;
+  }, [convs]);
+
   const [messages, setMessages] = useState([]);
+  const [chatSessionId, setChatSessionId] = useState(null);
+  const chatSessionIdRef = useRef(null);
+
+  const [liveStatus, setLiveStatus] = useState("idle");
+  const [queueInfo, setQueueInfo] = useState(null);
+  const [sessionInfo, setSessionInfo] = useState(null);
+  const [liveMessages, setLiveMessages] = useState([]);
+  const [liveInput, setLiveInput] = useState("");
+  const customerEventSourceRef = useRef(null);
+  useEffect(() => {
+    chatSessionIdRef.current = chatSessionId;
+  }, [chatSessionId]);
+
+  // WebSocket live chat với tư vấn viên
+ useEffect(() => {
+  if (liveStatus !== "chatting" || !sessionInfo?.session_id || !user) {
+    if (liveWsRef.current && liveWsRef.current.readyState === WebSocket.OPEN) {
+      liveWsRef.current.close();
+    }
+    liveWsRef.current = null;
+    return;
+  }
+
+  // close existing WS if any (prevent duplicates)
+  if (liveWsRef.current && liveWsRef.current.readyState === WebSocket.OPEN) {
+    try { liveWsRef.current.close(); } catch (e) { console.warn(e); }
+    liveWsRef.current = null;
+  }
+
+  const wsUrl = API_BASE_URL.replace(/^http/, "ws") +
+    `/live_chat/livechat/chat/${sessionInfo.session_id}`;
+
+  const ws = new WebSocket(wsUrl);
+  liveWsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("Live chat WS connected");
+    };
+
+   ws.onmessage = (event) => {
+  try {
+    const data = JSON.parse(event.data);
+
+    // server broadcast payload (see LiveChatService.broadcast_message):
+    // { event: "message", session_id, sender_id, message, timestamp }
+
+    // ensure we only handle 'message' events here (server may send other events)
+    if (data.event === "message") {
+      // Build the message object for UI
+      const msg = {
+        sender: data.sender_id === user.id ? "customer" : "official",
+        content: data.message,
+        // server sends ISO timestamp in `timestamp`
+        created_at: data.timestamp ?? new Date().toISOString(),
+      };
+
+      // Append the message (do NOT append optimistically when sending)
+      setLiveMessages((prev) => [...prev, msg]);
+    } else if (data.event === "chat_ended") {
+      // optionally handle end event here
+      setLiveStatus("ended");
+    } else {
+      // handle other events if needed
+      console.log("Live WS unhandled event:", data);
+    }
+  } catch (err) {
+    console.warn("Cannot parse WS message:", event.data, err);
+  }
+};
+
+    ws.onerror = (err) => {
+      console.error("Live chat WS error", err);
+    };
+
+    ws.onclose = () => {
+      console.log("Live chat WS closed");
+    };
+
+     return () => {
+    if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+  };
+}, [liveStatus, sessionInfo?.session_id, user]);
+
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [partialResponse, setPartialResponse] = useState("");
@@ -147,396 +352,421 @@ const [activeId, setActiveId] = useState(convs[0]?.id || null);
   const partialRef = useRef("");
   const [wsReady, setWsReady] = useState(false);
 
-// load messages khi đổi phiên
-useEffect(() => {
-  const c = convs.find(c => c.id === activeId);
-  setMessages(c ? c.messages : []);
-}, [activeId, convs]);
+  // cập nhật messages của conversation đang active
+  const pushToActive = (msg) => {
+    const currentConvs = convsRef.current;
+    const next = currentConvs.map((c) => {
+      if (c.id !== activeId) return c;
+      return {
+        ...c,
+        messages: [...(c.messages || []), msg],
+        updatedAt: Date.now(),
+      };
+    });
+    setConvs(next);
+  };
 
-const persistConvs = (next) => {
-  setConvs(next);
-  localStorage.setItem(LS_KEY, JSON.stringify(next));
-};
+  const createConversation = () => {
+    const c = newConv();
+    setConvs((prev) => [c, ...prev]);
+    setActiveId(c.id);
+    setMessages([]);
+  };
 
-const createConversation = () => {
-  const c = newConv();
-  const next = [c, ...convs];
-  persistConvs(next);
-  setActiveId(c.id);
-};
+  const selectConversation = (id) => {
+    setActiveId(id);
+    const c = convsRef.current.find((x) => x.id === id);
+    setMessages(c ? c.messages || [] : []);
+  };
 
-const selectConversation = (id) => setActiveId(id);
+  const renameConversation = (id) => {
+    const title = prompt("Đặt tên phiên chat:");
+    if (!title) return;
+    setConvs((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, title } : c))
+    );
+  };
 
-const renameConversation = (id) => {
-  const title = prompt("Đặt tên phiên chat:");
-  if (!title) return;
-  const next = convs.map(c => c.id === id ? { ...c, title } : c);
-  persistConvs(next);
-};
+  const deleteConversation = (id) => {
+    if (!confirm("Xoá phiên chat này?")) return;
+    setConvs((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      if (activeId === id) {
+        const newActive = next[0] || null;
+        setActiveId(newActive ? newActive.id : null);
+        setMessages(newActive ? newActive.messages || [] : []);
+      }
+      return next;
+    });
+  };
 
-const deleteConversation = (id) => {
-  if (!confirm("Xoá phiên chat này?")) return;
-  const next = convs.filter(c => c.id !== id);
-  persistConvs(next);
-  if (activeId === id) setActiveId(next[0]?.id || null);
-};
+  // ====== LIVE CHAT QUEUE ======
+  const handleJoinQueue = async () => {
+    if (!user) {
+      alert("Bạn cần đăng nhập trước.");
+      return;
+    }
+    try {
+      setLiveStatus("in_queue");
+      // tạm thời hard-code official_id = 3 (đúng theo Swagger anh gửi)
+      const data = await joinQueue(user.id, 3);
+      setQueueInfo(data);
+      console.log("join_queue result:", data);
+    } catch (err) {
+      console.error("joinQueue error:", err);
+      const msg =
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        "Không thể tham gia hàng chờ, vui lòng thử lại.";
+      alert(msg);
+      setLiveStatus("idle");
+    }
+  };
 
-// cập nhật phiên hiện tại khi có tin nhắn mới
-const pushToActive = (msg) => {
-  const next = convs.map(c => {
-    if (c.id !== activeId) return c;
-    return {
-      ...c,
-      messages: [...c.messages, msg],
-      updatedAt: Date.now(),
-    };
-  });
-  persistConvs(next);
-};
-
-
-//Live Chat with admission official 
-const [liveStatus, setLiveStatus] = useState("idle"); 
-
-// "idle" | "in_queue" | "chatting" | "ended"
-const [queueInfo, setQueueInfo] = useState(null);     // {queue_id, position,...}
-const [sessionInfo, setSessionInfo] = useState(null); // {session_id, official_name,...}
-const [liveMessages, setLiveMessages] = useState([]); // [{sender, content, created_at}, ...]
-const [liveInput, setLiveInput] = useState("");
-const customerEventSourceRef = useRef(null);
-
-
-const handleJoinQueue = async () => {
-  if (!user) {
-    alert("Bạn cần đăng nhập trước.");
-    return;
-  }
-  try {
-    setLiveStatus("in_queue");
-    const data = await joinQueue(user.id);
-    setQueueInfo(data);
-    console.log("join_queue result:", data);
-  } catch (err) {
-    console.error("joinQueue error:", err);
-
-    // Nếu là lỗi từ axios
-    const msg =
-      err?.response?.data?.detail ||
-      err?.response?.data?.message ||
-      "Không thể tham gia hàng chờ, vui lòng thử lại.";
-
-    alert(msg);
-    setLiveStatus("idle");
-  }
-};
-
-const handleSendLiveMessage = async (e) => {
+ const handleSendLiveMessage = async (e) => {
   e.preventDefault();
   if (!liveInput.trim() || !sessionInfo?.session_id) return;
   const content = liveInput.trim();
 
-  // push message phía client ngay
-  const msg = {
-    sender: "customer",
-    content,
-    created_at: new Date().toISOString(),
-  };
-  setLiveMessages((prev) => [...prev, msg]);
+  // Do NOT append locally here; server will broadcast the message back to all participants
   setLiveInput("");
 
-  try {
-    await sendSessionMessage(sessionInfo.session_id, {
-      sender: "customer",
-      content,
-    });
-  } catch (err) {
-    console.error(err);
-    alert("Gửi thất bại, thử lại.");
-  }
-};
-
-const handleEndLiveChat = async () => {
-  if (!sessionInfo?.session_id) return;
-  try {
-    await endSession(sessionInfo.session_id, user.id); // thêm user.id
-  } catch (err) {
-    console.error(err);
-  }
-  setLiveStatus("ended");
-  setSessionInfo(null);
-};
-
-
-// SSE cho customer: nhận sự kiện queue + message từ BE
-useEffect(() => {
-  if (tab !== "consultant" || !user) {
-    // rời tab hoặc chưa login => đóng SSE
-    if (customerEventSourceRef.current) {
-      customerEventSourceRef.current.close();
-      customerEventSourceRef.current = null;
-    }
+  if (!liveWsRef.current || liveWsRef.current.readyState !== WebSocket.OPEN) {
+    console.warn("Live chat WS not ready");
     return;
   }
 
-  const token = localStorage.getItem("access_token") || "";
-  // nếu BE cần token, cho phép đọc từ query ?token=
-  const url = `http://127.0.0.1:8000/live_chat/livechat/sse/customer/${user.id}?token=${encodeURIComponent(
-    token
-  )}`;
-
-  const es = new EventSource(url);
-  customerEventSourceRef.current = es;
-
-  es.onopen = () => {
-    console.log("SSE customer connected");
-  };
-
-  es.onerror = (err) => {
-    console.error("SSE error", err);
-    // optional: es.close();
-  };
-
-es.onmessage = async (event) => {
-  try {
-    const data = JSON.parse(event.data);
-    console.log("SSE data:", data);
-
-    // nếu BE gửi field "event" thì đổi data.type -> data.event
-    switch (data.type /* hoặc data.event */) {
-      case "queued": {
-        const qs = await getQueueStatus(user.id);
-        setQueueInfo(qs);
-        // optional: setLiveStatus("in_queue");
-        break;
-      }
-
-       case "accepted":
-        // data: { event: "accepted", session_id, official_id }
-        setSessionInfo({
-          session_id: data.session_id,
-          official_name: "Tư vấn viên", // tạm, nếu BE gửi tên thì map vào
-        });
-        setLiveStatus("chatting");
-
-        // load lịch sử tin nhắn nếu cần
-        if (data.session_id) {
-          const msgs = await getSessionMessages(data.session_id);
-          setLiveMessages(msgs || []);
-        }
-        break;
-
-      case "chat_ended":
-        setLiveStatus("ended");
-        break;
-
-      default:
-        console.log("Unhandled SSE:", data);
-    }
-  } catch (e) {
-    console.warn("Non-JSON SSE:", event.data);
-  }
+  liveWsRef.current.send(
+    JSON.stringify({
+      sender_id: user.id,
+      message: content,
+    })
+  );
 };
 
-  return () => {
-    es.close();
-  };
-}, [tab, user]);
-
-
-
-  const openConsultant = (c) => {
-    setSelectedConsultant(c);
-    setCMessages((prev) => {
-      if (prev[c.id]) return prev;
-      return {
-        ...prev,
-        [c.id]: [
-          { sender: "bot", text: `Xin chào, mình là ${c.name} – ${c.role}. Bạn cần hỗ trợ gì?` },
-        ],
-      };
-    });
-  };
-
-const deleteUploaded = (index) => {
-  setUploaded((prev) => {
-    const next = [...prev];
-    const [removed] = next.splice(index, 1);
-    if (removed?.preview) URL.revokeObjectURL(removed.preview);
-    return next;
-  });
-};
-
-
-  const handleConsultSend = (e) => {
-    e.preventDefault();
-    if (!selectedConsultant || !cInput.trim()) return;
-    const id = selectedConsultant.id;
-
-    setCMessages((prev) => ({
-      ...prev,
-      [id]: [...(prev[id] || []), { sender: "user", text: cInput }],
-    }));
-
-    const userText = cInput;
-    setCInput("");
-    setTimeout(() => {
-      setCMessages((prev) => ({
-        ...prev,
-        [id]: [
-          ...(prev[id] || []),
-          { sender: "bot", text: `${selectedConsultant.name} đã nhận câu hỏi: "${userText}". Mình sẽ phản hồi sớm nhất!` },
-        ],
-      }));
-    }, 700);
-  };
-
- 
-  const [form, setForm] = useState({
-   fullName: "",
-  gender: "male",
-  dob: "",
-  email: "",
-  phone: "",
-  address: "",
-  school: "",
-  grade: "12",
-  admissionScore: "",
-  subjects: "",
-  preferredMajor: "",
-  riasecCode: "",
-  });
-
-useEffect(() => {
-  // chỉ gọi khi đã có user (tức là đã login)
-  if (!user) return;
-
-  const fetchProfile = async () => {
+  const handleEndLiveChat = async () => {
+    if (!sessionInfo?.session_id) return;
     try {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        console.warn("No access_token in localStorage");
-        return;
-      }
-
-      // Giả sử BE có endpoint: GET /profile/{user_id}
-      const res = await axios.get(
-        `http://127.0.0.1:8000/profile/${user.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = res.data;
-      console.log("🔥 Profile from backend:", data);
-setForm({
-  fullName: data.full_name || "",
-  gender: data.gender || "male",
-  dob: data.dob || "",
-  email: data.email || user.email,
-  phone: data.phone_number || "",
-  address: data.address || "",
-  school: data.school || "",
-  grade: data.grade || "12",
-  admissionScore: data.admission_score?.toString() || "",
-  subjects: data.subjects || "",
-
-  preferredMajor:
-    data.student_profile?.interest?.desired_major || "",
-
-  riasecCode: data.student_profile?.riasec_result?.result || "",
-});
-
-    } catch (error) {
-      console.error("Failed to fetch profile:", error);
+      await endSession(sessionInfo.session_id, user.id);
+    } catch (err) {
+      console.error(err);
     }
+    setLiveStatus("ended");
+    setSessionInfo(null);
   };
 
-  fetchProfile();
-}, [user]);
-
-
+  // ====== SSE CUSTOMER (queue + accepted + chat_ended) ======
   useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      // const response = await axios.get(`${BASE.BASE_URL}/account/profile`, {
-      //   headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
-      // });
-      // setForm(response.data);
-    } catch (error) {
-      console.error("Failed to fetch profile:", error);
-    }
-  };
-
-  // Kết nối WS khi vào tab chatbot
-  useEffect(() => {
-    if (tab !== "chatbot") {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.close();
+    if (tab !== "consultant" || !user) {
+      if (customerEventSourceRef.current) {
+        customerEventSourceRef.current.close();
+        customerEventSourceRef.current = null;
       }
-      setWsReady(false);
       return;
     }
 
-    const ws = new WebSocket("ws://localhost:8000/chat/ws/chat");
+    const token = localStorage.getItem("access_token") || "";
+    const url =
+      `${API_BASE_URL}/live_chat/livechat/sse/customer/` +
+      `${user.id}?token=${encodeURIComponent(token)}`;
+
+    const es = new EventSource(url);
+    customerEventSourceRef.current = es;
+
+    es.onopen = () => {
+      console.log("SSE customer connected");
+    };
+
+    es.onerror = (err) => {
+      console.error("SSE error", err);
+    };
+
+    const handleSseEvent = async (event) => {
+      try {
+        let payload;
+
+        try {
+          // trường hợp server đã trả đúng JSON
+          payload = JSON.parse(event.data);
+        } catch {
+          // fallback cho format hiện tại: {'event': 'queued', ...}
+          const normalized = event.data
+            .replace(/'/g, '"')
+            .replace(/\bNone\b/g, "null")
+            .replace(/\bTrue\b/g, "true")
+            .replace(/\bFalse\b/g, "false");
+
+          payload = JSON.parse(normalized);
+        }
+
+        console.log("SSE data parsed:", payload);
+
+        const ev = payload.event; // queued / accepted / chat_ended ...
+
+        switch (ev) {
+          case "queued": {
+            // Gọi đúng API: GET /live_chat/livechatcustomer/queue/status/{customer_id}
+            try {
+              const res = await axios.get(
+                `${API_BASE_URL}/live_chat/livechat/customer/queue/status/${user.id}`,
+                { headers: authHeaders() }
+              );
+              setQueueInfo(res.data);
+            } catch (err) {
+              console.error("getQueueStatus error:", err);
+            }
+            setLiveStatus("in_queue");
+            break;
+          }
+          case "accepted": {
+            const sessionId = payload.session_id;
+            setSessionInfo({
+              session_id: sessionId,
+              official_name: "Tư vấn viên",
+            });
+            setLiveStatus("chatting");
+            if (sessionId) {
+              const msgs = await getSessionMessages(sessionId);
+              setLiveMessages(msgs || []);
+            }
+            break;
+          }
+          case "chat_ended": {
+            setLiveStatus("ended");
+            break;
+          }
+          default:
+            console.log("Unhandled SSE:", payload);
+        }
+      } catch (e) {
+        console.warn("SSE parse error:", event.data, e);
+      }
+    };
+
+    es.addEventListener("queued", handleSseEvent);
+    es.addEventListener("accepted", handleSseEvent);
+    es.addEventListener("chat_ended", handleSseEvent);
+    es.onmessage = handleSseEvent;
+
+    return () => {
+      es.close();
+    };
+  }, [tab, user]);
+
+  // ====== PROFILE ======
+  const [form, setForm] = useState({
+    fullName: "",
+    gender: "male",
+    dob: "",
+    email: "",
+    phone: "",
+    address: "",
+    school: "",
+    grade: "12",
+    admissionScore: "",
+    subjects: "",
+    preferredMajor: "",
+    riasecCode: "",
+  });
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          console.warn("No access_token in localStorage");
+          return;
+        }
+
+        const res = await axios.get(`${API_BASE_URL}/profile/${user.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = res.data;
+        const sp = data.student_profile || {};
+
+        const preferredMajor =
+          sp.preferred_major ||
+          data.interest_desired_major ||
+          sp.interest?.desired_major ||
+          "";
+
+        const riasecCode = sp.riasec_code || sp.riasec_result?.result || "";
+
+        setForm({
+          fullName: data.full_name || "",
+          gender: sp.gender || "male",
+          dob: sp.dob || "",
+          email: data.email || user.email,
+          phone: data.phone_number || "",
+          address: sp.address || "",
+          school: sp.school || "",
+          grade: sp.grade || "12",
+          admissionScore:
+            sp.admission_score != null ? String(sp.admission_score) : "",
+          subjects: sp.subjects || "",
+          preferredMajor,
+          riasecCode,
+        });
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
+
+  // ====== WebSocket Chatbot (LLM) ======
+  useEffect(() => {
+    if (tab !== "chatbot" || !user) {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
+      }
+      wsRef.current = null;
+      setWsReady(false);
+      setIsLoading(false);
+      setPartialResponse("");
+      partialRef.current = "";
+      return;
+    }
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      return;
+    }
+
+    const wsUrl = API_BASE_URL.replace(/^http/, "ws") + "/chat/ws/chat";
+
+    const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-    ws.onopen = () => setWsReady(true);
+    ws.onopen = () => {
+      console.log("✅ Connected to WebSocket chatbot");
+      ws.send(
+        JSON.stringify({
+          user_id: user.id,
+          session_id: chatSessionIdRef.current ?? null,
+        })
+      );
+      setWsReady(true);
+    };
 
     ws.onmessage = (event) => {
+      console.log("📩 WS chatbot:", event.data);
+
+      let data;
       try {
-        const data = JSON.parse(event.data);
-        if (data.event === "chunk") {
+        data = JSON.parse(event.data);
+      } catch (err) {
+        console.error("❌ Không parse được JSON:", event.data);
+        return;
+      }
+
+      const ev = data.event || data.type;
+
+      switch (ev) {
+        case "session_created": {
+          if (data.session_id) {
+            console.log("🆕 Chat session created:", data.session_id);
+            setChatSessionId(data.session_id);
+          }
+          break;
+        }
+
+        case "chunk": {
+          const chunk = data.content ?? data.text ?? data.message ?? "";
           setPartialResponse((prev) => {
-            const next = prev + data.content;
-            partialRef.current = next;
-            return next;
+            const updated = prev + chunk;
+            partialRef.current = updated;
+            return updated;
           });
-        } else if (data.event === "done") {
+          setIsLoading(true);
+          break;
+        }
+
+        case "done": {
           const finalText =
             partialRef.current && partialRef.current.trim() !== ""
               ? partialRef.current
               : "(không có phản hồi)";
 
-          setMessages((prev) => [...prev, { sender: "bot", text: finalText }]);
-          pushToActive({ sender: "bot", text: finalText });
+          const botMsg = { sender: "bot", text: finalText };
+          setMessages((prev) => [...prev, botMsg]);
+          pushToActive(botMsg);
+
           partialRef.current = "";
           setPartialResponse("");
           setIsLoading(false);
+          break;
         }
-      } catch (_) {
-        // ignore non-JSON logs
+
+        case "error": {
+          console.error("⚠️ WS error:", data.message || data);
+          const errText =
+            data.message ||
+            "Xin lỗi, đã có lỗi xảy ra trong quá trình xử lý câu hỏi. Bạn hãy thử lại sau hoặc thử một câu hỏi khác nhé.";
+          const botMsg = { sender: "bot", text: errText };
+          setMessages((prev) => [...prev, botMsg]);
+          pushToActive(botMsg);
+          setIsLoading(false);
+          break;
+        }
+
+        default:
+          console.warn("⚠️ Sự kiện không xác định:", data);
       }
     };
 
-    ws.onclose = () => setWsReady(false);
+    ws.onclose = () => {
+      console.log("🔒 WebSocket chatbot closed");
+      setWsReady(false);
+      setIsLoading(false);
+      setPartialResponse("");
+      partialRef.current = "";
+    };
 
     return () => {
-      if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
     };
-  }, [tab]);
+  }, [tab, user]); // KHÔNG phụ thuộc chatSessionId để tránh loop
 
   const handleSend = (e) => {
     e.preventDefault();
     if (!input.trim() || !activeId) return;
-    const msg = { sender: "user", text: input };
-     setMessages(prev => [...prev, msg]);
-  pushToActive(msg);  
+
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      alert(
+        "Kết nối chatbot đã bị ngắt. Hãy đổi sang tab khác rồi quay lại Chatbot hoặc reload trang."
+      );
+      return;
+    }
+
+    const text = input.trim();
+    const userMsg = { sender: "user", text };
+
+    setMessages((prev) => [...prev, userMsg]);
+    pushToActive(userMsg);
+
+    wsRef.current.send(
+      JSON.stringify({
+        message: text,
+        user_id: user.id,
+        session_id: chatSessionIdRef.current ?? null,
+      })
+    );
+
+    setInput("");
     setPartialResponse("");
     partialRef.current = "";
     setIsLoading(true);
-
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ message: msg }));
-    }
-    setInput("");
   };
 
-  // ------- Form handlers --------
+  // ====== Profile handlers, transcript... (giữ nguyên) ======
   const handleChange = (e) => {
     if (!editing) return;
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
@@ -557,7 +787,6 @@ setForm({
 
   const onSave = async (e) => {
     e?.preventDefault?.();
-
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(form.email)) {
       alert("Vui lòng nhập đúng định dạng email.");
@@ -579,7 +808,6 @@ setForm({
     }
 
     try {
-      // await axios.put(`${BASE.BASE_URL}/account/update`, form);
       alert("Profile saved!");
       setEditing(false);
     } catch (error) {
@@ -595,8 +823,6 @@ setForm({
     "Ngoại ngữ",
     "Hóa học",
     "Lịch sử",
-    "Công nghệ",
-    "Giáo dục KT - PL",
   ];
 
   const subjectsRight = [
@@ -604,67 +830,60 @@ setForm({
     "Vật lý",
     "Sinh học",
     "Địa lý",
-    "Tin học",
   ];
 
-  const [scores, setScores] = useState({}); // key: `${subject}_${grade}` -> value string
+    const SUBJECT_API_FIELDS = {
+    "Toán học(*)": "math",
+    "Ngữ văn(*)": "literature",
+    "Ngoại ngữ": "english",
+    "Vật lý": "physics",
+    "Hóa học": "chemistry",
+    "Sinh học": "biology",
+    "Lịch sử": "history",
+    "Địa lý": "geography",
+  };
 
-const handleScoreChange = (subject, grade, rawValue) => {
-  let value = rawValue;
+  const [scores, setScores] = useState({});
 
- 
-  value = value.replace(/[^0-9.]/g, "");
+  const handleScoreChange = (subject, grade, rawValue) => {
+    let value = rawValue;
+    value = value.replace(/[^0-9.]/g, "");
+    const digits = value.replace(/\./g, "");
+    if (digits.length > 2) value = digits.slice(0, 2);
 
-  const digits = value.replace(/\./g, "");
-
-  if (digits.length > 2) {
-
-    value = digits.slice(0, 2);
-  }
-
-
-  if (/^[0-9]{2}$/.test(value)) {
-    const intVal = parseInt(value, 10);
-
-    if (intVal > 10) {
- 
-      value = (intVal / 10).toFixed(1);
+    if (/^[0-9]{2}$/.test(value)) {
+      const intVal = parseInt(value, 10);
+      if (intVal > 10) value = (intVal / 10).toFixed(1);
     }
-  }
 
-  // Nếu dạng X.Y
-  if (/^[0-9]\.[0-9]$/.test(value)) {
-    let f = parseFloat(value);
-    if (f > 10) f = 10;
-    value = f.toString();
-  }
-
-  // ép max = 10
-  let num = parseFloat(value);
-  if (!isNaN(num) && num > 10) value = "10";
-
-  // Chỉ cho tối đa 1 số thập phân
-  value = value.match(/^\d{1,2}(\.\d{0,1})?/)?.[0] || "";
-
-  // Cập nhật state
-  setScores((prev) => ({
-    ...prev,
-    [subject]: {
-      ...prev[subject],
-      [grade]: value
+    if (/^[0-9]\.[0-9]$/.test(value)) {
+      let f = parseFloat(value);
+      if (f > 10) f = 10;
+      value = f.toString();
     }
-  }));
-};
 
-const renderScoreInput = (subject, grade) => (
-  <input
-    type="text"
-    maxLength={4}
-    value={scores?.[subject]?.[grade] ?? ""}
-    onChange={(e) => handleScoreChange(subject, grade, e.target.value)}
-    className="w-full px-3 py-2 rounded-md text-black placeholder-gray-400"
-  />
-);
+    let num = parseFloat(value);
+    if (!isNaN(num) && num > 10) value = "10";
+    value = value.match(/^\d{1,2}(\.\d{0,1})?/)?.[0] || "";
+
+    setScores((prev) => ({
+      ...prev,
+      [subject]: {
+        ...prev[subject],
+        [grade]: value,
+      },
+    }));
+  };
+
+  const renderScoreInput = (subject, grade) => (
+    <input
+      type="text"
+      maxLength={4}
+      value={scores?.[subject]?.[grade] ?? ""}
+      onChange={(e) => handleScoreChange(subject, grade, e.target.value)}
+      className="w-full px-3 py-2 rounded-md text-black placeholder-gray-400"
+    />
+  );
 
   if (!isAuthenticated) {
     return (
@@ -718,14 +937,19 @@ const renderScoreInput = (subject, grade) => (
                 label="Consultant"
                 onClick={() => setTab("consultant")}
               />
-               <SidebarItem active={tab === "transcript"} icon="📄" label="School records
-" onClick={() => setTab("transcript")} />
+              <SidebarItem
+                active={tab === "transcript"}
+                icon="📄"
+                label="School records"
+                onClick={() => setTab("transcript")}
+              />
               <div className="mt-6 text-xs text-gray-400 px-2">Help</div>
             </div>
           </aside>
 
           {/* RIGHT CONTENT */}
           <section className="col-span-12 md:col-span-9">
+            {/* PROFILE TAB */}
             {tab === "profile" && (
               <div className="rounded-2xl overflow-hidden border border-gray-200">
                 <div className="h-14 bg-[#EB5A0D]" />
@@ -735,22 +959,23 @@ const renderScoreInput = (subject, grade) => (
                     <div className="pb-1">
                       <div className="font-semibold">{form.fullName}</div>
                       <div className="text-sm text-gray-500">{form.email}</div>
-                      
                     </div>
- <div className="pb-1 flex-1 flex justify-end">
-                    <Link
-    to="/riasec"
-    className="shrink-0 whitespace-nowrap inline-flex items-center gap-2
+                    <div className="pb-1 flex-1 flex justify-end">
+                      <Link
+                        to="/riasec"
+                        className="shrink-0 whitespace-nowrap inline-flex items-center gap-2
                px-3 py-1.5 rounded-md text-xs bg-[#EB5A0D] text-white hover:opacity-90"
-    title="Làm bài trắc nghiệm RIASEC"
-  >
-    RIASEC
-  </Link>
- </div>
-
+                        title="Làm bài trắc nghiệm RIASEC"
+                      >
+                        RIASEC
+                      </Link>
+                    </div>
                   </div>
 
-                  <form onSubmit={onSave} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <form
+                    onSubmit={onSave}
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-5"
+                  >
                     {/* Họ tên */}
                     <div>
                       <label className="text-sm text-gray-500">Full Name</label>
@@ -783,7 +1008,9 @@ const renderScoreInput = (subject, grade) => (
 
                     {/* Ngày sinh */}
                     <div>
-                      <label className="text-sm text-gray-500">Date of Birth</label>
+                      <label className="text-sm text-gray-500">
+                        Date of Birth
+                      </label>
                       <input
                         type="date"
                         name="dob"
@@ -809,7 +1036,9 @@ const renderScoreInput = (subject, grade) => (
 
                     {/* Phone */}
                     <div>
-                      <label className="text-sm text-gray-500">Phone Number</label>
+                      <label className="text-sm text-gray-500">
+                        Phone Number
+                      </label>
                       <input
                         name="phone"
                         value={form.phone}
@@ -833,7 +1062,9 @@ const renderScoreInput = (subject, grade) => (
 
                     {/* Trường */}
                     <div>
-                      <label className="text-sm text-gray-500">High School</label>
+                      <label className="text-sm text-gray-500">
+                        High School
+                      </label>
                       <input
                         name="school"
                         value={form.school}
@@ -863,7 +1094,9 @@ const renderScoreInput = (subject, grade) => (
 
                     {/* Điểm xét tuyển */}
                     <div>
-                      <label className="text-sm text-gray-500">Admission score</label>
+                      <label className="text-sm text-gray-500">
+                        Admission score
+                      </label>
                       <input
                         name="admissionScore"
                         type="number"
@@ -878,60 +1111,58 @@ const renderScoreInput = (subject, grade) => (
                       />
                     </div>
 
-{/* Tổ hợp môn */}
-<div>
-  <label className="text-sm text-gray-500">Combination of 3 subjects</label>
-  <select
-    name="subjects"
-    value={form.subjects}
-    onChange={handleChange}
-    disabled={!editing}
-    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm 
+                    {/* Tổ hợp môn */}
+                    <div>
+                      <label className="text-sm text-gray-500">
+                        Combination of 3 subjects
+                      </label>
+                      <select
+                        name="subjects"
+                        value={form.subjects}
+                        onChange={handleChange}
+                        disabled={!editing}
+                        className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm 
                focus:outline-none focus:ring-2 focus:ring-[#EB5A0D] bg-white"
-  >
-    <option value="">Chọn tổ hợp</option>
-    {/* Khối A */}
-    <option value="A00">A00 - Toán, Lý, Hóa</option>
-    <option value="A01">A01 - Toán, Lý, Anh</option>
-
-    {/* Khối B */}
-    <option value="B00">B00 - Toán, Hóa, Sinh</option>
-
-    {/* Khối C */}
-    <option value="C00">C00 - Văn, Sử, Địa</option>
-
-    {/* Khối D */}
-    <option value="D01">D01 - Toán, Văn, Anh</option>
-    <option value="D07">D07 - Toán, Hóa, Anh</option>
-    <option value="D90">D90 - Toán, Anh, KHTN</option>
-  </select>
-</div>
-
+                      >
+                        <option value="">Chọn tổ hợp</option>
+                        <option value="A00">A00 - Toán, Lý, Hóa</option>
+                        <option value="A01">A01 - Toán, Lý, Anh</option>
+                        <option value="B00">B00 - Toán, Hóa, Sinh</option>
+                        <option value="C00">C00 - Văn, Sử, Địa</option>
+                        <option value="D01">D01 - Toán, Văn, Anh</option>
+                        <option value="D07">D07 - Toán, Hóa, Anh</option>
+                        <option value="D90">D90 - Toán, Anh, KHTN</option>
+                      </select>
+                    </div>
 
                     {/* Ngành mong muốn */}
-<div>
-  <label className="text-sm text-gray-500">Preferred major</label>
-  <select
-    name="preferredMajor"
-    value={form.preferredMajor}
-    onChange={handleChange}
-    disabled={!editing}
-    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm 
-               focus:outline-none focus:ring-2 focus:ring-[#EB5A0D] bg-white"
-  >
-    <option value="">Chọn ngành học</option>
-    <option value="software">Kỹ thuật phần mềm</option>
-    <option value="design">Thiết kế đồ họa</option>
-    <option value="ai">Trí tuệ nhân tạo</option>
-    <option value="security">An ninh mạng</option>
-    <option value="business">Kinh doanh số</option>
-    <option value="game">Thiết kế trò chơi</option>
-  </select>
-</div>
-
-                    {/* Mã RIASEC (readonly nếu muốn) */}
                     <div>
-                      <label className="text-sm text-gray-500">RIASEC code</label>
+                      <label className="text-sm text-gray-500">
+                        Preferred major
+                      </label>
+                      <select
+                        name="preferredMajor"
+                        value={form.preferredMajor}
+                        onChange={handleChange}
+                        disabled={!editing}
+                        className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm 
+               focus:outline-none focus:ring-2 focus:ring-[#EB5A0D] bg-white"
+                      >
+                        <option value="">Chọn ngành học</option>
+                        <option value="software">Kỹ thuật phần mềm</option>
+                        <option value="design">Thiết kế đồ họa</option>
+                        <option value="ai">Trí tuệ nhân tạo</option>
+                        <option value="security">An ninh mạng</option>
+                        <option value="business">Kinh doanh số</option>
+                        <option value="game">Thiết kế trò chơi</option>
+                      </select>
+                    </div>
+
+                    {/* Mã RIASEC */}
+                    <div>
+                      <label className="text-sm text-gray-500">
+                        RIASEC code
+                      </label>
                       <input
                         name="riasecCode"
                         value={form.riasecCode}
@@ -977,256 +1208,290 @@ const renderScoreInput = (subject, grade) => (
               </div>
             )}
 
-{tab === "chatbot" && (
-  <div className="rounded-2xl border border-gray-200 bg-white grid grid-cols-12 overflow-hidden min-h-[600px]">
-    {/* LEFT: danh sách phiên */}
-    <aside className="col-span-12 md:col-span-4 border-r border-gray-100 flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3 bg-[#FFF3ED]">
-        <div className="font-semibold text-[#EB5A0D]">Đoạn chat</div>
-        <button
-          onClick={createConversation}
-          className="px-3 py-1 rounded-md bg-[#EB5A0D] text-white text-sm hover:opacity-90"
-        >
-          + Phiên mới
-        </button>
-      </div>
+            {/* CHATBOT TAB */}
+            {tab === "chatbot" && (
+              <div className="rounded-2xl border border-gray-200 bg-white grid grid-cols-12 overflow-hidden min-h-[600px]">
+                {/* LEFT: danh sách phiên */}
+                <aside className="col-span-12 md:col-span-4 border-r border-gray-100 flex flex-col">
+                  <div className="flex items-center justify-between px-4 py-3 bg-[#FFF3ED]">
+                    <div className="font-semibold text-[#EB5A0D]">
+                      Đoạn chat
+                    </div>
+                    <button
+                      onClick={createConversation}
+                      className="px-3 py-1 rounded-md bg-[#EB5A0D] text-white text-sm hover:opacity-90"
+                    >
+                      + Phiên mới
+                    </button>
+                  </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <ul className="divide-y divide-gray-100">
-          {convs.map(c => (
-            <li
-              key={c.id}
-              className={`px-4 py-3 cursor-pointer hover:bg-gray-50 ${
-                c.id === activeId ? "bg-orange-50" : ""
-              }`}
-              onClick={() => selectConversation(c.id)}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="truncate font-medium">{c.title}</div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); renameConversation(c.id); }}
-                    className="text-xs text-gray-500 hover:text-gray-700"
-                    title="Đổi tên"
+                  <div className="flex-1 overflow-y-auto">
+                    <ul className="divide-y divide-gray-100">
+                      {convs.map((c) => (
+                        <li
+                          key={c.id}
+                          className={`px-4 py-3 cursor-pointer hover:bg-gray-50 ${
+                            c.id === activeId ? "bg-orange-50" : ""
+                          }`}
+                          onClick={() => selectConversation(c.id)}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="truncate font-medium">
+                              {c.title}
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  renameConversation(c.id);
+                                }}
+                                className="text-xs text-gray-500 hover:text-gray-700"
+                                title="Đổi tên"
+                              >
+                                Sửa
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteConversation(c.id);
+                                }}
+                                className="text-xs text-red-600 hover:text-red-700"
+                                title="Xoá"
+                              >
+                                Xoá
+                              </button>
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            {new Date(c.updatedAt).toLocaleString()}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </aside>
+
+                {/* RIGHT: khung chat */}
+                <section className="col-span-12 md:col-span-8 flex flex-col">
+                  <div className="bg-[#EB5A0D] text-white px-6 py-3 text-lg font-semibold text-center">
+                    ChatBotFPT
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+                    {!messages.length ? (
+                      <p className="text-gray-400 text-center mt-10">
+                        Hãy bắt đầu trò chuyện…
+                      </p>
+                    ) : (
+                      messages.map((m, i) => (
+                        <div
+                          key={i}
+                          className={`flex ${
+                            m.sender === "user"
+                              ? "justify-end"
+                              : "justify-start"
+                          }`}
+                        >
+                          <div
+                            className={`px-4 py-2 max-w-[70%] rounded-xl text-sm ${
+                              m.sender === "user"
+                                ? "bg-[#EB5A0D] text-white"
+                                : "bg-gray-200 text-gray-800"
+                            }`}
+                          >
+                            {m.text}
+                          </div>
+                        </div>
+                      ))
+                    )}
+
+                    {isLoading && (
+                      <div className="flex justify-start mt-1">
+                        <div className="px-4 py-2 max-w-[70%] rounded-xl text-sm bg-gray-200 text-gray-800">
+                          {partialResponse}
+                          <span className="animate-pulse">▌</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <form
+                    onSubmit={handleSend}
+                    className="flex items-center gap-3 border-t border-gray-200 p-4"
                   >
-                    Sửa
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); deleteConversation(c.id); }}
-                    className="text-xs text-red-600 hover:text-red-700"
-                    title="Xoá"
-                  >
-                    Xoá
-                  </button>
-                </div>
+                    <input
+                      type="text"
+                      placeholder="Nhập tin nhắn..."
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!wsReady || !input.trim() || !activeId}
+                      className={`px-4 py-2 rounded-md text-white ${
+                        !wsReady || !input.trim() || !activeId
+                          ? "bg-gray-300 cursor-not-allowed"
+                          : "bg-[#EB5A0D] hover:opacity-90"
+                      }`}
+                    >
+                      {wsReady ? "Gửi" : "Đang kết nối..."}
+                    </button>
+                  </form>
+                </section>
               </div>
-              <div className="text-xs text-gray-400 mt-1">
-                {new Date(c.updatedAt).toLocaleString()}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </aside>
-
-    {/* RIGHT: khung chat của phiên đang chọn */}
-    <section className="col-span-12 md:col-span-8 flex flex-col">
-      <div className="bg-[#EB5A0D] text-white px-6 py-3 text-lg font-semibold text-center">
-        ChatBotFPT
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
-        {!messages.length ? (
-          <p className="text-gray-400 text-center mt-10">
-            Hãy bắt đầu trò chuyện…
-          </p>
-        ) : (
-          messages.map((m, i) => (
-            <div key={i} className={`flex ${m.sender === "user" ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`px-4 py-2 max-w-[70%] rounded-xl text-sm ${
-                  m.sender === "user" ? "bg-[#EB5A0D] text-white" : "bg-gray-200 text-gray-800"
-                }`}
-              >
-                {m.text}
-              </div>
-            </div>
-          ))
-        )}
-
-        {isLoading && (
-          <div className="flex justify-start mt-1">
-            <div className="px-4 py-2 max-w-[70%] rounded-xl text-sm bg-gray-200 text-gray-800">
-              {partialResponse}
-              <span className="animate-pulse">▌</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <form onSubmit={handleSend} className="flex items-center gap-3 border-t border-gray-200 p-4">
-        <input
-          type="text"
-          placeholder="Nhập tin nhắn..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
-        />
-        <button
-          type="submit"
-          disabled={!wsReady || !input.trim() || !activeId}
-          className={`px-4 py-2 rounded-md text-white ${
-            !wsReady || !input.trim() || !activeId
-              ? "bg-gray-300 cursor-not-allowed"
-              : "bg-[#EB5A0D] hover:opacity-90"
-          }`}
-        >
-          {wsReady ? "Gửi" : "Đang kết nối..."}
-        </button>
-      </form>
-    </section>
-  </div>
-)}
-
-{tab === "consultant" && (
-  <div className="rounded-2xl border border-gray-200 bg-white flex flex-col min-h-[600px]">
-    <div className="bg-[#EB5A0D] text-white px-6 py-3 flex items-center justify-between">
-      <div className="text-lg font-semibold">Live chat với tư vấn viên</div>
-      <div className="text-sm">
-        Trạng thái:{" "}
-        <span className="font-semibold">
-          {liveStatus === "idle" && "Chưa bắt đầu"}
-          {liveStatus === "in_queue" && "Đang trong hàng chờ"}
-          {liveStatus === "chatting" && "Đang trò chuyện"}
-          {liveStatus === "ended" && "Đã kết thúc"}
-        </span>
-      </div>
-    </div>
-
-    {/* Khu info hàng chờ / tư vấn viên */}
-    <div className="px-6 py-3 border-b border-gray-100 flex flex-wrap items-center gap-4 text-sm text-gray-700">
-      {liveStatus === "idle" && (
-        <>
-          <p>
-            Ấn nút dưới đây để vào hàng chờ và kết nối với tư vấn viên tuyển sinh.
-          </p>
-          <button
-            onClick={handleJoinQueue}
-            className="ml-auto bg-[#EB5A0D] text-white px-4 py-2 rounded-md hover:opacity-90"
-          >
-            Bắt đầu chat
-          </button>
-        </>
-      )}
-
-      {liveStatus === "in_queue" && (
-        <>
-          <p>
-            Bạn đang trong hàng chờ…
-            {queueInfo?.position != null && (
-              <span> Vị trí hiện tại: {queueInfo.position}</span>
             )}
-          </p>
-        </>
-      )}
 
-      {liveStatus === "chatting" && (
-        <>
-          <p>
-            Đang trò chuyện với{" "}
-            <span className="font-semibold">
-              {sessionInfo?.official_name || "tư vấn viên"}
-            </span>
-          </p>
-          <button
-            onClick={handleEndLiveChat}
-            className="ml-auto text-sm text-red-600 hover:underline"
-          >
-            Kết thúc phiên
-          </button>
-        </>
-      )}
+            {/* CONSULTANT TAB */}
+            {tab === "consultant" && (
+              <div className="rounded-2xl border border-gray-200 bg-white flex flex-col min-h-[600px]">
+                <div className="bg-[#EB5A0D] text-white px-6 py-3 flex items-center justify-between">
+                  <div className="text-lg font-semibold">
+                    Live chat với tư vấn viên
+                  </div>
+                  <div className="text-sm">
+                    Trạng thái:{" "}
+                    <span className="font-semibold">
+                      {liveStatus === "idle" && "Chưa bắt đầu"}
+                      {liveStatus === "in_queue" && "Đang trong hàng chờ"}
+                      {liveStatus === "chatting" && "Đang trò chuyện"}
+                      {liveStatus === "ended" && "Đã kết thúc"}
+                    </span>
+                  </div>
+                </div>
 
-      {liveStatus === "ended" && (
-        <>
-          <p>Phiên chat đã kết thúc. Bạn có thể bắt đầu lại nếu cần.</p>
-          <button
-            onClick={handleJoinQueue}
-            className="ml-auto bg-[#EB5A0D] text-white px-4 py-2 rounded-md hover:opacity-90"
-          >
-            Bắt đầu lại
-          </button>
-        </>
-      )}
-    </div>
+                {/* Info hàng chờ / tư vấn viên */}
+                <div className="px-6 py-3 border-b border-gray-100 flex flex-wrap items-center gap-4 text-sm text-gray-700">
+                  {liveStatus === "idle" && (
+                    <>
+                      <p>
+                        Ấn nút dưới đây để vào hàng chờ và kết nối với tư vấn
+                        viên tuyển sinh.
+                      </p>
+                      <button
+                        onClick={handleJoinQueue}
+                        className="ml-auto bg-[#EB5A0D] text-white px-4 py-2 rounded-md hover:opacity-90"
+                      >
+                        Bắt đầu chat
+                      </button>
+                    </>
+                  )}
 
-    {/* KHUNG CHAT */}
-    <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-3">
-      {!liveMessages.length ? (
-        <p className="text-gray-400 text-center mt-10">
-          {liveStatus === "idle"
-            ? "Chưa có cuộc hội thoại nào."
-            : "Đang chờ tin nhắn..."}
-        </p>
-      ) : (
-        liveMessages.map((m, idx) => (
-          <div
-            key={idx}
-            className={`flex ${
-              m.sender === "customer" ? "justify-end" : "justify-start"
-            }`}
-          >
-            <div
-              className={`px-4 py-2 max-w-[70%] rounded-xl text-sm ${
-                m.sender === "customer"
-                  ? "bg-[#EB5A0D] text-white"
-                  : "bg-white text-gray-800 border border-gray-200"
-              }`}
-            >
-              {m.content}
-            </div>
-          </div>
-        ))
-      )}
-    </div>
+                  {liveStatus === "in_queue" && (
+                    <>
+                      <p>
+                        Bạn đang trong hàng chờ…
+                        {queueInfo?.position != null && (
+                          <span> Vị trí hiện tại: {queueInfo.position}</span>
+                        )}
+                      </p>
+                    </>
+                  )}
 
-    {/* INPUT */}
-    <form
-      onSubmit={handleSendLiveMessage}
-      className="flex items-center gap-3 border-t border-gray-200 p-4"
-    >
-      <input
-        type="text"
-        placeholder={
-          liveStatus === "chatting"
-            ? "Nhập tin nhắn..."
-            : "Hãy vào hàng chờ để bắt đầu chat..."
-        }
-        value={liveInput}
-        onChange={(e) => setLiveInput(e.target.value)}
-        disabled={liveStatus !== "chatting"}
-        className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D] disabled:bg-gray-100"
-      />
-      <button
-        type="submit"
-        disabled={liveStatus !== "chatting" || !liveInput.trim()}
-        className={`px-4 py-2 rounded-md text-white ${
-          liveStatus !== "chatting" || !liveInput.trim()
-            ? "bg-gray-300 cursor-not-allowed"
-            : "bg-[#EB5A0D] hover:opacity-90"
-        }`}
-      >
-        Gửi
-      </button>
-    </form>
-  </div>
-)}
+                  {liveStatus === "chatting" && (
+                    <>
+                      <p>
+                        Đang trò chuyện với{" "}
+                        <span className="font-semibold">
+                          {sessionInfo?.official_name || "tư vấn viên"}
+                        </span>
+                      </p>
+                      <button
+                        onClick={handleEndLiveChat}
+                        className="ml-auto text-sm text-red-600 hover:underline"
+                      >
+                        Kết thúc phiên
+                      </button>
+                    </>
+                  )}
 
+                  {liveStatus === "ended" && (
+                    <>
+                      <p>
+                        Phiên chat đã kết thúc. Bạn có thể bắt đầu lại nếu cần.
+                      </p>
+                      <button
+                        onClick={handleJoinQueue}
+                        className="ml-auto bg-[#EB5A0D] text-white px-4 py-2 rounded-md hover:opacity-90"
+                      >
+                        Bắt đầu lại
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* KHUNG CHAT */}
+                <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-3">
+                  {!liveMessages.length ? (
+                    <p className="text-gray-400 text-center mt-10">
+                      {liveStatus === "idle"
+                        ? "Chưa có cuộc hội thoại nào."
+                        : "Đang chờ tin nhắn..."}
+                    </p>
+                  ) : (
+                    liveMessages.map((m, idx) => (
+                      <div
+                        key={idx}
+                        className={`flex ${
+                          m.sender === "customer"
+                            ? "justify-end"
+                            : "justify-start"
+                        }`}
+                      >
+                        <div
+                          className={`px-4 py-2 max-w-[70%] rounded-xl text-sm ${
+                            m.sender === "customer"
+                              ? "bg-[#EB5A0D] text-white"
+                              : "bg-white text-gray-800 border border-gray-200"
+                          }`}
+                        >
+                          {m.content}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* INPUT */}
+                <form
+                  onSubmit={handleSendLiveMessage}
+                  className="flex items-center gap-3 border-t border-gray-200 p-4"
+                >
+                  <input
+                    type="text"
+                    placeholder={
+                      liveStatus === "chatting"
+                        ? "Nhập tin nhắn..."
+                        : "Hãy vào hàng chờ để bắt đầu chat..."
+                    }
+                    value={liveInput}
+                    onChange={(e) => setLiveInput(e.target.value)}
+                    disabled={liveStatus !== "chatting"}
+                    className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D] disabled:bg-gray-100"
+                  />
+                  <button
+                    type="submit"
+                    disabled={liveStatus !== "chatting" || !liveInput.trim()}
+                    className={`px-4 py-2 rounded-md text-white ${
+                      liveStatus !== "chatting" || !liveInput.trim()
+                        ? "bg-gray-300 cursor-not-allowed"
+                        : "bg-[#EB5A0D] hover:opacity-90"
+                    }`}
+                  >
+                    Gửi
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* TRANSCRIPT TAB */}
             {tab === "transcript" && (
               <div className="rounded-2xl border border-gray-200 bg-white p-6">
-                {/* Replaced upload UI with the score table matching your provided design */}
                 <div className="bg-orange-500 p-6 rounded-lg text-white">
-                  <p className="mb-6 text-sm">Cần nhập tối thiểu 06 môn cho cả bảng điểm, nếu điểm là số thập phân, sử dụng dấu chấm</p>
+                  <p className="mb-6 text-sm">
+                    Cần nhập tối thiểu 06 môn cho cả bảng điểm, nếu điểm là số
+                    thập phân, sử dụng dấu chấm
+                  </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     {/* LEFT */}
@@ -1239,7 +1504,10 @@ const renderScoreInput = (subject, grade) => (
 
                       <div>
                         {subjectsLeft.map((subject) => (
-                          <div key={subject} className="grid grid-cols-3 gap-4 items-center mb-3">
+                          <div
+                            key={subject}
+                            className="grid grid-cols-3 gap-4 items-center mb-3"
+                          >
                             <div className="font-semibold">{subject}</div>
                             <div>{renderScoreInput(subject, "11")}</div>
                             <div>{renderScoreInput(subject, "12")}</div>
@@ -1258,7 +1526,10 @@ const renderScoreInput = (subject, grade) => (
 
                       <div>
                         {subjectsRight.map((subject) => (
-                          <div key={subject} className="grid grid-cols-3 gap-4 items-center mb-3">
+                          <div
+                            key={subject}
+                            className="grid grid-cols-3 gap-4 items-center mb-3"
+                          >
                             <div className="font-semibold">{subject}</div>
                             <div>{renderScoreInput(subject, "11")}</div>
                             <div>{renderScoreInput(subject, "12")}</div>
@@ -1269,16 +1540,13 @@ const renderScoreInput = (subject, grade) => (
                   </div>
 
                   <div className="flex justify-center mt-10">
-                    <button
-                      onClick={() => {
-                        // Temporary: console.log the scores object
-                        console.log("Scores:", scores);
-                        alert("Save thành công!");
-                      }}
-                      className="bg-purple-700 hover:bg-purple-800 text-white font-bold text-2xl px-16 py-3 rounded-full"
-                    >
-                      Save
-                    </button>
+                   <button
+  onClick={saveAcademicScores}
+  className="bg-purple-700 hover:bg-purple-800 text-white font-bold text-2xl px-16 py-3 rounded-full"
+  disabled={uploading}
+>
+  {uploading ? "Đang lưu..." : "Save"}
+</button>
                   </div>
                 </div>
               </div>
@@ -1286,6 +1554,10 @@ const renderScoreInput = (subject, grade) => (
           </section>
         </div>
       </div>
+
+
+
+
 
       <Footer />
     </>
