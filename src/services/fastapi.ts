@@ -217,9 +217,9 @@ export interface ContentStatistics {
 // Content Analytics API
 export const contentAnalyticsAPI = {
   getStatistics: () =>
-    fastAPIClient.get<{ success: boolean; data: ContentStatistics }>('/content-analytics/content/statistics'),
+    fastAPIClient.get<{ success: boolean; data: ContentStatistics }>('/analytics/content-statistics'),
   getMyArticlesStatistics: () =>
-    fastAPIClient.get<{ success: boolean; data: any }>('/content-analytics/content/statistics/my-articles')
+    fastAPIClient.get<{ success: boolean; data: any }>('/analytics/category-statistics')
 };
 
 // Consultant Analytics types
@@ -261,19 +261,19 @@ export interface UnansweredQuestion {
 // Consultant Analytics API
 export const consultantAnalyticsAPI = {
   getStatistics: () =>
-    fastAPIClient.get<{ status: string; data: ConsultantStatistics; message: string }>('/consultant-analytics/consultant/statistics'),
+    fastAPIClient.get<{ status: string; data: ConsultantStatistics; message: string }>('/analytics/consultant-statistics'),
   getUnansweredQuestions: (days: number = 7, limit: number = 5) =>
-    fastAPIClient.get<{ status: string; data: UnansweredQuestion[]; message: string }>(`/consultant-analytics/consultant/unanswered-questions?days=${days}&limit=${limit}`),
+    fastAPIClient.get<{ status: string; data: UnansweredQuestion[]; message: string }>(`/analytics/knowledge-gaps?days=${days}&min_frequency=3`),
   getKnowledgeGaps: (days?: number, minFrequency?: number) =>
-    fastAPIClient.get<{ status: string; data: KnowledgeGap[]; message: string }>(`/consultant-analytics/consultant/knowledge-gaps?days=${days || 30}&min_frequency=${minFrequency || 3}`),
+    fastAPIClient.get<{ status: string; data: KnowledgeGap[]; message: string }>(`/analytics/knowledge-gaps?days=${days || 30}&min_frequency=${minFrequency || 3}`),
   getLowSatisfactionAnswers: (threshold?: number, minUsage?: number) =>
-    fastAPIClient.get<{ status: string; data: LowSatisfactionAnswer[]; message: string }>(`/consultant-analytics/consultant/low-satisfaction-answers?threshold=${threshold || 3.5}&min_usage=${minUsage || 5}`),
+    fastAPIClient.get<{ status: string; data: LowSatisfactionAnswer[]; message: string }>(`/analytics/low-satisfaction-answers?threshold=${threshold || 3.5}&min_usage=${minUsage || 5}`),
   getTrendingTopics: (days?: number, minQuestions?: number) =>
-    fastAPIClient.get<{ status: string; data: TrendingTopic[]; message: string }>(`/consultant-analytics/consultant/trending-topics?days=${days || 14}&min_questions=${minQuestions || 5}`),
+    fastAPIClient.get<{ status: string; data: TrendingTopic[]; message: string }>(`/analytics/trending-topics?days=${days || 14}&min_questions=${minQuestions || 5}`),
   getAnalyticsSummary: () =>
-    fastAPIClient.get<{ status: string; data: AnalyticsSummary; message: string }>('/consultant-analytics/consultant/analytics-summary'),
+    fastAPIClient.get<{ status: string; data: AnalyticsSummary; message: string }>('/analytics/analytics-summary'),
   getCategoryStatistics: (days?: number) =>
-    fastAPIClient.get<{ status: string; data: CategoryStatistic[]; message: string }>(`/consultant-analytics/consultant/category-statistics?days=${days || 30}`)
+    fastAPIClient.get<{ status: string; data: CategoryStatistic[]; message: string }>(`/analytics/category-statistics?days=${days || 30}`)
 };
 
 // Live Chat types

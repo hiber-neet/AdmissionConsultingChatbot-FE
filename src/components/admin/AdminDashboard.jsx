@@ -1,3 +1,4 @@
+import React from 'react';
 import { Activity, Users, MessageSquare, Database, TrendingUp, AlertCircle, Clock, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/system_users/card';
 import { Progress } from '../ui/system_users/progress';

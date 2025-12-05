@@ -1,4 +1,5 @@
 // src/router/Router.jsx
+import React from 'react';
 import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPrivate from "../pages/login/LoginPrivate.jsx";
 import { AdminPage } from "../pages/admin/AdminPage.tsx";

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollArea } from '../../ui/system_users/scroll-area';
 import { UserManagementHeader } from './UserManagementHeader';
 import { UserFilters } from './UserFilters';
@@ -45,17 +45,53 @@ const PERMISSION_ID_TO_NAME = {
   5: 'customer'
 };
 
+// Function to derive permissions from user profile fields
+const derivePermissionsFromProfiles = (apiUser) => {
+  const permissions = [];
+  
+  // Check for admin permission (role_id === 1)
+  if (apiUser.role_id === 1) {
+    permissions.push('admin');
+  }
+  
+  // Check for consultant permission (has consultant_profile or role_id === 2)
+  if (apiUser.consultant_profile || apiUser.role_id === 2) {
+    permissions.push('consultant');
+  }
+  
+  // Check for content_manager permission (has content_manager_profile or role_id === 3)
+  if (apiUser.content_manager_profile || apiUser.role_id === 3) {
+    permissions.push('content_manager');
+  }
+  
+  // Check for admission_officer permission (has admission_official_profile or role_id === 4)
+  if (apiUser.admission_official_profile || apiUser.role_id === 4) {
+    permissions.push('admission_officer');
+  }
+  
+  // Remove duplicates and return
+  return Array.from(new Set(permissions));
+};
+
 // Function to transform API user data to frontend format
 const transformUserData = (apiUser) => {
   const roleName = roleMapping[apiUser.role_id] || 'CUSTOMER';
   
   // Transform permissions from API format to frontend format
-  let permissions = [roleName]; // Default to role name as permission
+  let permissions = [];
   
-  if (apiUser.permissions && Array.isArray(apiUser.permissions)) {
-    // If API returns permission objects with permission_id
+  if (apiUser.permissions && Array.isArray(apiUser.permissions) && apiUser.permissions.length > 0) {
+    // If API returns permission objects with permission_name
     permissions = apiUser.permissions.map(perm => {
-      if (typeof perm === 'object' && perm.permission_id) {
+      if (typeof perm === 'object' && perm.permission_name) {
+        // Normalize permission names
+        const name = perm.permission_name.toLowerCase();
+        if (name === 'admin' || name === 'system_admin') return 'admin';
+        if (name === 'consultant') return 'consultant';
+        if (name === 'content_manager' || name === 'contentmanager') return 'content_manager';
+        if (name === 'admission_officer' || name === 'admission_official') return 'admission_officer';
+        return name;
+      } else if (typeof perm === 'object' && perm.permission_id) {
         return PERMISSION_ID_TO_NAME[perm.permission_id] || 'customer';
       } else if (typeof perm === 'string') {
         // If it's already a permission name, normalize to lowercase
@@ -63,14 +99,20 @@ const transformUserData = (apiUser) => {
       } else if (typeof perm === 'number') {
         return PERMISSION_ID_TO_NAME[perm] || 'customer';
       }
-      return roleName.toLowerCase(); // Fallback to role name
-    });
+      return null; // We'll filter out nulls
+    }).filter(Boolean);
     
-    // Remove duplicates and ensure at least the role is included
-    const normalizedRole = roleName.toLowerCase().replace('system_admin', 'admin');
-    permissions = Array.from(new Set([...permissions, normalizedRole]));
-  } else {
-    // No specific permissions, use role-based permission
+    // Remove duplicates
+    permissions = Array.from(new Set(permissions));
+  }
+  
+  // If no valid permissions found, derive from profile fields
+  if (permissions.length === 0) {
+    permissions = derivePermissionsFromProfiles(apiUser);
+  }
+  
+  // If still no permissions, fall back to role-based permission
+  if (permissions.length === 0) {
     permissions = [roleName.toLowerCase().replace('system_admin', 'admin')];
   }
   
@@ -391,68 +433,6 @@ export function UserManagement() {
     }
   };
 
-  // Update user permissions API call
-  const updateUserPermissions = async (userId, permissions, consultantIsLeader = false, contentManagerIsLeader = false) => {
-    try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const baseUrl = 'http://localhost:8000';
-
-      // Convert permission names to IDs
-      const permissionIds = permissions
-        .map(permName => PERMISSION_NAME_TO_ID[permName])
-        .filter(id => id !== undefined); // Remove any unmapped permissions
-      
-      if (permissionIds.length === 0) {
-        console.warn('No valid permission IDs found for permissions:', permissions);
-      }
-
-      const requestBody = {
-        user_id: parseInt(userId),
-        permission_ids: permissionIds,
-        consultant_is_leader: consultantIsLeader,
-        content_manager_is_leader: contentManagerIsLeader
-      };
-
-      const response = await fetch(`${baseUrl}/users/permissions/update`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(requestBody)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.text();
-        
-        let errorMessage;
-        try {
-          const parsedError = JSON.parse(errorData);
-          errorMessage = parsedError.detail || `HTTP ${response.status}`;
-          
-          // Handle specific permission errors
-          if (parsedError.missing_permission_ids) {
-            errorMessage = `Invalid permission IDs: ${parsedError.missing_permission_ids.join(', ')}`;
-          }
-        } catch (parseError) {
-          errorMessage = `HTTP ${response.status}: ${errorData}`;
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      
-      return data;
-    } catch (error) {
-      throw error;
-    }
-  };
-
   // Create new user API call
   const createUser = async (userData) => {
     try {
@@ -542,42 +522,32 @@ export function UserManagement() {
       setLoading(true);
 
       if (editingUser) {
-        // Update existing user - call API for permission updates
-        
-        // Check if permissions have changed
-        const currentPermissions = editingUser.permissions || [];
-        const newPermissions = formData.permissions || [];
-        const permissionsChanged = JSON.stringify(currentPermissions.sort()) !== JSON.stringify(newPermissions.sort());
-        
-        if (permissionsChanged) {
-          // Use leadership flags from form data
-          const consultantIsLeader = formData.consultant_is_leader || false;
-          const contentManagerIsLeader = formData.content_manager_is_leader || false;
-          
-          await updateUserPermissions(
-            editingUser.id, 
-            newPermissions, 
-            consultantIsLeader, 
-            contentManagerIsLeader
-          );
-          
-          toast.success('User permissions updated successfully!');
-        } else {
-          toast.success('User information updated successfully!');
-        }
-        
-        // Update local state regardless
+        // Update existing user - basic information only
+        // The UserFormDialog handles permission updates internally
+        console.log('Updating basic user information:', {
+          name: formData.name,
+          email: formData.email,
+          phone_number: formData.phone_number,
+          interest_desired_major: formData.interest_desired_major,
+          interest_region: formData.interest_region
+        });
+
+        // For now, just update local state
+        // In a real app, you'd call a user update API here
         setUsers(users.map(u => 
           u.id === editingUser.id 
             ? {
                 ...u,
                 name: formData.name,
                 email: formData.email,
-                // Role cannot be changed, only permissions can be updated
-                permissions: formData.permissions,
+                phone_number: formData.phone_number,
+                interest_desired_major: formData.interest_desired_major,
+                interest_region: formData.interest_region
               }
             : u
         ));
+        
+        toast.success('User information updated successfully!');
       } else {
         // Create new user via API
         
@@ -587,7 +557,6 @@ export function UserManagement() {
           'CONSULTANT': 2,
           'CONTENT_MANAGER': 3,
           'ADMISSION_OFFICER': 4,
-          'CUSTOMER': 5
         };
         
         const roleId = roleNameToId[formData.role];
@@ -595,70 +564,75 @@ export function UserManagement() {
           throw new Error(`Invalid role: ${formData.role}`);
         }
         
-        // Convert permission names to IDs
-        const permissionIds = formData.permissions
-          .map(permName => PERMISSION_NAME_TO_ID[permName])
-          .filter(id => id !== undefined); // Remove any unmapped permissions
-        
-        // Determine leadership flags from form data
-        const consultantIsLeader = formData.consultant_is_leader || false;
-        const contentManagerIsLeader = formData.content_manager_is_leader || false;
-        
-        // Prepare API request body
+        // Prepare API request body for new user
         const requestBody = {
           full_name: formData.name,
           email: formData.email,
           status: true,
-          password: formData.password, // Use password from form
+          password: formData.password,
           role_id: roleId,
-          permissions: permissionIds,
+          permissions: [], // Start with no permissions, can be added later
           phone_number: formData.phone_number || '',
-          consultant_is_leader: consultantIsLeader,
-          content_manager_is_leader: contentManagerIsLeader,
+          consultant_is_leader: false,
+          content_manager_is_leader: false,
           interest_desired_major: formData.interest_desired_major || '',
           interest_region: formData.interest_region || ''
         };
-        
-        // Call the API
-        const createdUser = await createUser(requestBody);
-        
-        // Transform API response to frontend format
-        const newUser = transformUserData(createdUser);
-        
-        // Add to the users list
-        setUsers([newUser, ...users]);
-        toast.success('New user created successfully!');
-        toast.info('Default password: TempPassword123! - User should change on first login', {
-          autoClose: 8000,
+
+        console.log('Creating new user:', requestBody);
+
+        const response = await fetch(`${baseUrl}/users/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(requestBody)
         });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          
+          let errorMessage;
+          try {
+            const parsedError = JSON.parse(errorData);
+            errorMessage = parsedError.detail || `HTTP ${response.status}`;
+          } catch (parseError) {
+            errorMessage = `HTTP ${response.status}: ${errorData}`;
+          }
+          
+          throw new Error(errorMessage);
+        }
+
+        const newUser = await response.json();
+        console.log('New user created:', newUser);
+
+        // Add to local state
+        setUsers([...users, {
+          id: newUser.user_id,
+          name: newUser.full_name,
+          email: newUser.email,
+          role: formData.role,
+          permissions: [], // New user starts with no permissions
+          phone_number: newUser.phone_number || '',
+          interest_desired_major: newUser.interest_desired_major || '',
+          interest_region: newUser.interest_region || ''
+        }]);
         
-        // Refresh the user list to ensure we have the latest data
-        await fetchUsers();
+        toast.success('User created successfully! You can now add permissions.');
       }
 
-      // Reset form and close dialog
-      setFormData({ 
-        name: '', 
-        email: '', 
-        password: '',
-        role: '', 
-        permissions: [], 
-        phone_number: '', 
-        interest_desired_major: '', 
-        interest_region: '',
-        consultant_is_leader: false,
-        content_manager_is_leader: false,
-      });
-      setEditingUser(null);
+      // Close dialog and refresh
       setIsDialogOpen(false);
-      
+      await fetchUsers(); // Refresh the user list
+
     } catch (error) {
+      console.error('Failed to create/update user:', error);
       toast.error(`Failed to ${editingUser ? 'update' : 'create'} user: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
-
   const handleEdit = (user) => {
     setEditingUser(user);
     setFormData({
@@ -753,6 +727,7 @@ export function UserManagement() {
         formData={formData}
         onFormChange={setFormData}
         onSubmit={handleCreateOrUpdate}
+        onUserUpdated={fetchUsers}
       />
     </div>
   );

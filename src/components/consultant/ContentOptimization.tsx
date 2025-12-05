@@ -41,10 +41,11 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
           consultantAnalyticsAPI.getAnalyticsSummary()
         ]);
         
-        setKnowledgeGaps(gapsData.data);
-        setConfusingAnswers(answersData.data);
-        setTrendingTopics(topicsData.data);
-        setSummary(summaryData.data);
+        setKnowledgeGaps(Array.isArray(gapsData) ? gapsData : gapsData?.data || []);
+        setConfusingAnswers(Array.isArray(answersData) ? answersData : answersData?.data || []);
+        setTrendingTopics(Array.isArray(topicsData) ? topicsData : topicsData?.data || []);
+        const summaryValue = (summaryData && typeof summaryData === 'object' && 'data' in summaryData) ? summaryData.data : summaryData;
+        setSummary(summaryValue as AnalyticsSummary || null);
       } catch (error) {
         console.error('Error fetching analytics data:', error);
         setError('Failed to load analytics data. Please try again.');
@@ -162,7 +163,7 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
             </div>
           </CardHeader>
           <CardContent>
-            {knowledgeGaps.length === 0 ? (
+            {!knowledgeGaps || knowledgeGaps.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <HelpCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>No knowledge gaps identified at this time</p>
@@ -208,7 +209,7 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
                 ))}
                 
                 {/* Show More Button for Knowledge Gaps */}
-                {gapsVisibleCount < knowledgeGaps.length && (
+                {knowledgeGaps && gapsVisibleCount < knowledgeGaps.length && (
                   <div className="flex justify-center pt-4">
                     <Button 
                       variant="outline" 
@@ -258,7 +259,7 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
             </div>
           </CardHeader>
           <CardContent>
-            {confusingAnswers.length === 0 ? (
+            {!confusingAnswers || confusingAnswers.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <CheckCircle className="h-12 w-12 mx-auto mb-2 opacity-50 text-green-500" />
                 <p>No low satisfaction answers found!</p>
@@ -328,7 +329,7 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
                 ))}
                 
                 {/* Show More Button for Low Satisfaction Answers */}
-                {answersVisibleCount < confusingAnswers.length && (
+                {confusingAnswers && answersVisibleCount < confusingAnswers.length && (
                   <div className="flex justify-center pt-4">
                     <Button 
                       variant="outline" 
@@ -378,7 +379,7 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
             </div>
           </CardHeader>
           <CardContent>
-            {trendingTopics.length === 0 ? (
+            {!trendingTopics || trendingTopics.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <TrendingUp className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>No trending topics detected</p>
@@ -438,7 +439,7 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
                 ))}
                 
                 {/* Show More Button for Trending Topics */}
-                {topicsVisibleCount < trendingTopics.length && (
+                {trendingTopics && topicsVisibleCount < trendingTopics.length && (
                   <div className="flex justify-center pt-4">
                     <Button 
                       variant="outline" 
