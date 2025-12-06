@@ -65,6 +65,14 @@ export function UserFormDialog({
   const [permissionLabels, setPermissionLabels] = useState({});
   const [permissionNameToId, setPermissionNameToId] = useState({});
   const [permissionsLoaded, setPermissionsLoaded] = useState(false);
+  
+  // Validation state
+  const [fieldErrors, setFieldErrors] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phone_number: ''
+  });
 
   // Load permissions from API on component mount
   useEffect(() => {
@@ -270,19 +278,59 @@ export function UserFormDialog({
   }, [isOpen, editingUser]);
 
   const handleNameChange = (e) => {
-    onFormChange({ ...formData, name: e.target.value });
+    // Trim extra spaces and limit length
+    const value = e.target.value.slice(0, 100);
+    
+    // Real-time validation
+    let error = '';
+    if (value.trim().length > 0 && value.trim().length < 2) {
+      error = 'Name must be at least 2 characters';
+    }
+    setFieldErrors(prev => ({ ...prev, name: error }));
+    
+    onFormChange({ ...formData, name: value });
   };
 
   const handleEmailChange = (e) => {
-    onFormChange({ ...formData, email: e.target.value });
+    // Trim whitespace and convert to lowercase
+    const value = e.target.value.trim().toLowerCase();
+    
+    // Real-time validation
+    let error = '';
+    if (value && !validateEmail(value)) {
+      error = 'Invalid email format';
+    }
+    setFieldErrors(prev => ({ ...prev, email: error }));
+    
+    onFormChange({ ...formData, email: value });
   };
 
   const handlePasswordChange = (e) => {
-    onFormChange({ ...formData, password: e.target.value });
+    // No trimming for password to allow intentional spaces
+    const value = e.target.value.slice(0, 128); // Limit max length
+    
+    // Real-time validation
+    let error = '';
+    if (value && value.length < 6) {
+      error = 'Password must be at least 6 characters';
+    }
+    setFieldErrors(prev => ({ ...prev, password: error }));
+    
+    onFormChange({ ...formData, password: value });
   };
 
   const handlePhoneChange = (e) => {
-    onFormChange({ ...formData, phone_number: e.target.value });
+    // Only allow digits, limit to 10 characters
+    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    
+    // Real-time validation
+    let error = '';
+    if (value && !validatePhone(value)) {
+      error = 'Must start with 0 and contain 10 digits';
+    }
+    setFieldErrors(prev => ({ ...prev, phone_number: error }));
+    
+    onFormChange({ ...formData, phone_number: value });
   };
 
   const handleInterestMajorChange = (e) => {
@@ -431,8 +479,100 @@ export function UserFormDialog({
     }
   };
 
+  // Validation helper functions
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone) => {
+    // Vietnam phone format: starts with 0, 10 digits
+    const phoneRegex = /^0\d{9}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const validatePassword = (password) => {
+    // Minimum 6 characters
+    return password && password.length >= 6;
+  };
+
+  const validateForm = () => {
+    const errors = [];
+
+    // Name validation
+    if (!formData.name || !formData.name.trim()) {
+      errors.push('Name is required');
+    } else if (formData.name.trim().length < 2) {
+      errors.push('Name must be at least 2 characters long');
+    } else if (formData.name.trim().length > 100) {
+      errors.push('Name must not exceed 100 characters');
+    }
+
+    // Email validation
+    if (!formData.email || !formData.email.trim()) {
+      errors.push('Email is required');
+    } else if (!validateEmail(formData.email)) {
+      errors.push('Invalid email format (example: user@domain.com)');
+    }
+
+    // Password validation (only for new users or if password is being changed)
+    if (!editingUser) {
+      if (!formData.password || !formData.password.trim()) {
+        errors.push('Password is required for new users');
+      } else if (!validatePassword(formData.password)) {
+        errors.push('Password must be at least 6 characters long');
+      }
+    } else if (formData.password && formData.password.trim()) {
+      // Password is optional when editing, but if provided, must be valid
+      if (!validatePassword(formData.password)) {
+        errors.push('Password must be at least 6 characters long');
+      }
+    }
+
+    // Phone validation (optional but must be valid if provided)
+    if (formData.phone_number && formData.phone_number.trim()) {
+      if (!validatePhone(formData.phone_number)) {
+        errors.push('Phone number must start with 0 and contain exactly 10 digits');
+      }
+    }
+
+    // Role validation
+    if (!formData.role) {
+      errors.push('Role is required');
+    }
+
+    // Interest major validation (optional but limit length if provided)
+    if (formData.interest_desired_major && formData.interest_desired_major.trim().length > 200) {
+      errors.push('Interest desired major must not exceed 200 characters');
+    }
+
+    // Interest region validation (optional but limit length if provided)
+    if (formData.interest_region && formData.interest_region.trim().length > 200) {
+      errors.push('Interest region must not exceed 200 characters');
+    }
+
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      toast.error(
+        <div>
+          <strong>Validation Errors:</strong>
+          <ul className="list-disc pl-4 mt-2">
+            {validationErrors.map((error, index) => (
+              <li key={index}>{error}</li>
+            ))}
+          </ul>
+        </div>,
+        { autoClose: 5000 }
+      );
+      return;
+    }
     
     if (!editingUser) {
       // For new users, use the original onSubmit
@@ -527,31 +667,41 @@ export function UserFormDialog({
           {/* Basic User Information */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
               <Input
                 id="name"
                 value={formData.name || ''}
                 onChange={handleNameChange}
                 placeholder="Enter full name"
                 required
+                className={fieldErrors.name ? 'border-red-500 focus:ring-red-500' : ''}
               />
+              {fieldErrors.name && (
+                <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
+              )}
+              <p className="text-xs text-gray-500">Min 2 characters, max 100</p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email || ''}
                 onChange={handleEmailChange}
-                placeholder="Enter email"
+                placeholder="user@example.com"
                 required
+                className={fieldErrors.email ? 'border-red-500 focus:ring-red-500' : ''}
               />
+              {fieldErrors.email && (
+                <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
+              )}
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="password">
-                {editingUser ? 'New Password (optional)' : 'Password'}
+                {editingUser ? 'New Password (optional)' : 'Password'} 
+                {!editingUser && <span className="text-red-500">*</span>}
               </Label>
               <Input
                 id="password"
@@ -560,17 +710,28 @@ export function UserFormDialog({
                 onChange={handlePasswordChange}
                 placeholder={editingUser ? 'Leave blank to keep current password' : 'Enter password'}
                 required={!editingUser}
+                className={fieldErrors.password ? 'border-red-500 focus:ring-red-500' : ''}
               />
+              {fieldErrors.password && (
+                <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
+              )}
+              <p className="text-xs text-gray-500">Minimum 6 characters</p>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <Input
                 id="phone"
+                type="tel"
                 value={formData.phone_number || ''}
                 onChange={handlePhoneChange}
-                placeholder="Enter phone number"
+                placeholder="0912345678"
+                className={fieldErrors.phone_number ? 'border-red-500 focus:ring-red-500' : ''}
               />
+              {fieldErrors.phone_number && (
+                <p className="text-xs text-red-500 mt-1">{fieldErrors.phone_number}</p>
+              )}
+              <p className="text-xs text-gray-500">Format: 0XXXXXXXXX (10 digits)</p>
             </div>
           </div>
 

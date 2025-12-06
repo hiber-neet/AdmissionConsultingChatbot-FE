@@ -44,9 +44,79 @@ const QATemplateManager = () => {
     }
   };
 
+  // Validation helper function
+  const validateTemplateForm = () => {
+    const errors = [];
+
+    // Template name validation
+    if (!formData.template_name || !formData.template_name.trim()) {
+      errors.push('Template name is required');
+    } else if (formData.template_name.trim().length < 3) {
+      errors.push('Template name must be at least 3 characters long');
+    } else if (formData.template_name.trim().length > 100) {
+      errors.push('Template name must not exceed 100 characters');
+    }
+
+    // Template fields validation
+    if (!formData.template_fields || formData.template_fields.length === 0) {
+      errors.push('Template must have at least one field');
+    } else {
+      // Validate each field
+      const fieldNames = [];
+      formData.template_fields.forEach((field, index) => {
+        // Field name validation
+        if (!field.field_name || !field.field_name.trim()) {
+          errors.push(`Field ${index + 1}: Field name is required`);
+        } else if (field.field_name.trim().length < 2) {
+          errors.push(`Field ${index + 1}: Field name must be at least 2 characters long`);
+        } else if (field.field_name.trim().length > 50) {
+          errors.push(`Field ${index + 1}: Field name must not exceed 50 characters`);
+        } else {
+          // Check for duplicate field names
+          if (fieldNames.includes(field.field_name.trim().toLowerCase())) {
+            errors.push(`Field ${index + 1}: Duplicate field name "${field.field_name}"`);
+          }
+          fieldNames.push(field.field_name.trim().toLowerCase());
+        }
+
+        // Order field validation
+        if (!field.order_field || field.order_field < 1) {
+          errors.push(`Field ${index + 1}: Order must be a positive number`);
+        }
+
+        // Field type validation
+        const validFieldTypes = ['text', 'textarea', 'number', 'date', 'email', 'file', 'select', 'checkbox', 'radio'];
+        if (!field.field_type || !validFieldTypes.includes(field.field_type)) {
+          errors.push(`Field ${index + 1}: Invalid field type`);
+        }
+      });
+
+      // Check for duplicate order numbers
+      const orderNumbers = formData.template_fields.map(f => f.order_field);
+      const duplicateOrders = orderNumbers.filter((order, index) => orderNumbers.indexOf(order) !== index);
+      if (duplicateOrders.length > 0) {
+        errors.push(`Duplicate order numbers found: ${[...new Set(duplicateOrders)].join(', ')}`);
+      }
+    }
+
+    return errors;
+  };
+
   const handleCreateOrUpdate = async () => {
-    if (!formData.template_name.trim()) {
-      toast.error('Please enter a template name');
+    // Validate form
+    const validationErrors = validateTemplateForm();
+    if (validationErrors.length > 0) {
+      toast.error(
+        <div>
+          <strong>Validation Errors:</strong>
+          <ul className="list-disc pl-4 mt-2">
+            {validationErrors.map((error, index) => (
+              <li key={index}>{error}</li>
+            ))}
+          </ul>
+        </div>,
+        { autoClose: 6000 }
+      );
       return;
     }
 
@@ -259,15 +329,24 @@ const QATemplateManager = () => {
             {/* Template Name */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Template Name *
+                Template Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.template_name}
-                onChange={(e) => setFormData({ ...formData, template_name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.slice(0, 100);
+                  setFormData({ ...formData, template_name: value });
+                }}
                 className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter template name"
+                placeholder="Enter template name (min 3 chars, max 100)"
+                required
+                minLength={3}
+                maxLength={100}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                {formData.template_name.length}/100 characters
+              </p>
             </div>
 
             {/* Fields */}
@@ -289,23 +368,37 @@ const QATemplateManager = () => {
                   <div className="grid grid-cols-12 gap-2 items-end">
                     {/* Field Name */}
                     <div className="col-span-5">
-                      <label className="block text-xs text-gray-600 mb-1">Field Name</label>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        Field Name <span className="text-red-500">*</span>
+                      </label>
                       <input
                         type="text"
                         value={field.field_name}
-                        onChange={(e) => updateField(index, 'field_name', e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value.slice(0, 50);
+                          updateField(index, 'field_name', value);
+                        }}
                         className="w-full p-2 border rounded text-sm"
-                        placeholder="field name"
+                        placeholder="e.g., question, answer"
+                        required
+                        minLength={2}
+                        maxLength={50}
                       />
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {field.field_name.length}/50
+                      </p>
                     </div>
 
                     {/* Field Type */}
                     <div className="col-span-4">
-                      <label className="block text-xs text-gray-600 mb-1">Type</label>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        Type <span className="text-red-500">*</span>
+                      </label>
                       <select
                         value={field.field_type}
                         onChange={(e) => updateField(index, 'field_type', e.target.value)}
                         className="w-full p-2 border rounded text-sm"
+                        required
                       >
                         {fieldTypeOptions.map(option => (
                           <option key={option.value} value={option.value}>
@@ -317,13 +410,16 @@ const QATemplateManager = () => {
 
                     {/* Order */}
                     <div className="col-span-2">
-                      <label className="block text-xs text-gray-600 mb-1">Order</label>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        Order <span className="text-red-500">*</span>
+                      </label>
                       <input
                         type="number"
                         value={field.order_field}
-                        onChange={(e) => updateField(index, 'order_field', parseInt(e.target.value))}
+                        onChange={(e) => updateField(index, 'order_field', Math.max(1, parseInt(e.target.value) || 1))}
                         className="w-full p-2 border rounded text-sm"
                         min="1"
+                        required
                       />
                     </div>
 
