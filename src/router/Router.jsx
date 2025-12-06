@@ -23,7 +23,7 @@ import { QATemplateManagerPage } from "../pages/admin/QATemplateManagerPage.tsx"
 import { UserManagementPage } from "../pages/admin/UserManagementPage.tsx";
 import { AdminAdmissionDashboardPage } from "../pages/admin/AdminAdmissionDashboardPage.tsx";
 import { AdminConsultationPage } from "../pages/admin/AdminConsultationPage.tsx";
-import { AdminStudentInsightsPage } from "../pages/admin/AdminStudentInsightsPage.tsx";
+
 import { AdminConsultantDashboardPage } from "../pages/admin/AdminConsultantDashboardPage.tsx";
 import { AdminAnalyticsPage } from "../pages/admin/AdminAnalyticsPage.tsx";
 import { AdminKnowledgeBasePage } from "../pages/admin/AdminKnowledgeBasePage.tsx";
@@ -42,7 +42,7 @@ import { LiveChatView } from "../components/admission/chat/LiveChatView.jsx";
 import { KnowledgeBaseViewer } from "../components/admission/knowledgebase/KnowledgeBaseViewer.jsx";
 import { StudentListPage } from "../components/admission/StudentListPage.jsx";
 import { StudentProfilePage } from "../components/admission/StudentProfilePage.jsx";
-import { StudentInsights } from "../components/admission/StudentInsights.jsx";
+
 import ContentManagerLayOut from "../components/content/ContentManagerLayOut.tsx";
 import { ContentManagerDashboardPage } from "../components/content/ContentManagerDashboardPage.tsx";
 import { AllArticlesPage } from "../components/content/AllArticlesPage.tsx";
@@ -101,7 +101,6 @@ export default function Router() {
         <Route path="knowledge-base" element={<KnowledgeBaseViewer />} />
         <Route path="students" element={<StudentListPage />} />
         <Route path="students/:studentId" element={<StudentProfilePage />} />
-        <Route path="insights" element={<StudentInsights />} />
         <Route path="profile" element={<ManagerProfilePage />} />
       </Route>
       
@@ -134,7 +133,6 @@ export default function Router() {
         <Route path="admissions" element={<AdminAdmissionDashboardPage />} />
         <Route path="content" element={<AdminContentManagerDashboardPage />} />
         <Route path="consultation" element={<AdminConsultationPage />} />
-        <Route path="insights" element={<AdminStudentInsightsPage />} />
         {/* Consultant Management Routes */}
         <Route path="overview" element={<AdminConsultantDashboardPage />} />
         <Route path="analytics" element={<AdminAnalyticsPage />} />

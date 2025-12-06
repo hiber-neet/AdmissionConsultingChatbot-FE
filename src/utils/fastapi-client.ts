@@ -103,6 +103,8 @@ export interface Article {
   title: string;
   description: string;
   url: string;
+  link_image?: string;
+  note?: string;
   status: string;
   create_at: string;
   created_by: number;
@@ -188,9 +190,12 @@ export interface ChatRequest {
 export interface KnowledgeDocument {
   document_id: number;
   title: string;
-  content: string;
+  content?: string;
   file_path: string;
-  uploaded_at: string;
+  category?: string;
+  created_at: string;
+  updated_at?: string;
+  created_by?: number;
 }
 
 export interface TrainingQuestion {

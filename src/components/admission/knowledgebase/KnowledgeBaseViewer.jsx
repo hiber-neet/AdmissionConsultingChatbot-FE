@@ -5,7 +5,7 @@ import SearchAndFilter from './SearchAndFilter';
 import QATemplateList from './QATemplateList';
 import DocumentList from './DocumentList';
 import QADetailDialog from './QADetailDialog';
-import { knowledgeAPI } from '../../../services/fastapi';
+import { knowledgeAPI, intentAPI } from '../../../services/fastapi';
 
 export function KnowledgeBaseViewer() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -14,6 +14,7 @@ export function KnowledgeBaseViewer() {
   const [isQADialogOpen, setIsQADialogOpen] = useState(false);
   const [trainingQuestions, setTrainingQuestions] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [intents, setIntents] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Static categories for filtering
@@ -32,6 +33,20 @@ export function KnowledgeBaseViewer() {
       try {
         setLoading(true);
         
+        // Fetch intents first
+        console.log('🎯 Fetching intents...');
+        const intentsResponse = await intentAPI.getIntents();
+        console.log('🎯 Intents response:', intentsResponse);
+        const intentsData = intentsResponse.data || intentsResponse || [];
+        
+        // Create intent map for quick lookup
+        const intentMap = {};
+        intentsData.forEach(intent => {
+          intentMap[intent.intent_id] = intent.intent_name;
+        });
+        console.log('🎯 Intent map:', intentMap);
+        setIntents(intentsData);
+        
         // Fetch training questions
         console.log('📚 Fetching training questions...');
         const trainingResponse = await knowledgeAPI.getTrainingQuestions();
@@ -46,9 +61,8 @@ export function KnowledgeBaseViewer() {
               id: question.question_id?.toString() || index.toString(),
               question: question.question || 'No question',
               answer: question.answer || 'No answer',
-              category: 'Tuyển Sinh', // Default category, could be enhanced
-              tags: extractTags(question.question || ''), // Extract tags from question
-              usageCount: Math.floor(Math.random() * 500), // Mock usage count
+              category: question.intent_id ? (intentMap[question.intent_id] || 'Khác') : 'Khác',
+              tags: [], // No tags for now
               lastModified: question.created_at || new Date().toISOString().split('T')[0]
             }))
           : [];
@@ -66,13 +80,11 @@ export function KnowledgeBaseViewer() {
           ? documentsData.map((doc, index) => ({
               id: doc.document_id?.toString() || `D${index + 1}`,
               title: doc.title || 'Untitled Document',
-              description: doc.content ? doc.content.substring(0, 150) + '...' : 'Không có mô tả',
-              category: 'Tài Liệu', // Default category
+              description: doc.content ? doc.content.substring(0, 150) + '...' : '',
+              category: doc.category || 'Khác',
               fileType: getFileType(doc.file_path || ''),
-              size: '1.5 MB', // Mock size
-              uploadedDate: doc.uploaded_at || doc.created_at || new Date().toISOString().split('T')[0],
-              tags: extractTags(doc.title || ''),
-              viewCount: Math.floor(Math.random() * 1000), // Mock view count
+              uploadedDate: doc.created_at || new Date().toISOString().split('T')[0],
+              tags: [], // No tags
               file_path: doc.file_path,
               content: doc.content
             }))
@@ -107,15 +119,7 @@ export function KnowledgeBaseViewer() {
     fetchData();
   }, []);
 
-  // Helper functions
-  const extractTags = (text) => {
-    const keywords = text.toLowerCase().split(' ');
-    const commonTags = ['tuyển sinh', 'học bổng', 'hồ sơ', 'yêu cầu', 'thông tin'];
-    return commonTags.filter(tag => 
-      keywords.some(keyword => keyword.includes(tag) || tag.includes(keyword))
-    ).slice(0, 3);
-  };
-
+  // Helper function
   const getFileType = (filePath) => {
     if (!filePath) return 'PDF';
     const extension = filePath.split('.').pop()?.toUpperCase();
@@ -144,9 +148,6 @@ export function KnowledgeBaseViewer() {
     setSelectedQA(template);
     setIsQADialogOpen(true);
   };
-
-  const totalUsage = trainingQuestions.reduce((sum, t) => sum + (t.usageCount || 0), 0);
-  const totalViews = documents.reduce((sum, d) => sum + (d.viewCount || 0), 0);
 
   if (loading) {
     return (
@@ -184,8 +185,6 @@ export function KnowledgeBaseViewer() {
         <StatsCards 
           qaTemplatesCount={trainingQuestions.length}
           documentsCount={documents.length}
-          totalUsage={totalUsage}
-          totalViews={totalViews}
         />
 
         {/* Search and Filter */}

@@ -8,18 +8,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/system_users/dropdown-menu';
-import { fastAPIArticles } from '../../services/fastapi';
-import { majorsAPI } from '../../services/fastapi';
+import { fastAPIArticles, majorsAPI } from '../../services/fastapi';
 import { Article, Major } from '../../utils/fastapi-client';
 import { ARTICLE_STATUSES } from '../../constants/status';
+import { useAuth } from '../../contexts/Auth';
 
 export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateToEditorWithData }: { 
   onCreate?: () => void; 
   onNavigateToEditor?: () => void;
   onNavigateToEditorWithData?: (articleData: { title: string }) => void;
 }) {
+  const { user, hasPermission, isContentManagerLeader } = useAuth();
   const [q, setQ] = useState("");
-  const [selected, setSelected] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("All Status");
   const [categoryFilter, setCategoryFilter] = useState<string>("All Majors");
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -32,15 +32,38 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   const [articleDetailsError, setArticleDetailsError] = useState<string | null>(null);
   const [majors, setMajors] = useState<Major[]>([]);
   const [majorsLoading, setMajorsLoading] = useState(false);
+  const [specializations, setSpecializations] = useState<any[]>([]);
+  const [editingArticle, setEditingArticle] = useState<Article | null>(null);
+  const [deleteConfirmArticle, setDeleteConfirmArticle] = useState<Article | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch articles from FastAPI
+  // Fetch articles from FastAPI based on permissions
   useEffect(() => {
     const fetchArticles = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await fastAPIArticles.getAll();
+        
+        // Check if user is Admin or Content Manager Leader
+        const isAdmin = hasPermission("Admin");
+        const isLeader = isContentManagerLeader();
+        
+        let data: Article[];
+        
+        if (isAdmin || isLeader) {
+          // Admin or Content Manager Leader: Get all articles
+          console.log('Fetching all articles (Admin or Content Manager Leader)');
+          data = await fastAPIArticles.getAll();
+        } else if (hasPermission("Content Manager") && user?.id) {
+          // Regular Content Manager: Get only their own articles
+          console.log('Fetching articles by user ID:', user.id);
+          data = await fastAPIArticles.getByUserId(parseInt(user.id));
+        } else {
+          // No permission
+          setError('You do not have permission to view articles.');
+          return;
+        }
+        
         setArticles(data);
       } catch (err) {
         setError('Failed to load articles. Please try again.');
@@ -50,8 +73,10 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
       }
     };
 
-    fetchArticles();
-  }, []);
+    if (user) {
+      fetchArticles();
+    }
+  }, [user, hasPermission, isContentManagerLeader]);
 
   // Fetch majors from FastAPI
   useEffect(() => {
@@ -99,20 +124,6 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
     }),
     [articles, q, statusFilter, categoryFilter]
   );
-
-  const toggleSelect = (title: string) => {
-    setSelected((prev) =>
-      prev.includes(title)
-        ? prev.filter((t) => t !== title)
-        : [...prev, title]
-    );
-  };
-
-  const allSelected = filtered.length > 0 && selected.length === filtered.length;
-
-  const toggleAll = () => {
-    setSelected(allSelected ? [] : filtered.map((article) => article.title));
-  };
 
   // Fetch detailed article information
   const fetchArticleDetails = async (articleId: number) => {
@@ -274,18 +285,6 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         </div>
       </div>
 
-      {/* Action bar */}
-      {selected.length > 0 && (
-        <div className="bg-gray-50 border rounded-lg px-4 py-2 mb-3 text-sm flex items-center gap-4">
-          <span className="text-gray-700">
-            {selected.length} selected
-          </span>
-          <button className="text-blue-600 hover:underline">Publish</button>
-          <button className="text-gray-600 hover:underline">Archive</button>
-          <button className="text-red-600 hover:underline">Delete</button>
-        </div>
-      )}
-
       {/* Table */}
       <div className="bg-white border rounded-xl overflow-hidden">
         {loading ? (
@@ -300,15 +299,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500">
               <tr>
-                <th className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={toggleAll}
-                    className="h-4 w-4 rounded border-gray-300 accent-blue-500"
-                  />
-                </th>
-                <th className="text-left px-2 py-3">Title</th>
+                <th className="text-left px-4 py-3">Title</th>
                 <th className="text-left px-2 py-3">Major</th>
                 <th className="text-left px-2 py-3">Status</th>
                 <th className="text-left px-2 py-3">Author</th>
@@ -318,25 +309,14 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
             </thead>
             <tbody className="divide-y">
               {filtered.map((article, i) => {
-                const isSelected = selected.includes(article.title);
                 return (
                   <tr
                     key={article.article_id}
                     onClick={(event) => handleArticleClick(article, event)}
-                    className={`hover:bg-blue-50 hover:shadow-sm cursor-pointer transition-all duration-150 ${
-                      isSelected ? "bg-blue-50/30" : ""
-                    }`}
+                    className="hover:bg-blue-50 hover:shadow-sm cursor-pointer transition-all duration-150"
                     title="Click to view article details"
                   >
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleSelect(article.title)}
-                        className="h-4 w-4 rounded border-gray-300 accent-blue-500"
-                      />
-                    </td>
-                    <td className="px-2 py-3 font-medium text-gray-900">
+                    <td className="px-4 py-3 font-medium text-gray-900">
                       {article.title}
                     </td>
                     <td className="px-2 py-3">{article.major_name}</td>
@@ -360,26 +340,51 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
                     <td className="px-4 py-3 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          {/* Show View for all users */}
                           <DropdownMenuItem
-                            onClick={() => {
-                              if (onNavigateToEditorWithData) {
-                                onNavigateToEditorWithData({ title: article.title });
-                              }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fetchArticleDetails(article.article_id);
                             }}
                           >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
+                          
+                          {/* Show Edit/Delete only for Admin or Content Manager Leader */}
+                          {(hasPermission("Admin") || isContentManagerLeader()) && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingArticle(article);
+                                }}
+                              >
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteConfirmArticle(article);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
@@ -389,7 +394,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
               {filtered.length === 0 && !loading && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="px-4 py-10 text-center text-gray-400"
                   >
                     No results
@@ -567,6 +572,48 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
                     </div>
                   )}
 
+                  {/* Link Image */}
+                  {selectedArticle.link_image && (
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                        <ExternalLink className="h-4 w-4" />
+                        Article Image
+                      </h4>
+                      <div className="flex flex-col gap-2">
+                        <a
+                          href={selectedArticle.link_image}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline text-sm break-all"
+                        >
+                          {selectedArticle.link_image}
+                          <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                        </a>
+                        {/* Image Preview */}
+                        <div className="mt-2">
+                          <img
+                            src={selectedArticle.link_image}
+                            alt={selectedArticle.title}
+                            className="max-w-full h-auto rounded-lg border border-gray-200"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Note */}
+                  {selectedArticle.note && (
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-gray-900">Note</h4>
+                      <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        {selectedArticle.note}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Action Buttons */}
                   <div className="flex gap-3 pt-4 border-t">
                     <button
@@ -594,6 +641,346 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
           </div>
         </div>
       )}
+
+      {/* Edit Article Modal */}
+      {editingArticle && (
+        <EditArticleModal
+          article={editingArticle}
+          majors={majors}
+          onClose={() => setEditingArticle(null)}
+          onSave={async (updatedData) => {
+            try {
+              await fastAPIArticles.update(editingArticle.article_id, updatedData);
+              // Refresh articles list
+              const isAdmin = hasPermission("Admin");
+              const isLeader = isContentManagerLeader();
+              let data: Article[];
+              if (isAdmin || isLeader) {
+                data = await fastAPIArticles.getAll();
+              } else if (hasPermission("Content Manager") && user?.id) {
+                data = await fastAPIArticles.getByUserId(parseInt(user.id));
+              } else {
+                return;
+              }
+              setArticles(data);
+              setEditingArticle(null);
+            } catch (err) {
+              console.error('Error updating article:', err);
+              alert('Failed to update article. Please try again.');
+            }
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmArticle && (
+        <DeleteConfirmModal
+          article={deleteConfirmArticle}
+          onClose={() => setDeleteConfirmArticle(null)}
+          onConfirm={async () => {
+            try {
+              await fastAPIArticles.delete(deleteConfirmArticle.article_id);
+              // Refresh articles list
+              const isAdmin = hasPermission("Admin");
+              const isLeader = isContentManagerLeader();
+              let data: Article[];
+              if (isAdmin || isLeader) {
+                data = await fastAPIArticles.getAll();
+              } else if (hasPermission("Content Manager") && user?.id) {
+                data = await fastAPIArticles.getByUserId(parseInt(user.id));
+              } else {
+                return;
+              }
+              setArticles(data);
+              setDeleteConfirmArticle(null);
+            } catch (err) {
+              console.error('Error deleting article:', err);
+              alert('Failed to delete article. Please try again.');
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Edit Article Modal Component
+function EditArticleModal({ 
+  article, 
+  majors, 
+  onClose, 
+  onSave 
+}: { 
+  article: Article; 
+  majors: Major[]; 
+  onClose: () => void; 
+  onSave: (data: Partial<Article>) => Promise<void>;
+}) {
+  const [formData, setFormData] = useState({
+    title: article.title,
+    description: article.description,
+    url: article.url || '',
+    link_image: article.link_image || '',
+    note: article.note || '',
+    major_id: article.major_id,
+    specialization_id: article.specialization_id
+  });
+  const [specializations, setSpecializations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch specializations when major changes
+  useEffect(() => {
+    const fetchSpecs = async () => {
+      if (formData.major_id) {
+        try {
+          const { fastAPISpecializations } = await import('../../services/fastapi');
+          const specs = await fastAPISpecializations.getByMajor(formData.major_id);
+          setSpecializations(specs);
+        } catch (err) {
+          console.error('Error fetching specializations:', err);
+        }
+      } else {
+        setSpecializations([]);
+      }
+    };
+    fetchSpecs();
+  }, [formData.major_id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await onSave(formData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-xl font-semibold text-gray-900">Edit Article</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        {/* Modal Content */}
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+          <div className="space-y-4">
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Title *
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description *
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                required
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* URL */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                URL
+              </label>
+              <input
+                type="url"
+                value={formData.url}
+                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Link Image */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Link Image
+              </label>
+              <input
+                type="url"
+                value={formData.link_image}
+                onChange={(e) => setFormData({ ...formData, link_image: e.target.value })}
+                placeholder="https://example.com/image.jpg"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Note */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Note
+              </label>
+              <textarea
+                value={formData.note}
+                onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Major */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Major
+              </label>
+              <select
+                value={formData.major_id || ''}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  major_id: e.target.value ? parseInt(e.target.value) : 0,
+                  specialization_id: 0 // Reset specialization when major changes
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select a major</option>
+                {majors.map((major) => (
+                  <option key={major.major_id} value={major.major_id}>
+                    {major.major_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Specialization */}
+            {formData.major_id && specializations.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Specialization
+                </label>
+                <select
+                  value={formData.specialization_id || ''}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    specialization_id: e.target.value ? parseInt(e.target.value) : 0
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a specialization</option>
+                  {specializations.map((spec: any) => (
+                    <option key={spec.specialization_id} value={spec.specialization_id}>
+                      {spec.specialization_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-6 border-t mt-6">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Delete Confirmation Modal Component
+function DeleteConfirmModal({ 
+  article, 
+  onClose, 
+  onConfirm 
+}: { 
+  article: Article; 
+  onClose: () => void; 
+  onConfirm: () => Promise<void>;
+}) {
+  const [loading, setLoading] = useState(false);
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    try {
+      await onConfirm();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg w-full max-w-md">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-xl font-semibold text-gray-900">Delete Article</h2>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        {/* Modal Content */}
+        <div className="p-6">
+          <p className="text-gray-700 mb-4">
+            Are you sure you want to delete this article?
+          </p>
+          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+            <p className="font-semibold text-gray-900">{article.title}</p>
+            <p className="text-sm text-gray-600 mt-1">{article.description}</p>
+          </div>
+          <p className="text-sm text-gray-500 mt-4">
+            This action will mark the article as deleted. It will no longer appear in the article list.
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3 p-6 border-t">
+          <button
+            onClick={handleConfirm}
+            disabled={loading}
+            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Deleting...' : 'Delete'}
+          </button>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

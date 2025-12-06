@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, FileText, Trash2, Edit, ExternalLink, Loader2 } from 'lucide-react';
+import { Search, Plus, FileText, Trash2, Edit, Download, Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/system_users/scroll-area';
 import { Input } from '../ui/system_users/input';
 import { Button } from '../ui/system_users/button';
@@ -66,13 +66,23 @@ export function DocumentManagement() {
       
       // Set first document as selected if available
       if (data.length > 0 && !selectedDoc) {
-        setSelectedDoc(data[0]);
+        await fetchDocumentDetails(data[0].document_id);
       }
     } catch (error) {
       console.error('Failed to fetch documents:', error);
       toast.error('Failed to load documents. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDocumentDetails = async (documentId: number) => {
+    try {
+      const details = await knowledgeAPI.getDocumentById(documentId);
+      setSelectedDoc(details);
+    } catch (error) {
+      console.error('Failed to fetch document details:', error);
+      toast.error('Failed to load document details. Please try again.');
     }
   };
 
@@ -154,14 +164,25 @@ export function DocumentManagement() {
     }
   };
 
-  const handleView = (doc: Document) => {
+  const handleDownload = async (doc: Document) => {
     try {
-      // Open document in new tab using view endpoint
-      const viewUrl = `${API_CONFIG.FASTAPI_BASE_URL}/knowledge/documents/${doc.document_id}/view`;
-      window.open(viewUrl, '_blank');
-    } catch (error) {
-      console.error('Failed to open document:', error);
-      toast.error('Failed to open document. Please try again.');
+      const blob = await knowledgeAPI.downloadDocument(doc.document_id);
+      
+      // Create a download link and trigger it
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.title || `document-${doc.document_id}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Document downloaded successfully!');
+    } catch (error: any) {
+      console.error('Failed to download document:', error);
+      const errorMessage = error?.message || 'Failed to download document. Please try again.';
+      toast.error(errorMessage);
     }
   };
 
@@ -255,7 +276,7 @@ export function DocumentManagement() {
                 filteredDocuments.map(doc => (
                   <button
                     key={doc.document_id}
-                    onClick={() => setSelectedDoc(doc)}
+                    onClick={() => fetchDocumentDetails(doc.document_id)}
                     className={`w-full flex items-start gap-3 p-3 rounded-lg transition-colors text-left ${
                       selectedDoc?.document_id === doc.document_id
                         ? 'bg-[#3B82F6] text-white'
@@ -268,7 +289,7 @@ export function DocumentManagement() {
                       <div className={`text-sm truncate ${
                         selectedDoc?.document_id === doc.document_id ? 'text-blue-100' : 'text-muted-foreground'
                       }`}>
-                        Updated {formatDate(doc.uploaded_at)}
+                        Created {formatDate(doc.created_at)}
                       </div>
                     </div>
                   </button>
@@ -291,10 +312,10 @@ export function DocumentManagement() {
                     variant="outline" 
                     size="sm" 
                     className="gap-2"
-                    onClick={() => handleView(selectedDoc)}
+                    onClick={() => handleDownload(selectedDoc)}
                   >
-                    <ExternalLink className="h-4 w-4" />
-                    Open
+                    <Download className="h-4 w-4" />
+                    Download
                   </Button>
                   <Button 
                     variant="destructive" 
@@ -315,12 +336,20 @@ export function DocumentManagement() {
 
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Uploaded</div>
-                  <div>{formatDate(selectedDoc.uploaded_at)}</div>
+                  <div className="text-sm text-muted-foreground">Created</div>
+                  <div>{formatDate(selectedDoc.created_at)}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-sm text-muted-foreground">Last Updated</div>
+                  <div>{selectedDoc.updated_at ? formatDate(selectedDoc.updated_at) : 'N/A'}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-sm text-muted-foreground">File Type</div>
                   <div className="capitalize">{getFileType(selectedDoc.file_path)}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-sm text-muted-foreground">Category</div>
+                  <div className="capitalize">{selectedDoc.category || 'General'}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-sm text-muted-foreground">File Path</div>
