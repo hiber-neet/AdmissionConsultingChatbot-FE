@@ -12,13 +12,12 @@ import { ScrollArea } from '../ui/system_users/scroll-area';
 import { Badge } from '../ui/system_users/badge';
 import { Progress } from '../ui/system_users/progress';
 import { useState, useEffect } from 'react';
-import { consultantAnalyticsAPI, KnowledgeGap, LowSatisfactionAnswer, TrendingTopic, AnalyticsSummary } from '../../services/fastapi';
+import { consultantAnalyticsAPI, KnowledgeGap, LowSatisfactionAnswer, TrendingTopic } from '../../services/fastapi';
 
 export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateToKnowledgeBase?: (question: string) => void }) {
   const [knowledgeGaps, setKnowledgeGaps] = useState<KnowledgeGap[]>([]);
   const [confusingAnswers, setConfusingAnswers] = useState<LowSatisfactionAnswer[]>([]);
   const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
-  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,18 +33,15 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
         setError(null);
         
         // Fetch all analytics data in parallel using unified consultant analytics API
-        const [gapsData, answersData, topicsData, summaryData] = await Promise.all([
+        const [gapsData, answersData, topicsData] = await Promise.all([
           consultantAnalyticsAPI.getKnowledgeGaps(),
           consultantAnalyticsAPI.getLowSatisfactionAnswers(),
-          consultantAnalyticsAPI.getTrendingTopics(),
-          consultantAnalyticsAPI.getAnalyticsSummary()
+          consultantAnalyticsAPI.getTrendingTopics()
         ]);
         
         setKnowledgeGaps(Array.isArray(gapsData) ? gapsData : gapsData?.data || []);
         setConfusingAnswers(Array.isArray(answersData) ? answersData : answersData?.data || []);
         setTrendingTopics(Array.isArray(topicsData) ? topicsData : topicsData?.data || []);
-        const summaryValue = (summaryData && typeof summaryData === 'object' && 'data' in summaryData) ? summaryData.data : summaryData;
-        setSummary(summaryValue as AnalyticsSummary || null);
       } catch (error) {
         console.error('Error fetching analytics data:', error);
         setError('Failed to load analytics data. Please try again.');
@@ -110,7 +106,7 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-3xl">{summary?.knowledge_gaps_count || 0}</div>
+                  <div className="text-3xl">{knowledgeGaps?.length || 0}</div>
                   <p className="text-sm text-muted-foreground mt-1">Knowledge Gaps</p>
                 </div>
                 <HelpCircle className="h-8 w-8 text-[#EF4444] opacity-50" />
@@ -122,7 +118,7 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-3xl">{summary?.low_satisfaction_count || 0}</div>
+                  <div className="text-3xl">{confusingAnswers?.length || 0}</div>
                   <p className="text-sm text-muted-foreground mt-1">Low-Rated Answers</p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-[#F59E0B] opacity-50" />
@@ -134,7 +130,7 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-3xl">{summary?.trending_topics_count || 0}</div>
+                  <div className="text-3xl">{trendingTopics?.length || 0}</div>
                   <p className="text-sm text-muted-foreground mt-1">Trending Topics</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-[#10B981] opacity-50" />
