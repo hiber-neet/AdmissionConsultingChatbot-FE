@@ -20,7 +20,6 @@
 const handleLogin = async (event) => {
   event.preventDefault();
 
-  // CHỈ GIỮ VALIDATE EMAIL / PASSWORD
   if (!email || !password) {
     toast.error("Thiếu Email hoặc Mật khẩu.");
     return;
@@ -44,15 +43,21 @@ const handleLogin = async (event) => {
       else if (role === "consultant") appRole = "CONSULTANT";
       else if (role === "admission_officer") appRole = "ADMISSION_OFFICER";
       else appRole = "STUDENT";
+     // 🔹 Nếu là student thì cho về /profile
+      let targetRoute = "";
+      if (appRole === "STUDENT") {
+        targetRoute = "/profile";
+      } else {
+        targetRoute = getDefaultRoute(appRole);
+      }
 
-      const defaultRoute = getDefaultRoute(appRole);
       toast.success(
         `Đăng nhập thành công! Chuyển đến ${
           appRole === "STUDENT" ? "Profile" : "Dashboard"
-        }.`
+        }.` 
       );
-      navigate(defaultRoute);
-      window.location.reload();
+
+      navigate(targetRoute);
     } else {
       swal({
         title: "Sai tài khoản hoặc mật khẩu",
