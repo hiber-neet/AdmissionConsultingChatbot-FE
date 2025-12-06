@@ -66,6 +66,20 @@ export interface CategoryStatistic {
   total_questions: number;
   total_times_asked: number;
 }
+
+// RIASEC types
+export interface RiasecResult {
+  result_id: number;
+  customer_id?: number;
+  score_realistic: number;
+  score_investigative: number;
+  score_artistic: number;
+  score_social: number;
+  score_enterprising: number;
+  score_conventional: number;
+  result: string;
+}
+
 // Articles API
 export const articlesAPI = {
   getAll: () => fastAPIClient.get<Article[]>('/articles'),
@@ -87,6 +101,26 @@ export const usersAPI = {
   create: (data: Partial<User>) => fastAPIClient.post<User>('/users', data),
   update: (id: number, data: Partial<User>) => fastAPIClient.put<User>(`/users/${id}`, data),
   delete: (id: number) => fastAPIClient.delete(`/users/${id}`),
+};
+
+// Permissions API
+export interface Permission {
+  permission_id: number;
+  permission_name: string;
+  description?: string;
+}
+
+export const permissionsAPI = {
+  getAll: () => fastAPIClient.get<Permission[]>('/users/permissions'),
+};
+
+export interface Role {
+  role_id: number;
+  role_name: string;
+}
+
+export const rolesAPI = {
+  getAll: () => fastAPIClient.get<Role[]>('/users/roles'),
 };
 
 // Authentication API
@@ -173,6 +207,7 @@ export const riasecAPI = {
   getTest: () => fastAPIClient.get('/riasec/test'),
   submitAnswers: (answers: any) => fastAPIClient.post('/riasec/submit', answers),
   getResults: (id: number) => fastAPIClient.get(`/riasec/results/${id}`),
+  getUserResults: (userId: number) => fastAPIClient.get<RiasecResult[]>(`/riasec/users/${userId}/riasec/results`),
 };
 
 // Content Analytics types
@@ -274,6 +309,18 @@ export const consultantAnalyticsAPI = {
     fastAPIClient.get<{ status: string; data: AnalyticsSummary; message: string }>('/analytics/analytics-summary'),
   getCategoryStatistics: (days?: number) =>
     fastAPIClient.get<{ status: string; data: CategoryStatistic[]; message: string }>(`/analytics/category-statistics?days=${days || 30}`)
+};
+
+// Dashboard Analytics API
+export const dashboardAnalyticsAPI = {
+  getMetrics: (days: number = 7) =>
+    fastAPIClient.get(`/analytics/dashboard/metrics?days=${days}`),
+  getChatbotRequests: (days: number = 30) =>
+    fastAPIClient.get(`/analytics/dashboard/chatbot-requests?days=${days}`),
+  getSystemHealth: () =>
+    fastAPIClient.get('/analytics/dashboard/system-health'),
+  getQuickStats: () =>
+    fastAPIClient.get('/analytics/dashboard/quick-stats')
 };
 
 // Live Chat types

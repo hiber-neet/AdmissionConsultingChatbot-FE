@@ -62,7 +62,10 @@ class FastAPIClient {
   }
 
   async get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET' });
+    console.log(`🌐 FastAPI GET request to: ${endpoint}`);
+    const result = await this.request<T>(endpoint, { method: 'GET' });
+    console.log(`✅ FastAPI GET response from ${endpoint}:`, result);
+    return result;
   }
 
   async post<T>(endpoint: string, data: any): Promise<T> {

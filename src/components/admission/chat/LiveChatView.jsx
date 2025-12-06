@@ -1,21 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  MessageCircle,
-  User,
-  Clock,
-  Send,
-  X,
-} from 'lucide-react';
-import { Button } from '../../ui/system_users/button';
-import { Input } from '../../ui/system_users/input';
-import { Badge } from '../../ui/system_users/badge';
-import { Avatar, AvatarFallback } from '../../ui/system_users/avatar';
-import { ScrollArea } from '../../ui/system_users/scroll-area';
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/system_users/card';
 import { useAuth } from '../../../contexts/Auth';
 import { liveChatAPI } from '../../../services/fastapi';
 import { toast } from 'react-toastify';
+
+// Import components
+import { ActiveSessionsList } from './ActiveSessionsList';
+import { ChatHeader } from './ChatHeader';
+import { MessagesArea } from './MessagesArea';
+import { MessageInput } from './MessageInput';
+import { EmptyChat } from './EmptyChat';
+import { LoadingView } from './LoadingView';
+import { useWebSocket } from './useWebSocket';
 
 export function LiveChatView() {
   const location = useLocation();
@@ -29,21 +25,18 @@ export function LiveChatView() {
   const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [error, setError] = useState('');
   const [customerInfo, setCustomerInfo] = useState(null);
-  
-  const wsRef = useRef(null);
-  const messagesEndRef = useRef(null);
 
-  // Scroll to bottom when new messages arrive
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // Handle WebSocket messages
+  const handleMessageReceived = (newMessage) => {
+    setMessages(prev => [...prev, newMessage]);
   };
 
-  useEffect(scrollToBottom, [messages]);
+  // WebSocket connection
+  const { isConnected, sendMessage: wsSendMessage, disconnect } = useWebSocket(selectedSessionId, handleMessageReceived);
 
   // Get active sessions for admission official
   const loadActiveSessions = async () => {
@@ -53,7 +46,6 @@ export function LiveChatView() {
     try {
       console.log('Loading active sessions for official:', user.id);
       
-      // Call real API to get active sessions
       const response = await liveChatAPI.getActiveSessions(parseInt(user.id));
       console.log('Active sessions response:', response);
       
@@ -71,9 +63,6 @@ export function LiveChatView() {
       }
     } catch (err) {
       console.error('Error loading active sessions:', err);
-      
-      // Fallback to empty array on error, don't show error to user
-      // as having no active sessions is a valid state
       setActiveSessions([]);
       
       // Only show error if it's not a 404 (which means no active sessions)
@@ -118,75 +107,14 @@ export function LiveChatView() {
     }
   };
 
-  // Initialize WebSocket connection
-  const connectWebSocket = () => {
-    if (!selectedSessionId) {
-      console.error('No session ID available for WebSocket connection');
-      setIsConnected(false);
-      return;
-    }
+  // Send message
+  const handleSendMessage = () => {
+    if (!newMessage.trim()) return;
 
-    try {
-      const wsUrl = `ws://localhost:8000/live_chat/livechat/chat/${selectedSessionId}`;
-      console.log('Connecting to WebSocket:', wsUrl);
-      wsRef.current = new WebSocket(wsUrl);
-
-      wsRef.current.onopen = () => {
-        console.log('WebSocket connected');
-        setIsConnected(true);
-        setError('');
-      };
-
-      wsRef.current.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        console.log('Received message:', data);
-        
-        if (data.event === 'message') {
-          const newMessage = {
-            interaction_id: Date.now(),
-            session_id: selectedSessionId,
-            sender_id: data.sender_id,
-            message_text: data.message,
-            timestamp: data.timestamp,
-            is_from_bot: false
-          };
-          
-          setMessages(prev => [...prev, newMessage]);
-        }
-      };
-
-      wsRef.current.onclose = () => {
-        console.log('WebSocket disconnected');
-        setIsConnected(false);
-      };
-
-      wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setIsConnected(false);
-        setError('Connection error. Please try refreshing the page.');
-      };
-    } catch (err) {
-      console.error('Error creating WebSocket:', err);
-      setError('Failed to establish connection');
-    }
-  };
-
-  // Send message via WebSocket
-  const sendMessage = () => {
-    if (!newMessage.trim() || !wsRef.current || !isConnected) return;
-
-    const messageData = {
-      sender_id: parseInt(user.id),
-      message: newMessage.trim()
-    };
-
-    try {
-      wsRef.current.send(JSON.stringify(messageData));
-      console.log('Sent message:', messageData);
-      
+    const success = wsSendMessage(user.id, newMessage);
+    if (success) {
       setNewMessage('');
-    } catch (err) {
-      console.error('Error sending message:', err);
+    } else {
       toast.error('Failed to send message');
     }
   };
@@ -195,7 +123,7 @@ export function LiveChatView() {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      handleSendMessage();
     }
   };
 
@@ -203,7 +131,6 @@ export function LiveChatView() {
   const handleEndSession = async () => {
     if (!selectedSessionId) return;
     
-    // Show confirmation dialog
     const confirmed = window.confirm(
       'Are you sure you want to end this chat session? This action cannot be undone.'
     );
@@ -213,9 +140,7 @@ export function LiveChatView() {
     try {
       await liveChatAPI.endSession(selectedSessionId, parseInt(user.id));
       
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
+      disconnect();
       
       toast.success('Session ended successfully');
       
@@ -237,6 +162,16 @@ export function LiveChatView() {
     }
   };
 
+  // Handle session selection
+  const handleSessionSelect = (sessionId) => {
+    setSelectedSessionId(sessionId);
+  };
+
+  // Go to queue
+  const handleGoToQueue = () => {
+    navigate('/admission/request-queue');
+  };
+
   // Initialize component
   useEffect(() => {
     const initialize = async () => {
@@ -249,10 +184,7 @@ export function LiveChatView() {
       }
 
       console.log('Initializing LiveChatView');
-
-      // First load active sessions
       await loadActiveSessions();
-      
       setLoading(false);
     };
 
@@ -271,44 +203,25 @@ export function LiveChatView() {
   useEffect(() => {
     const setupSession = async () => {
       if (!selectedSessionId) {
-        // Close existing WebSocket if any
-        if (wsRef.current) {
-          wsRef.current.close();
-        }
-        setIsConnected(false);
         setMessages([]);
         setCustomerInfo(null);
         return;
       }
 
       console.log('Setting up session:', selectedSessionId);
-
-      // Load messages for the selected session
       await loadSessionData();
-      
-      // Connect WebSocket
-      connectWebSocket();
     };
 
     setupSession();
-
-    // Cleanup function
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
   }, [selectedSessionId]);
 
   // Listen for SSE queue updates to refresh active sessions
   useEffect(() => {
     const handleQueueUpdate = (event) => {
       console.log('📢 LiveChatView received queue update event:', event.detail);
-      // Refresh active sessions when queue updates (new session might be created)
       loadActiveSessions();
     };
 
-    // Listen for custom events from the NotificationContext
     window.addEventListener('queueUpdate', handleQueueUpdate);
 
     return () => {
@@ -316,258 +229,60 @@ export function LiveChatView() {
     };
   }, []);
 
-  if (loading || sessionsLoading) {
+  // Show loading or error states
+  if (loading || error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">{loading ? 'Loading chat sessions...' : 'Loading active sessions...'}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-md mx-auto mt-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-red-600">Error</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <div className="space-x-2">
-              <Button onClick={() => navigate('/admission/request-queue')}>
-                Go to Request Queue
-              </Button>
-              <Button variant="outline" onClick={() => window.location.reload()}>
-                Retry
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <LoadingView 
+        isLoading={loading}
+        error={error}
+        onRetry={() => window.location.reload()}
+        onGoToQueue={handleGoToQueue}
+      />
     );
   }
 
   return (
     <div className="h-screen flex bg-gray-50 overflow-hidden">
       {/* Left Sidebar - Active Sessions */}
-      <div className="w-80 border-r bg-white flex flex-col">
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Active Sessions</h3>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={loadActiveSessions}
-                disabled={sessionsLoading}
-              >
-                {sessionsLoading ? '...' : '🔄'}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/admission/request-queue')}
-              >
-                Queue
-              </Button>
-            </div>
-          </div>
-        </div>
-        <ScrollArea className="flex-1">
-          <div className="p-2 space-y-2">
-            {activeSessions.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No active sessions</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => navigate('/admission/request-queue')}
-                >
-                  Go to Queue
-                </Button>
-              </div>
-            ) : (
-              activeSessions.map((session) => (
-                <button
-                  key={session.session_id}
-                  onClick={() => setSelectedSessionId(session.session_id)}
-                  className={`w-full flex items-start gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors ${
-                    selectedSessionId === session.session_id ? 'bg-blue-50 border border-blue-200' : 'border border-transparent'
-                  }`}
-                >
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-blue-500 text-white">
-                      {session.customer_name?.slice(0, 2)?.toUpperCase() || 'ST'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 text-left">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-sm">{session.customer_name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {(() => {
-                          try {
-                            const date = new Date(session.start_time);
-                            if (isNaN(date.getTime())) {
-                              return 'Today';
-                            }
-                            const day = date.getDate().toString().padStart(2, '0');
-                            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                            const year = date.getFullYear();
-                            return `${day}/${month}/${year}`;
-                          } catch {
-                            return 'Today';
-                          }
-                        })()}
-                      </span>
-                    </div>
-                    <div className="text-sm text-muted-foreground truncate">{session.session_type || 'Live Chat'}</div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs font-normal">
-                        Session {session.session_id}
-                      </Badge>
-                      <div className="flex items-center gap-1">
-                        <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                        <span className="text-xs text-green-600">Active</span>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </div>
+      <ActiveSessionsList
+        activeSessions={activeSessions}
+        selectedSessionId={selectedSessionId}
+        onSessionSelect={handleSessionSelect}
+        onRefresh={loadActiveSessions}
+        onGoToQueue={handleGoToQueue}
+        isLoading={sessionsLoading}
+      />
 
       {/* Main Chat Area */}
       {selectedSessionId ? (
         <div className="flex-1 flex flex-col h-full overflow-hidden">
-          {/* Chat Header */}
-          <div className="bg-white border-b p-4 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Avatar>
-                <AvatarFallback>
-                  {customerInfo?.avatar || activeSessions.find(s => s.session_id === selectedSessionId)?.customer_name?.slice(0, 2)?.toUpperCase() || 'ST'}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h2 className="font-semibold">
-                  {customerInfo?.name || activeSessions.find(s => s.session_id === selectedSessionId)?.customer_name || 'Student'}
-                </h2>
-                <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  <span className="text-sm text-gray-500">
-                    {isConnected ? 'Connected' : 'Disconnected'}
-                  </span>
-                  <Badge variant="outline">Session {selectedSessionId}</Badge>
-                  <span className="text-sm text-gray-500">
-                    {activeSessions.find(s => s.session_id === selectedSessionId)?.session_type || 'Live Chat'}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={handleEndSession}
-              >
-                End Session
-              </Button>
-            </div>
-          </div>
+          <ChatHeader
+            selectedSessionId={selectedSessionId}
+            activeSessions={activeSessions}
+            customerInfo={customerInfo}
+            isConnected={isConnected}
+            user={user}
+            onEndSession={handleEndSession}
+          />
 
-          {/* Messages Area */}
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No messages yet. Start the conversation!</p>
-                </div>
-              ) : (
-                messages.map((message, index) => (
-                  <div
-                    key={message.interaction_id || index}
-                    className={`flex ${
-                      message.sender_id === parseInt(user.id) 
-                        ? 'justify-end' 
-                        : 'justify-start'
-                    }`}
-                  >
-                    <div className="flex items-start space-x-2 max-w-xs lg:max-w-md">
-                      {message.sender_id !== parseInt(user.id) && (
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback>ST</AvatarFallback>
-                        </Avatar>
-                      )}
-                      
-                      <div className={`rounded-lg px-3 py-2 ${
-                        message.sender_id === parseInt(user.id)
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-white border'
-                      }`}>
-                        <p className="text-sm">{message.message_text}</p>
-                      </div>
-                      
-                      {message.sender_id === parseInt(user.id) && (
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback>{user.name?.slice(0, 2)?.toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-              <div ref={messagesEndRef} />
-            </div>
+            <MessagesArea
+              messages={messages}
+              userId={user.id}
+              userName={user.name}
+            />
 
-            {/* Message Input */}
-            <div className="bg-white border-t p-4 flex-shrink-0">
-              <div className="flex items-center space-x-2">
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder={isConnected ? "Type your message..." : "Connecting..."}
-                  disabled={!isConnected}
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={sendMessage}
-                  disabled={!isConnected || !newMessage.trim()}
-                  size="sm"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-              {!isConnected && (
-                <p className="text-xs text-red-500 mt-1">
-                  Connection lost. Please refresh the page.
-                </p>
-              )}
-            </div>
+            <MessageInput
+              newMessage={newMessage}
+              setNewMessage={setNewMessage}
+              onSendMessage={handleSendMessage}
+              onKeyPress={handleKeyPress}
+              isConnected={isConnected}
+            />
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-muted-foreground">
-          <div className="text-center">
-            <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Select a session to start chatting</p>
-            <Button
-              variant="outline"
-              className="mt-4"
-              onClick={() => navigate('/admission/request-queue')}
-            >
-              Go to Request Queue
-            </Button>
-          </div>
-        </div>
+        <EmptyChat onGoToQueue={handleGoToQueue} />
       )}
     </div>
   );

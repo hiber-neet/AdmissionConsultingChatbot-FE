@@ -1,14 +1,11 @@
-import React from 'react';
-import { Activity, Users, MessageSquare, Database, TrendingUp, AlertCircle, Clock, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Activity, Users, MessageSquare, Database, TrendingUp, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/system_users/card';
-import { Progress } from '../ui/system_users/progress';
-import { Badge } from '../ui/system_users/badge';
 import { Button } from '../ui/system_users/button';
 import { ScrollArea } from '../ui/system_users/scroll-area';
-import { useNavigate } from 'react-router-dom';
+import { dashboardAnalyticsAPI } from '../../services/fastapi';
+import { toast } from 'react-toastify';
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   XAxis,
@@ -19,278 +16,233 @@ import {
   Legend,
 } from 'recharts';
 
-const conversationData = [
-  { name: 'Mon', conversations: 245, resolved: 220 },
-  { name: 'Tue', conversations: 310, resolved: 285 },
-  { name: 'Wed', conversations: 278, resolved: 265 },
-  { name: 'Thu', conversations: 325, resolved: 310 },
-  { name: 'Fri', conversations: 290, resolved: 275 },
-  { name: 'Sat', conversations: 180, resolved: 170 },
-  { name: 'Sun', conversations: 150, resolved: 145 },
-];
-
-const responseTimeData = [
-  { time: '00:00', avgResponse: 2.1 },
-  { time: '04:00', avgResponse: 1.8 },
-  { time: '08:00', avgResponse: 2.5 },
-  { time: '12:00', avgResponse: 2.8 },
-  { time: '16:00', avgResponse: 2.6 },
-  { time: '20:00', avgResponse: 2.2 },
-];
-
-const recentActivity = [
-  { id: 1, type: 'conversation', user: 'Sarah Johnson', action: 'Started chat about MBA programs', time: '2 min ago', status: 'active' },
-  { id: 2, type: 'kb_update', user: 'Admin User', action: 'Updated Financial Aid KB article', time: '15 min ago', status: 'completed' },
-  { id: 3, type: 'conversation', user: 'Michael Chen', action: 'Asked about admission deadlines', time: '23 min ago', status: 'resolved' },
-  { id: 4, type: 'alert', user: 'System', action: 'High response time detected', time: '1 hour ago', status: 'warning' },
-  { id: 5, type: 'conversation', user: 'Emily Rodriguez', action: 'Inquired about scholarships', time: '1 hour ago', status: 'resolved' },
-];
-
 export function AdminDashboard() {
-  const navigate = useNavigate();
+  // State for API data
+  const [metrics, setMetrics] = useState({
+    active_chatbot_sessions: 0,
+    total_customers: 0,
+    active_live_sessions: 0
+  });
+  const [conversationData, setConversationData] = useState([]);
+  const [systemHealth, setSystemHealth] = useState({
+    active_sessions: 0,
+    total_articles: 0,
+    total_qa_pairs: 0,
+    total_kb_docs: 0,
+    recent_errors: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Fetch all dashboard data
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      console.log('Starting to fetch dashboard data...');
+      
+      // Fetch all data in parallel
+      const [
+        metricsResponse,
+        chatbotRequestsResponse,
+        healthResponse
+      ] = await Promise.all([
+        dashboardAnalyticsAPI.getMetrics(7).catch(err => {
+          console.error('Metrics API error:', err);
+          return null;
+        }),
+        dashboardAnalyticsAPI.getChatbotRequests(30).catch(err => {
+          console.error('Chatbot requests API error:', err);
+          return [];
+        }),
+        dashboardAnalyticsAPI.getSystemHealth().catch(err => {
+          console.error('System health API error:', err);
+          return null;
+        })
+      ]);
+
+      console.log('API Responses:', {
+        metricsResponse,
+        chatbotRequestsResponse,
+        healthResponse
+      });
+
+      // Update state with API data - handle potential null/undefined responses
+      if (metricsResponse) {
+        setMetrics(metricsResponse);
+      } else {
+        console.warn('No metrics data received, using defaults');
+        setMetrics({
+          active_chatbot_sessions: 0,
+          total_customers: 0,
+          active_live_sessions: 0
+        });
+      }
+      
+      if (chatbotRequestsResponse && Array.isArray(chatbotRequestsResponse)) {
+        setConversationData(chatbotRequestsResponse);
+      }
+      
+      if (healthResponse) {
+        setSystemHealth(healthResponse);
+      } else {
+        console.warn('No system health data received, using defaults');
+        setSystemHealth({
+          active_sessions: 0,
+          total_articles: 0,
+          total_qa_pairs: 0,
+          total_kb_docs: 0,
+          recent_errors: 0
+        });
+      }
+      
+      console.log('Dashboard data loaded successfully', {
+        metrics: metricsResponse,
+        chatbotRequests: chatbotRequestsResponse,
+        health: healthResponse
+      });
+      
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast.error('Failed to load dashboard data');
+      
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+    
+    // Refresh data every 5 minutes
+    const interval = setInterval(fetchDashboardData, 300000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <ScrollArea className="h-full">
       <div className="p-6 pb-8 space-y-6">
         {/* Header */}
-        <div>
-          <h1>System Dashboard</h1>
-          <p className="text-muted-foreground">Real-time admission chatbot analytics and monitoring</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1>System Dashboard</h1>
+            <p className="text-muted-foreground">Real-time admission chatbot analytics and monitoring</p>
+          </div>
+          <Button 
+            variant="outline"
+            onClick={fetchDashboardData}
+            disabled={loading}
+            className="gap-2"
+          >
+            <TrendingUp className="h-4 w-4" />
+            Refresh Data
+          </Button>
         </div>
 
         {/* Key Metrics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm">Active Conversations</CardTitle>
+              <CardTitle className="text-sm">Active Chatbot Sessions</CardTitle>
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl">24</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+12%</span> from last hour
-              </p>
+              <div className="text-2xl">{metrics?.active_chatbot_sessions || 0}</div>
+              <p className="text-xs text-muted-foreground">AI-powered conversations</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm">Avg Response Time</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl">2.4s</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">-0.3s</span> from yesterday
-              </p>
-              <Progress value={80} className="mt-2 h-2 bg-[#3B82F6]/20" />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm">Total Users Today</CardTitle>
+              <CardTitle className="text-sm">Total Customers</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl">1,234</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+18%</span> from yesterday
-              </p>
+              <div className="text-2xl">{metrics?.total_customers || 0}</div>
+              <p className="text-xs text-muted-foreground">Unique students & parents</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm">Success Rate</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm">Active Live Sessions</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl">94.2%</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+2.1%</span> from last week
-              </p>
-              <Progress value={94.2} className="mt-2 h-2" />
+              <div className="text-2xl">{metrics?.active_live_sessions || 0}</div>
+              <p className="text-xs text-muted-foreground">Human agent chats</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Charts */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Conversation Volume</CardTitle>
-              <CardDescription>Daily conversations and resolution rate</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={conversationData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="conversations" fill="#3B82F6" name="Total" />
-                  <Bar dataKey="resolved" fill="#10B981" name="Resolved" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Response Time Trend</CardTitle>
-              <CardDescription>Average response time throughout the day</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={responseTimeData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="time" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="avgResponse" 
-                    stroke="#8B5CF6" 
-                    strokeWidth={2}
-                    name="Avg Response (s)"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* System Status & Recent Activity */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Health</CardTitle>
-              <CardDescription>Real-time system performance metrics</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>RAG Model Performance</span>
-                  <Badge variant="default">Excellent</Badge>
-                </div>
-                <Progress value={96} className="h-2 bg-[#3B82F6]/20" />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Database Query Speed</span>
-                  <Badge variant="default">Good</Badge>
-                </div>
-                <Progress value={87} className="h-2 bg-[#10B981]/20" />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>API Response Rate</span>
-                  <Badge variant="default">Excellent</Badge>
-                </div>
-                <Progress value={99} className="h-2 bg-[#8B5CF6]/20" />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Knowledge Base Coverage</span>
-                  <Badge variant="outline">Moderate</Badge>
-                </div>
-                <Progress value={72} className="h-2 bg-[#F59E0B]/20" />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Concurrent Users</span>
-                  <span className="text-muted-foreground">24 / 100</span>
-                </div>
-                <Progress value={24} className="h-2 bg-[#EF4444]/20" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>Latest system events and user interactions</CardDescription>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => navigate('/admin/activity')}>
-                  View All
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3 pb-4 border-b last:border-0 last:pb-0">
-                    <div className="mt-1">
-                      {activity.type === 'conversation' && (
-                        <MessageSquare className="h-4 w-4 text-blue-500" />
-                      )}
-                      {activity.type === 'kb_update' && (
-                        <Database className="h-4 w-4 text-green-500" />
-                      )}
-                      {activity.type === 'alert' && (
-                        <AlertCircle className="h-4 w-4 text-orange-500" />
-                      )}
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm">{activity.action}</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs text-muted-foreground">{activity.user}</p>
-                        <span className="text-xs text-muted-foreground">•</span>
-                        <p className="text-xs text-muted-foreground">{activity.time}</p>
-                      </div>
-                    </div>
-                    <div>
-                      {activity.status === 'active' && (
-                        <Badge variant="default" className="text-xs">Active</Badge>
-                      )}
-                      {activity.status === 'completed' && (
-                        <Badge variant="outline" className="text-xs">Done</Badge>
-                      )}
-                      {activity.status === 'resolved' && (
-                        <Badge variant="secondary" className="text-xs">Resolved</Badge>
-                      )}
-                      {activity.status === 'warning' && (
-                        <Badge variant="destructive" className="text-xs">Warning</Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
         <Card>
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common administrative tasks</CardDescription>
+            <CardTitle>Chatbot Requests (Last 30 Days)</CardTitle>
+            <CardDescription>Customer messages vs chatbot responses</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              <button className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors">
-                <Database className="h-4 w-4" />
-                <span className="text-sm">Update KB</span>
-              </button>
-              <button className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors">
-                <Users className="h-4 w-4" />
-                <span className="text-sm">Manage Users</span>
-              </button>
-              <button className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors">
-                <Activity className="h-4 w-4" />
-                <span className="text-sm">View Analytics</span>
-              </button>
-              <button className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors">
-                <TrendingUp className="h-4 w-4" />
-                <span className="text-sm">Export Report</span>
-              </button>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={conversationData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="customer" fill="#3B82F6" name="Customer Messages" />
+                <Bar dataKey="chatbot" fill="#10B981" name="Chatbot Responses" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* System Statistics */}
+        <Card>
+          <CardHeader>
+            <CardTitle>System Statistics</CardTitle>
+            <CardDescription>Knowledge base and content metrics</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Database className="h-4 w-4 text-blue-500" />
+                <span className="text-sm">Published Articles</span>
+              </div>
+              <span className="text-2xl font-bold">{systemHealth?.total_articles || 0}</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Database className="h-4 w-4 text-green-500" />
+                <span className="text-sm">KB Documents</span>
+              </div>
+              <span className="text-2xl font-bold">{systemHealth?.total_kb_docs || 0}</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-purple-500" />
+                <span className="text-sm">Training Q&A Pairs</span>
+              </div>
+              <span className="text-2xl font-bold">{systemHealth?.total_qa_pairs || 0}</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-orange-500" />
+                <span className="text-sm">Active Sessions</span>
+              </div>
+              <span className="text-2xl font-bold">{systemHealth?.active_sessions || 0}</span>
             </div>
           </CardContent>
         </Card>

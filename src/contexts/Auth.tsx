@@ -1,6 +1,6 @@
 // src/contexts/auth.tsx
 import React, { createContext, useContext, useMemo, useState, ReactNode, useEffect } from "react";
-import { Permission, hasPermission as checkPermission, getRolePermissions, type Role } from "@/constants/permissions";
+import { Permission, hasPermission as checkPermission, initializePermissions, type Role } from "@/constants/permissions";
 import { authAPI } from '../services/fastapi';
 import { getRoleFromToken } from '../pages/login/jwtHelper';
 
@@ -36,6 +36,13 @@ const AuthContext = createContext<AuthCtx | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [activeRole, setActiveRole] = useState<Role | null>(null);
+
+  // Initialize permissions system when auth provider mounts
+  useEffect(() => {
+    initializePermissions().catch(error => {
+      console.warn('Failed to initialize permissions system:', error);
+    });
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
@@ -203,6 +210,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } catch (profileError) {
             console.log('Profile fetch failed, falling back to email-based role mapping:', profileError);
             
+            // Create fallback permissions based on role
+            const getFallbackPermissions = (role: Role): Permission[] => {
+              switch (role) {
+                case "Admin":
+                  return ["Admin", "Content Manager", "Admission Official", "Consultant", "Student"];
+                case "Content Manager":
+                  return ["Content Manager", "Student"];
+                case "Admission Official":
+                  return ["Admission Official", "Student"];
+                case "Consultant":
+                  return ["Consultant", "Student"];
+                case "Student":
+                case "Parent":
+                default:
+                  return ["Student"];
+              }
+            };
+            
             const userData: User = {
               id: userId.toString(),
               name: userEmail.split('@')[0],
@@ -211,7 +236,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               isLeader: isLeader,
               consultantIsLeader: false, // Default to false when profile fails
               contentManagerIsLeader: false, // Default to false when profile fails
-              permissions: getRolePermissions(appRole) // Fallback to hardcoded permissions
+              permissions: getFallbackPermissions(appRole) // Fallback to role-based permissions
             };
 
             setUser(userData);
@@ -232,7 +257,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: "Student", // Safe default
         email: email,
         isLeader: false,
-        permissions: getRolePermissions("Student")
+        permissions: ["Student"] // Safe fallback
       };
 
       setUser(userData);
