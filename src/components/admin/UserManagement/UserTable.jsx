@@ -7,25 +7,51 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Card } from '../../ui/system_users/card';
 import PropTypes from 'prop-types';
 
-const roleColors = {
-  SYSTEM_ADMIN: 'destructive',
-  CONTENT_MANAGER: 'default',
-  ADMISSION_OFFICER: 'outline',
-  CONSULTANT: 'secondary',
+// Helper function to get role color
+const getRoleColor = (role) => {
+  const colorMap = {
+    SYSTEM_ADMIN: 'destructive',
+    ADMIN: 'destructive',
+    CONTENT_MANAGER: 'default',
+    ADMISSION_OFFICER: 'outline',
+    CONSULTANT: 'secondary',
+    CUSTOMER: 'secondary',
+    STUDENT: 'secondary',
+    PARENT: 'secondary',
+  };
+  return colorMap[role] || 'secondary';
 };
 
-const roleLabels = {
-  SYSTEM_ADMIN: 'System Admin',
-  CONTENT_MANAGER: 'Content Manager',
-  ADMISSION_OFFICER: 'Admission Officer',
-  CONSULTANT: 'Consultant',
+// Helper function to get role label
+const getRoleLabel = (role) => {
+  const labelMap = {
+    SYSTEM_ADMIN: 'System Admin',
+    ADMIN: 'Admin',
+    CONTENT_MANAGER: 'Content Manager',
+    ADMISSION_OFFICER: 'Admission Officer',
+    CONSULTANT: 'Consultant',
+    CUSTOMER: 'Customer',
+    STUDENT: 'Student',
+    PARENT: 'Parent',
+  };
+  
+  // If role is in the map, use it; otherwise convert underscores to spaces and title case
+  if (labelMap[role]) {
+    return labelMap[role];
+  }
+  
+  // Convert SOME_ROLE to "Some Role"
+  return role
+    ? role.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')
+    : 'Unknown';
 };
 
 export function UserTable({ 
   users, 
   onEdit, 
   onBanUser,
-  loading 
+  loading,
+  isCustomerSection = false
 }) {
   const getRoleIcon = (role) => {
     switch (role) {
@@ -105,9 +131,9 @@ export function UserTable({
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
-                  <Badge variant={getPermissionsBadgeColor(user.permissions)} className="gap-1">
+                  <Badge variant={getRoleColor(user.role)} className="gap-1">
                     {getRoleIcon(user.role)}
-                    {roleLabels[user.role]}
+                    {getRoleLabel(user.role)}
                   </Badge>
                   {hasMultipleRoles(user.permissions) && (
                     <Badge variant="outline" className="gap-1 border-blue-300 text-blue-700">
@@ -127,28 +153,9 @@ export function UserTable({
                 </div>
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-2">
-                  <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
-                    {user.status}
-                  </Badge>
-                  {user.isBanned && (
-                    <Badge variant="destructive" className="gap-1">
-                      <Ban className="h-3 w-3" />
-                      Banned
-                    </Badge>
-                  )}
-                  {isAdminUser(user) && (
-                    <Badge variant="outline" className="gap-1 border-blue-300 text-blue-700">
-                      <Shield className="h-3 w-3" />
-                      Protected
-                    </Badge>
-                  )}
-                  {user.banReason && (
-                    <span className="text-xs text-red-600">
-                      {user.banReason}
-                    </span>
-                  )}
-                </div>
+                <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
+                  {user.status}
+                </Badge>
               </TableCell>
               <TableCell className="text-muted-foreground">{user.lastActive}</TableCell>
               <TableCell className="text-muted-foreground">{user.createdAt}</TableCell>
@@ -160,10 +167,13 @@ export function UserTable({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit(user)} disabled={loading}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
+                    {/* Only show Edit for staff members, not customers */}
+                    {!isCustomerSection && onEdit && (
+                      <DropdownMenuItem onClick={() => onEdit(user)} disabled={loading}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem 
                       onClick={() => user.status === 'active' ? onBanUser(user.id, false) : onBanUser(user.id, true)} 
                       disabled={loading || isAdminUser(user)}
@@ -212,7 +222,8 @@ UserTable.propTypes = {
     isBanned: PropTypes.bool,
     banReason: PropTypes.string,
   })).isRequired,
-  onEdit: PropTypes.func.isRequired,
+  onEdit: PropTypes.func,
   onBanUser: PropTypes.func.isRequired,
   loading: PropTypes.bool,
+  isCustomerSection: PropTypes.bool,
 };

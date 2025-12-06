@@ -1,14 +1,113 @@
 // Define Role type to match backend roles (with spaces as they appear in backend)
 export type Role = "Admin" | "Consultant" | "Content Manager" | "Admission Official" | "Student" | "Parent";
 
-/** All possible permissions in the system - matching backend permission names exactly */
-export type Permission = 
-  | "Admin"
-  | "Consultant" 
-  | "Content Manager"
-  | "Admission Official"
-  | "Student"
-  | "Parent";
+/** All possible permissions in the system - will be dynamically loaded from backend */
+export type Permission = string;
+
+// API interface for permissions from backend
+export interface PermissionData {
+  permission_id: number;
+  permission_name: string;
+  description?: string;
+}
+
+// Global permissions cache
+let permissionsCache: PermissionData[] = [];
+let permissionsCacheLoaded = false;
+
+/** Fetch and cache all permissions from the backend */
+export async function loadPermissions(): Promise<PermissionData[]> {
+  if (permissionsCacheLoaded) {
+    return permissionsCache;
+  }
+
+  try {
+    const { permissionsAPI } = await import('../services/fastapi');
+    const permissions = await permissionsAPI.getAll();
+    permissionsCache = permissions;
+    permissionsCacheLoaded = true;
+    return permissions;
+  } catch (error) {
+    console.error('Failed to load permissions from API:', error);
+    // Fallback to hardcoded permissions if API fails
+    const fallbackPermissions: PermissionData[] = [
+      { permission_id: 1, permission_name: "Admin", description: "System administrator" },
+      { permission_id: 2, permission_name: "Consultant", description: "Educational consultant" },
+      { permission_id: 3, permission_name: "Content Manager", description: "Content management" },
+      { permission_id: 4, permission_name: "Admission Official", description: "Admission processing" },
+      { permission_id: 5, permission_name: "Student", description: "Student access" },
+      { permission_id: 6, permission_name: "Parent", description: "Parent access" }
+    ];
+    permissionsCache = fallbackPermissions;
+    permissionsCacheLoaded = true;
+    return fallbackPermissions;
+  }
+}
+
+/** Get cached permissions (must call loadPermissions first) */
+export function getCachedPermissions(): PermissionData[] {
+  return permissionsCache;
+}
+
+/** Update PAGE_PERMISSIONS dynamically */
+export function updatePagePermissions(newMappings: Partial<Record<PagePermission, Permission>>) {
+  PAGE_PERMISSIONS = { ...PAGE_PERMISSIONS, ...newMappings };
+}
+
+/** Update ROLE_PERMISSIONS dynamically */
+export function updateRolePermissions(newMappings: Partial<Record<Role, Permission[]>>) {
+  ROLE_PERMISSIONS = { ...ROLE_PERMISSIONS, ...newMappings };
+}
+
+/** Update PERMISSION_HIERARCHY dynamically */
+export function updatePermissionHierarchy(newHierarchy: Partial<Record<Permission, Permission[]>>) {
+  PERMISSION_HIERARCHY = { ...PERMISSION_HIERARCHY, ...newHierarchy };
+}
+
+/** Get current PAGE_PERMISSIONS (for readonly access) */
+export function getPagePermissions(): Record<PagePermission, Permission> {
+  return { ...PAGE_PERMISSIONS };
+}
+
+/** Get current ROLE_PERMISSIONS (for readonly access) */
+export function getRolePermissionMappings(): Record<Role, Permission[]> {
+  return { ...ROLE_PERMISSIONS };
+}
+
+/** Get current PERMISSION_HIERARCHY (for readonly access) */
+export function getPermissionHierarchy(): Record<Permission, Permission[]> {
+  return { ...PERMISSION_HIERARCHY };
+}
+
+// Export constants for backward compatibility
+export { PAGE_PERMISSIONS, ROLE_PERMISSIONS, PERMISSION_HIERARCHY };
+
+/**
+ * Initialize the permission system by loading permissions from API
+ * and optionally updating role mappings
+ */
+export async function initializePermissions(): Promise<void> {
+  try {
+    await loadPermissions();
+    console.log('✅ Permissions system initialized successfully');
+  } catch (error) {
+    console.warn('⚠️ Failed to initialize permissions system, using fallbacks:', error);
+  }
+}
+
+/** Get all permission names as an array */
+export async function getAllPermissionNames(): Promise<string[]> {
+  const permissions = await loadPermissions();
+  return permissions.map(p => p.permission_name);
+}
+
+/** Get available permissions for editing (excludes admin) */
+export async function getEditablePermissionNames(): Promise<string[]> {
+  const permissions = await loadPermissions();
+  return permissions
+    .filter(p => p.permission_name.toLowerCase() !== 'admin')
+    .map(p => p.permission_name);
+}
 
 /** Page/Component identifiers that need permission checks */
 export type PagePermission = 
@@ -23,8 +122,8 @@ export type PagePermission =
   // Shared/Student pages
   | "profile" | "riasec" | "chatbot";
 
-/** Map each page to its required permission */
-export const PAGE_PERMISSIONS: Record<PagePermission, Permission> = {
+/** Map each page to its required permission - can be updated dynamically */
+let PAGE_PERMISSIONS: Record<PagePermission, Permission> = {
   // Admin-only pages
   "dashboard": "Admin",
   "templates": "Admin", 
@@ -55,8 +154,8 @@ export const PAGE_PERMISSIONS: Record<PagePermission, Permission> = {
   "chatbot": "Admission Official"
 };
 
-/** Base permissions for each role */
-export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
+/** Base permissions for each role - can be updated dynamically */
+let ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   Admin: ["Admin", "Content Manager", "Admission Official", "Consultant"],
   "Content Manager": ["Content Manager"],
   "Admission Official": ["Admission Official"], 
@@ -65,8 +164,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   Parent: [] // Parents don't have staff permissions
 };
 
-/** Permission hierarchy - higher levels include lower levels */
-export const PERMISSION_HIERARCHY: Record<Permission, Permission[]> = {
+/** Permission hierarchy - higher levels include lower levels - can be updated dynamically */
+let PERMISSION_HIERARCHY: Record<Permission, Permission[]> = {
   "Admin": ["Admin", "Content Manager", "Admission Official", "Consultant"],
   "Content Manager": ["Content Manager"],
   "Admission Official": ["Admission Official"],

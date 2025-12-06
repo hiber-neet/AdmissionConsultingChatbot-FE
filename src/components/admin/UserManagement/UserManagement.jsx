@@ -6,76 +6,32 @@ import { UserStats } from './UserStats';
 import { UserFormDialog } from './UserFormDialog';
 import { UserTable } from './UserTable';
 import { toast } from 'react-toastify';
+import { loadPermissions } from '../../../constants/permissions';
+import { rolesAPI } from '../../../services/fastapi';
 
-// Role mapping from role_id to role name
-const roleMapping = {
-  1: 'SYSTEM_ADMIN',
-  2: 'CONSULTANT', 
-  3: 'CONTENT_MANAGER',
-  4: 'ADMISSION_OFFICER',
-  5: 'CUSTOMER',
-  null: 'CUSTOMER', // Default role for users without role_id
-  undefined: 'CUSTOMER'
-};
+// Dynamic role mappings - will be loaded from API
+let ROLE_ID_TO_NAME = {};
+let ROLE_NAME_TO_FRONTEND = {};
 
-// Permission name to ID mapping (permissions are the same as roles)
-// Note: These IDs should match your backend database permission_id values
-const PERMISSION_NAME_TO_ID = {
-  'admin': 1,
-  'consultant': 2,
-  'content_manager': 3,
-  'admission_officer': 4,
-  'customer': 5,
-  // Also handle uppercase versions for compatibility
-  'ADMIN': 1,
-  'CONSULTANT': 2,
-  'CONTENT_MANAGER': 3,
-  'ADMISSION_OFFICER': 4,
-  'CUSTOMER': 5,
-  // Handle SYSTEM_ADMIN alias
-  'SYSTEM_ADMIN': 1
-};
-
-// Reverse mapping from permission ID to name
-const PERMISSION_ID_TO_NAME = {
-  1: 'admin',
-  2: 'consultant', 
-  3: 'content_manager',
-  4: 'admission_officer',
-  5: 'customer'
-};
-
-// Function to derive permissions from user profile fields
-const derivePermissionsFromProfiles = (apiUser) => {
-  const permissions = [];
-  
-  // Check for admin permission (role_id === 1)
-  if (apiUser.role_id === 1) {
-    permissions.push('admin');
-  }
-  
-  // Check for consultant permission (has consultant_profile or role_id === 2)
-  if (apiUser.consultant_profile || apiUser.role_id === 2) {
-    permissions.push('consultant');
-  }
-  
-  // Check for content_manager permission (has content_manager_profile or role_id === 3)
-  if (apiUser.content_manager_profile || apiUser.role_id === 3) {
-    permissions.push('content_manager');
-  }
-  
-  // Check for admission_officer permission (has admission_official_profile or role_id === 4)
-  if (apiUser.admission_official_profile || apiUser.role_id === 4) {
-    permissions.push('admission_officer');
-  }
-  
-  // Remove duplicates and return
-  return Array.from(new Set(permissions));
-};
+// Permission mapping will be loaded dynamically from API
+let PERMISSION_NAME_TO_ID = {};
+let PERMISSION_ID_TO_NAME = {};
 
 // Function to transform API user data to frontend format
 const transformUserData = (apiUser) => {
-  const roleName = roleMapping[apiUser.role_id] || 'CUSTOMER';
+  // Use role_name from API if available, otherwise map from role_id
+  let roleName;
+  if (apiUser.role_name) {
+    // Use dynamic role mapping from API
+    roleName = ROLE_NAME_TO_FRONTEND[apiUser.role_name] || apiUser.role_name.toUpperCase().replace(/ /g, '_');
+  } else if (apiUser.role_id && ROLE_ID_TO_NAME[apiUser.role_id]) {
+    // Map from role_id if role_name is not available
+    const dbRoleName = ROLE_ID_TO_NAME[apiUser.role_id];
+    roleName = ROLE_NAME_TO_FRONTEND[dbRoleName] || dbRoleName.toUpperCase().replace(/ /g, '_');
+  } else {
+    // Fallback to CUSTOMER if no role information
+    roleName = 'CUSTOMER';
+  }
   
   // Transform permissions from API format to frontend format
   let permissions = [];
@@ -106,13 +62,10 @@ const transformUserData = (apiUser) => {
     permissions = Array.from(new Set(permissions));
   }
   
-  // If no valid permissions found, derive from profile fields
-  if (permissions.length === 0) {
-    permissions = derivePermissionsFromProfiles(apiUser);
-  }
-  
-  // If still no permissions, fall back to role-based permission
-  if (permissions.length === 0) {
+  // Don't add fallback permission for customer-type roles - leave empty array
+  // Only add fallback for staff roles (SYSTEM_ADMIN, CONSULTANT, CONTENT_MANAGER, ADMISSION_OFFICER)
+  const customerRoles = ['CUSTOMER', 'STUDENT', 'PARENT'];
+  if (permissions.length === 0 && !customerRoles.includes(roleName)) {
     permissions = [roleName.toLowerCase().replace('system_admin', 'admin')];
   }
   
@@ -122,7 +75,7 @@ const transformUserData = (apiUser) => {
     username: apiUser.email?.split('@')[0] || 'unknown',
     email: apiUser.email || '',
     role: roleName,
-    permissions: permissions,
+    permissions: permissions, // Can be empty array for customers
     status: apiUser.status ? 'active' : 'inactive',
     phone_number: apiUser.phone_number || '',
     lastActive: 'Recently', // API doesn't provide this, so we use a default
@@ -133,101 +86,6 @@ const transformUserData = (apiUser) => {
     content_manager_is_leader: apiUser.content_manager_is_leader || false,
   };
 };
-
-// Fallback data in case API fails
-const initialUsers = [
-  {
-    id: '1',
-    name: 'John Anderson',
-    username: 'john.anderson',
-    email: 'john.anderson@university.edu',
-    role: 'SYSTEM_ADMIN',
-    permissions: ['SYSTEM_ADMIN'],
-    status: 'active',
-    lastActive: '5 minutes ago',
-    createdAt: '2024-01-15',
-    isBanned: false,
-    banReason: null,
-  },
-  {
-    id: '2',
-    name: 'Sarah Mitchell',
-    username: 'sarah.mitchell',
-    email: 'sarah.mitchell@university.edu',
-    role: 'CONTENT_MANAGER',
-    permissions: ['CONTENT_MANAGER', 'CONSULTANT'],
-    status: 'active',
-    lastActive: '2 hours ago',
-    createdAt: '2024-02-20',
-    isBanned: false,
-    banReason: null,
-  },
-  {
-    id: '3',
-    name: 'Michael Chen',
-    username: 'michael.chen',
-    email: 'michael.chen@university.edu',
-    role: 'CONSULTANT',
-    permissions: ['CONSULTANT'],
-    status: 'active',
-    lastActive: '1 day ago',
-    createdAt: '2024-03-10',
-    isBanned: false,
-    banReason: null,
-  },
-  {
-    id: '4',
-    name: 'Emily Rodriguez',
-    username: 'emily.rodriguez',
-    email: 'emily.rodriguez@university.edu',
-    role: 'CONTENT_MANAGER',
-    permissions: ['CONTENT_MANAGER'],
-    status: 'active',
-    lastActive: '3 hours ago',
-    createdAt: '2024-04-05',
-    isBanned: false,
-    banReason: null,
-  },
-  {
-    id: '5',
-    name: 'David Thompson',
-    username: 'david.thompson',
-    email: 'david.thompson@university.edu',
-    role: 'CONSULTANT',
-    permissions: ['CONSULTANT'],
-    status: 'inactive',
-    lastActive: '2 weeks ago',
-    createdAt: '2024-05-12',
-    isBanned: true,
-    banReason: 'Banned for policy violation',
-  },
-  {
-    id: '6',
-    name: 'Lisa Wang',
-    username: 'lisa.wang',
-    email: 'lisa.wang@university.edu',
-    role: 'ADMISSION_OFFICER',
-    permissions: ['ADMISSION_OFFICER'],
-    status: 'active',
-    lastActive: '30 minutes ago',
-    createdAt: '2024-06-18',
-    isBanned: false,
-    banReason: null,
-  },
-  {
-    id: '7',
-    name: 'Robert Johnson',
-    username: 'robert.johnson',
-    email: 'robert.johnson@university.edu',
-    role: 'ADMISSION_OFFICER',
-    permissions: ['ADMISSION_OFFICER', 'CONSULTANT'],
-    status: 'active',
-    lastActive: '1 hour ago',
-    createdAt: '2024-07-22',
-    isBanned: false,
-    banReason: null,
-  },
-];
 
 export function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -249,6 +107,89 @@ export function UserManagement() {
     content_manager_is_leader: false,
   });
 
+  // Load permissions and roles from API on component mount
+  useEffect(() => {
+    const initializePermissions = async () => {
+      try {
+        const permissions = await loadPermissions();
+        
+        // Build dynamic permission mappings
+        const nameToId = {};
+        const idToName = {};
+        
+        permissions.forEach(p => {
+          const key = p.permission_name.toLowerCase().replace(/\s+/g, '_');
+          nameToId[key] = p.permission_id;
+          idToName[p.permission_id] = key;
+          
+          // Also add uppercase versions for compatibility
+          nameToId[p.permission_name.toUpperCase().replace(/\s+/g, '_')] = p.permission_id;
+        });
+        
+        // Update global mappings
+        PERMISSION_NAME_TO_ID = nameToId;
+        PERMISSION_ID_TO_NAME = idToName;
+      } catch (error) {
+        console.error('Failed to load permissions:', error);
+        toast.error('Failed to load permissions data');
+      }
+    };
+
+    const initializeRoles = async () => {
+      try {
+        const roles = await rolesAPI.getAll();
+        
+        // Build dynamic role mappings
+        const idToName = {};
+        const nameToFrontend = {};
+        
+        roles.forEach(r => {
+          idToName[r.role_id] = r.role_name;
+          
+          // Map database role names to frontend display names
+          // Default mapping: convert to uppercase and replace spaces with underscores
+          let frontendName = r.role_name.toUpperCase().replace(/\s+/g, '_');
+          
+          // Special mappings
+          if (r.role_name === 'Admin' || r.role_name === 'System Admin') {
+            frontendName = 'SYSTEM_ADMIN';
+          } else if (r.role_name === 'Consultant') {
+            frontendName = 'CONSULTANT';
+          } else if (r.role_name === 'Content Manager') {
+            frontendName = 'CONTENT_MANAGER';
+          } else if (r.role_name === 'Admission Official') {
+            frontendName = 'ADMISSION_OFFICER';
+          } else if (r.role_name === 'Student') {
+            frontendName = 'STUDENT';
+          } else if (r.role_name === 'Parent') {
+            frontendName = 'PARENT';
+          } else if (r.role_name === 'Customer') {
+            frontendName = 'CUSTOMER';
+          }
+          // Note: Any other role names will use the default uppercase conversion
+          
+          nameToFrontend[r.role_name] = frontendName;
+        });
+        
+        // Update global mappings
+        ROLE_ID_TO_NAME = idToName;
+        ROLE_NAME_TO_FRONTEND = nameToFrontend;
+      } catch (error) {
+        console.error('Failed to load roles:', error);
+        toast.error('Failed to load roles data');
+      }
+    };
+
+    // Run initialization in sequence to avoid race conditions
+    const initialize = async () => {
+      await Promise.all([initializePermissions(), initializeRoles()]);
+      // Fetch users after roles and permissions are loaded
+      fetchUsers();
+    };
+    
+    initialize();
+  }, []);
+
   // Fetch users from API
   const fetchUsers = async () => {
     setLoading(true);
@@ -257,7 +198,7 @@ export function UserManagement() {
     const token = localStorage.getItem('access_token');
     if (!token) {
       toast.error('No authentication token found. Please login again.');
-      setUsers(initialUsers);
+      setUsers([]);
       setLoading(false);
       return;
     }
@@ -268,13 +209,13 @@ export function UserManagement() {
       const currentTime = Date.now() / 1000;
       if (payload.exp < currentTime) {
         toast.error('Authentication token expired. Please login again.');
-        setUsers(initialUsers);
+        setUsers([]);
         setLoading(false);
         return;
       }
     } catch (e) {
       toast.error('Invalid authentication token. Please login again.');
-      setUsers(initialUsers);
+      setUsers([]);
       setLoading(false);
       return;
     }
@@ -287,47 +228,64 @@ export function UserManagement() {
       // Ensure token type is properly capitalized
       const authHeader = `Bearer ${token}`;
 
-      const response = await fetch(`${baseUrl}/users/staffs`, {
-        method: 'GET',
-        headers: {
-          'accept': 'application/json',
-          'Authorization': authHeader
-        }
-      });
+      // Fetch both staff and customer users in parallel
+      const [staffResponse, customersResponse] = await Promise.all([
+        fetch(`${baseUrl}/users/staffs`, {
+          method: 'GET',
+          headers: {
+            'accept': 'application/json',
+            'Authorization': authHeader
+          }
+        }),
+        fetch(`${baseUrl}/users/students`, {
+          method: 'GET',
+          headers: {
+            'accept': 'application/json',
+            'Authorization': authHeader
+          }
+        })
+      ]);
 
-      if (!response.ok) {
-        const errorData = await response.text();
+      if (!staffResponse.ok) {
+        const errorData = await staffResponse.text();
         
         let errorMessage;
         try {
           const parsedError = JSON.parse(errorData);
-          errorMessage = parsedError.detail || `HTTP ${response.status}: ${response.statusText}`;
+          errorMessage = parsedError.detail || `HTTP ${staffResponse.status}: ${staffResponse.statusText}`;
           
           // Special handling for permission errors
-          if (response.status === 403 && parsedError.detail === "Admin permission required") {
+          if (staffResponse.status === 403 && parsedError.detail === "Admin permission required") {
             errorMessage = "Access denied: Admin permissions required. Current user role may not have sufficient privileges.";
           }
         } catch (parseError) {
-          errorMessage = `HTTP ${response.status}: ${errorData || response.statusText}`;
+          errorMessage = `HTTP ${staffResponse.status}: ${errorData || staffResponse.statusText}`;
         }
         
         throw new Error(errorMessage);
       }
 
-      const data = await response.json();
+      const staffData = await staffResponse.json();
+      const customersData = customersResponse.ok ? await customersResponse.json() : [];
 
-      // Transform API data to frontend format
-      if (Array.isArray(data)) {
-        const transformedUsers = data.map(transformUserData);
-        setUsers(transformedUsers);
-      } else {
-        setUsers(initialUsers);
+      // Transform and combine both datasets
+      const allUsers = [];
+      
+      if (Array.isArray(staffData)) {
+        const transformedStaff = staffData.map(transformUserData);
+        allUsers.push(...transformedStaff);
       }
+      
+      if (Array.isArray(customersData)) {
+        const transformedCustomers = customersData.map(transformUserData);
+        allUsers.push(...transformedCustomers);
+      }
+      
+      setUsers(allUsers);
 
     } catch (err) {
       toast.error(`Failed to fetch users: ${err.message}`);
-      // Use fallback data when API fails
-      setUsers(initialUsers);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -474,10 +432,8 @@ export function UserManagement() {
     }
   };
 
-  // Load users on component mount
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  // Note: fetchUsers is now called from the initialization useEffect
+  // after roles and permissions are loaded to avoid race conditions
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -524,14 +480,7 @@ export function UserManagement() {
       if (editingUser) {
         // Update existing user - basic information only
         // The UserFormDialog handles permission updates internally
-        console.log('Updating basic user information:', {
-          name: formData.name,
-          email: formData.email,
-          phone_number: formData.phone_number,
-          interest_desired_major: formData.interest_desired_major,
-          interest_region: formData.interest_region
-        });
-
+        
         // For now, just update local state
         // In a real app, you'd call a user update API here
         setUsers(users.map(u => 
@@ -579,8 +528,6 @@ export function UserManagement() {
           interest_region: formData.interest_region || ''
         };
 
-        console.log('Creating new user:', requestBody);
-
         const response = await fetch(`${baseUrl}/users/create`, {
           method: 'POST',
           headers: {
@@ -605,8 +552,7 @@ export function UserManagement() {
         }
 
         const newUser = await response.json();
-        console.log('New user created:', newUser);
-
+        
         // Add to local state
         setUsers([...users, {
           id: newUser.user_id,
@@ -681,6 +627,15 @@ export function UserManagement() {
     }
   };
 
+  // Separate users into staff and customers
+  const staffUsers = filteredUsers.filter(user => 
+    user.permissions && user.permissions.length > 0
+  );
+  
+  const customerUsers = filteredUsers.filter(user => 
+    !user.permissions || user.permissions.length === 0
+  );
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -707,15 +662,42 @@ export function UserManagement() {
         <UserStats users={users} />
       </div>
 
-      {/* User Table */}
+      {/* User Tables */}
       <ScrollArea className="flex-1">
-        <div className="p-6 pb-8">
-          <UserTable
-            users={filteredUsers}
-            onEdit={handleEdit}
-            onBanUser={handleBanUser}
-            loading={loading}
-          />
+        <div className="p-6 pb-8 space-y-8">
+          {/* Staff Section */}
+          <div>
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Staff Members</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Users with system permissions (Admins, Consultants, Content Managers, Admission Officers)
+              </p>
+            </div>
+            <UserTable
+              users={staffUsers}
+              onEdit={handleEdit}
+              onBanUser={handleBanUser}
+              loading={loading}
+              isCustomerSection={false}
+            />
+          </div>
+
+          {/* Customer Section */}
+          <div>
+            <div className="mb-4 border-t pt-6">
+              <h2 className="text-xl font-semibold text-gray-900">Customers</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Students and Parents (can only be activated/deactivated, not edited)
+              </p>
+            </div>
+            <UserTable
+              users={customerUsers}
+              onEdit={null}
+              onBanUser={handleBanUser}
+              loading={loading}
+              isCustomerSection={true}
+            />
+          </div>
         </div>
       </ScrollArea>
 

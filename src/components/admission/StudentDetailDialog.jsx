@@ -16,13 +16,19 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Clock
+  Clock,
+  Brain,
+  BarChart3
 } from 'lucide-react';
+import { riasecAPI } from '../../services/fastapi';
 
 export function StudentDetailDialog({ isOpen, onClose, userId }) {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [riasecResults, setRiasecResults] = useState([]);
+  const [riasecLoading, setRiasecLoading] = useState(false);
+  const [riasecError, setRiasecError] = useState(null);
 
   // Fetch student details from API
   const fetchStudentDetail = async (id) => {
@@ -40,18 +46,11 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
       }
 
       // Extract numeric ID from student ID (e.g., "ST001" → "1")
-      // But first, let's see what the actual ID looks like
-      console.log('🔍 Original student ID:', id, 'Type:', typeof id);
-      
-      // Convert to string first to handle both string and number IDs
       const idString = String(id);
-      
       let numericId;
       if (idString.startsWith('ST')) {
-        // Remove "ST" prefix and leading zeros: "ST001" → "1"
         numericId = idString.replace('ST', '').replace(/^0+/, '') || '1';
       } else {
-        // If it's already numeric, use as-is
         numericId = idString;
       }
       
@@ -59,15 +58,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
       
       const baseUrl = 'http://localhost:8000';
       const url = `${baseUrl}/users/${numericId}`;
-      
-      console.log('📡 API Request:', { 
-        url, 
-        token: `${token.substring(0, 20)}...`,
-        headers: {
-          'accept': 'application/json',
-          'Authorization': `Bearer ${token.substring(0, 20)}...`
-        }
-      });
 
       const response = await fetch(url, {
         method: 'GET',
@@ -76,9 +66,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
           'Authorization': `Bearer ${token}`
         }
       });
-
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorData = await response.text();
@@ -95,8 +82,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
           
           // Try fetching all students first to see what IDs exist
           const studentsUrl = `${baseUrl}/users/students`;
-          console.log('📋 Trying to fetch all students from:', studentsUrl);
-          
           const studentsResponse = await fetch(studentsUrl, {
             headers: {
               'accept': 'application/json',
@@ -118,8 +103,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
               console.log('✅ Found student in students list:', foundStudent);
               setStudent(foundStudent);
               return;
-            } else {
-              console.log('❌ Student not found in students list');
             }
           }
         }
@@ -147,12 +130,90 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
     }
   };
 
+  // Fetch RIASEC results for the student
+  const fetchRiasecResults = async (id) => {
+    if (!id) return;
+    
+    console.log('🧠 Fetching RIASEC results for user ID:', id);
+    setRiasecLoading(true);
+    setRiasecError(null);
+    setRiasecResults([]);
+
+    try {
+      // Convert ID to numeric if needed
+      const idString = String(id);
+      let numericId;
+      if (idString.startsWith('ST')) {
+        numericId = parseInt(idString.replace('ST', '').replace(/^0+/, '') || '1');
+      } else {
+        numericId = parseInt(idString);
+      }
+      
+      console.log('🔢 Fetching RIASEC for numeric ID:', numericId);
+      console.log('📞 Calling riasecAPI.getUserResults with ID:', numericId);
+      
+      const response = await riasecAPI.getUserResults(numericId);
+      console.log('✅ RIASEC results received:', response);
+      console.log('📦 Response type:', typeof response);
+      console.log('📊 Response is array?:', Array.isArray(response));
+      console.log('📏 Response length:', response?.length);
+      
+      setRiasecResults(response || []);
+
+    } catch (err) {
+      console.error('💥 RIASEC fetch error:', err);
+      
+      // Check different types of errors
+      if (err.response?.status === 404) {
+        console.log('ℹ️ No RIASEC results found for user - this is normal if they haven\'t taken the test');
+        setRiasecResults([]);  // Empty array for no results
+        setRiasecError(null);  // Clear error since 404 is expected
+      } else if (err.response?.status === 500) {
+        // Server error - usually means backend issue
+        console.error('🔥 RIASEC API server error (500):', err.response?.data);
+        setRiasecError('Lỗi máy chủ khi tải kết quả RIASEC. Vui lòng thử lại sau.');
+      } else if (err.message === 'Internal Server Error') {
+        // Generic server error without response object
+        console.error('🔥 RIASEC API internal server error:', err.message);
+        setRiasecError('Lỗi máy chủ nội bộ khi tải kết quả RIASEC. Vui lòng thử lại sau.');
+      } else {
+        // Other errors (network, etc.)
+        console.error('💥 Real RIASEC API error:', err.response?.data || err.message);
+        setRiasecError(err.response?.data?.detail || err.message || 'Không thể tải kết quả RIASEC');
+      }
+    } finally {
+      setRiasecLoading(false);
+    }
+  };
+
   // Fetch student when dialog opens or userId changes
   useEffect(() => {
     if (isOpen && userId) {
-      fetchStudentDetail(userId);
+      const fetchData = async () => {
+        await fetchStudentDetail(userId);
+        
+        // Only fetch RIASEC results if student exists
+        // Check if student was successfully loaded before fetching RIASEC
+        if (student && !error) {
+          fetchRiasecResults(userId);
+        } else {
+          console.log('ℹ️ Skipping RIASEC fetch - student not found or error occurred');
+          setRiasecResults([]);
+          setRiasecError(null);
+          setRiasecLoading(false);
+        }
+      };
+      
+      fetchData();
     }
   }, [isOpen, userId]);
+
+  // Separate effect to fetch RIASEC after student is loaded
+  useEffect(() => {
+    if (student && !error && isOpen) {
+      fetchRiasecResults(userId);
+    }
+  }, [student, error, isOpen, userId]);
 
   // Get status badge configuration
   const getStatusConfig = (status) => {
@@ -193,6 +254,104 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
           <div className="text-xs text-muted-foreground mb-1">{label}</div>
           <div className="text-sm font-medium break-words">{String(value)}</div>
         </div>
+      </div>
+    );
+  };
+
+  // Render RIASEC Results Section
+  const renderRiasecSection = () => {
+    return (
+      <div className="mt-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Brain className="h-5 w-5 text-primary" />
+          <h4 className="font-medium text-base">Kết Quả Trắc Nghiệm RIASEC</h4>
+        </div>
+
+        {riasecLoading && (
+          <div className="flex items-center justify-center py-6 bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent mx-auto mb-2"></div>
+              <div className="text-sm text-muted-foreground">Đang tải kết quả RIASEC...</div>
+            </div>
+          </div>
+        )}
+
+        {riasecError && (
+          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <div className="text-sm">
+              <div className="font-medium">Không thể tải kết quả</div>
+              <div className="text-xs mt-1">{riasecError}</div>
+            </div>
+          </div>
+        )}
+
+        {!riasecLoading && !riasecError && riasecResults.length === 0 && (
+          <div className="flex items-center gap-2 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-700">
+            <BarChart3 className="h-4 w-4 flex-shrink-0" />
+            <div className="text-sm">
+              <div className="font-medium">Chưa có kết quả trắc nghiệm</div>
+              <div className="text-xs mt-1">Học sinh chưa thực hiện bài trắc nghiệm RIASEC</div>
+            </div>
+          </div>
+        )}
+
+        {!riasecLoading && !riasecError && riasecResults.length > 0 && (
+          <div className="space-y-4">
+            {riasecResults.map((result, index) => (
+              <div key={index} className="p-4 bg-primary/5 rounded-lg border">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-medium">
+                    Kết quả #{riasecResults.length - index}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    ID: {result.result_id || index + 1}
+                  </div>
+                </div>
+
+                {/* Personality Type Result */}
+                {result.result && (
+                  <div className="mb-4 p-3 bg-white rounded border">
+                    <div className="text-xs text-muted-foreground mb-1">Loại tính cách</div>
+                    <div className="text-sm font-medium">{result.result}</div>
+                  </div>
+                )}
+
+                {/* RIASEC Scores */}
+                <div className="space-y-3">
+                  <div className="text-xs text-muted-foreground mb-2">Điểm số các khía cạnh:</div>
+                  
+                  {[
+                    { key: 'realistic', label: 'Thực tế (Realistic)', color: 'bg-green-500' },
+                    { key: 'investigative', label: 'Nghiên cứu (Investigative)', color: 'bg-blue-500' },
+                    { key: 'artistic', label: 'Nghệ thuật (Artistic)', color: 'bg-purple-500' },
+                    { key: 'social', label: 'Xã hội (Social)', color: 'bg-orange-500' },
+                    { key: 'enterprising', label: 'Kinh doanh (Enterprising)', color: 'bg-red-500' },
+                    { key: 'conventional', label: 'Quy ước (Conventional)', color: 'bg-gray-500' }
+                  ].map(({ key, label, color }) => {
+                    const score = result[key] || 0;
+                    const percentage = (score / 5.0) * 100;
+                    
+                    return (
+                      <div key={key} className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{label}</span>
+                          <span className="font-medium">{score.toFixed(1)}/5.0</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`${color} h-2 rounded-full transition-all duration-300`}
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -278,6 +437,9 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
                   )}
                   {student.role_id && renderField('Role ID', student.role_id, User)}
                 </div>
+
+                {/* RIASEC Results Section */}
+                {renderRiasecSection()}
               </>
             )}
           </div>

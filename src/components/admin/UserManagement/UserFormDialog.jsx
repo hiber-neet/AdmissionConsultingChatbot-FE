@@ -6,35 +6,42 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { RoleSelector } from '../RoleSelector';
 import PropTypes from 'prop-types';
 import { toast } from 'react-toastify';
+import { loadPermissions, getCachedPermissions, getAllPermissionNames, getEditablePermissionNames } from '../../../constants/permissions';
 
-// Available permissions
-const AVAILABLE_PERMISSIONS = [
-  'admin',
-  'consultant', 
-  'content_manager',
-  'admission_officer'
-];
-
-// Permissions available for editing (excludes admin)
-const EDITABLE_PERMISSIONS = [
-  'consultant', 
-  'content_manager',
-  'admission_officer'
-];
-
-const PERMISSION_LABELS = {
-  'admin': 'Admin',
-  'consultant': 'Consultant',
-  'content_manager': 'Content Manager', 
-  'admission_officer': 'Admission Officer'
+// Get available permissions (will be loaded from API)
+const getAvailablePermissions = async () => {
+  const permissions = await loadPermissions();
+  return permissions.map(p => p.permission_name.toLowerCase().replace(/\s+/g, '_'));
 };
 
-// Permission name to ID mapping (should match backend)
-const PERMISSION_NAME_TO_ID = {
-  'admin': 1,
-  'consultant': 2,
-  'content_manager': 3,
-  'admission_officer': 4
+// Get editable permissions (excludes admin)
+const getEditablePermissions = async () => {
+  const permissions = await loadPermissions();
+  return permissions
+    .filter(p => p.permission_name.toLowerCase() !== 'admin')
+    .map(p => p.permission_name.toLowerCase().replace(/\s+/g, '_'));
+};
+
+// Generate permission labels from API data
+const getPermissionLabels = async () => {
+  const permissions = await loadPermissions();
+  const labels = {};
+  permissions.forEach(p => {
+    const key = p.permission_name.toLowerCase().replace(/\s+/g, '_');
+    labels[key] = p.permission_name;
+  });
+  return labels;
+};
+
+// Generate permission name to ID mapping from API data
+const getPermissionNameToId = async () => {
+  const permissions = await loadPermissions();
+  const mapping = {};
+  permissions.forEach(p => {
+    const key = p.permission_name.toLowerCase().replace(/\s+/g, '_');
+    mapping[key] = p.permission_id;
+  });
+  return mapping;
 };
 
 export function UserFormDialog({
@@ -48,16 +55,53 @@ export function UserFormDialog({
 }) {
   const [permissionsToRevoke, setPermissionsToRevoke] = useState([]);
   const [permissionsToGrant, setPermissionsToGrant] = useState([]);
-  const [consultantIsLeader, setConsultantIsLeader] = useState(false);
-  const [contentManagerIsLeader, setContentManagerIsLeader] = useState(false);
   const [currentPermissions, setCurrentPermissions] = useState([]);
   const [availableToGrant, setAvailableToGrant] = useState([]);
   const [loadingPermissions, setLoadingPermissions] = useState(false);
+  
+  // Dynamic permissions state
+  const [availablePermissions, setAvailablePermissions] = useState([]);
+  const [editablePermissions, setEditablePermissions] = useState([]);
+  const [permissionLabels, setPermissionLabels] = useState({});
+  const [permissionNameToId, setPermissionNameToId] = useState({});
+  const [permissionsLoaded, setPermissionsLoaded] = useState(false);
+
+  // Load permissions from API on component mount
+  useEffect(() => {
+    const loadPermissionsData = async () => {
+      try {
+        setLoadingPermissions(true);
+        await loadPermissions(); // Load permissions into cache
+        
+        const [available, editable, labels, nameToId] = await Promise.all([
+          getAvailablePermissions(),
+          getEditablePermissions(),
+          getPermissionLabels(),
+          getPermissionNameToId()
+        ]);
+        
+        setAvailablePermissions(available);
+        setEditablePermissions(editable);
+        setPermissionLabels(labels);
+        setPermissionNameToId(nameToId);
+        setPermissionsLoaded(true);
+      } catch (error) {
+        console.error('Failed to load permissions:', error);
+        toast.error('Failed to load permissions data');
+      } finally {
+        setLoadingPermissions(false);
+      }
+    };
+
+    if (isOpen && !permissionsLoaded) {
+      loadPermissionsData();
+    }
+  }, [isOpen, permissionsLoaded]);
 
   // Helper function to get permissions available for editing
   // Excludes admin permission when editing existing users
-  const getEditablePermissions = (isEditing = false) => {
-    return isEditing ? EDITABLE_PERMISSIONS : AVAILABLE_PERMISSIONS;
+  const getEditablePermissionsList = (isEditing = false) => {
+    return isEditing ? editablePermissions : availablePermissions;
   };
 
   // Helper function to filter permissions that can be revoked
@@ -106,7 +150,9 @@ export function UserFormDialog({
       }
 
       const baseUrl = 'http://localhost:8000';
-      const response = await fetch(`${baseUrl}/users/staffs`, {
+      
+      // Step 1: Get all system permissions
+      const allPermissionsResponse = await fetch(`${baseUrl}/users/permissions`, {
         method: 'GET',
         headers: {
           'accept': 'application/json',
@@ -114,116 +160,89 @@ export function UserFormDialog({
         }
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch users: ${response.status}`);
+      if (!allPermissionsResponse.ok) {
+        throw new Error(`Failed to fetch system permissions: ${allPermissionsResponse.status}`);
       }
 
-      const staffUsers = await response.json();
+      const allSystemPermissions = await allPermissionsResponse.json();
+      console.log('📋 All system permissions:', allSystemPermissions);
       
-      console.log('All staff users:', staffUsers);
-      console.log('Looking for user ID:', userId);
+      // Normalize system permission names
+      const allPermissionNames = allSystemPermissions.map(p => {
+        const name = p.permission_name?.toLowerCase().replace(/\s+/g, '_');
+        return name;
+      });
+      console.log('📋 Normalized system permissions:', allPermissionNames);
       
-      // Find the specific user - try both id and user_id fields
+      // Step 2: Get user's current permissions
+      const userResponse = await fetch(`${baseUrl}/users/staffs`, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!userResponse.ok) {
+        throw new Error(`Failed to fetch users: ${userResponse.status}`);
+      }
+
+      const staffUsers = await userResponse.json();
+      
+      console.log('👥 Looking for user ID:', userId);
+      
+      // Find the specific user
       const user = staffUsers.find(u => 
         u.user_id?.toString() === userId?.toString() || 
         u.id?.toString() === userId?.toString()
       );
       
-      console.log('Found user:', user);
-      
-      if (user) {
-        console.log('User permissions from API:', user.permissions);
-        console.log('Permissions array length:', user.permissions?.length);
-        
-        let permissionNames = [];
-        
-        if (user.permissions && Array.isArray(user.permissions) && user.permissions.length > 0) {
-          // Extract permission names from the user's permissions
-          permissionNames = user.permissions.map(p => {
-            const name = p.permission_name?.toLowerCase();
-            console.log('Processing permission:', p, 'normalized name:', name);
-            // Normalize permission names to match our constants
-            if (name === 'admin' || name === 'system_admin') return 'admin';
-            if (name === 'consultant') return 'consultant';
-            if (name === 'content_manager' || name === 'contentmanager') return 'content_manager';
-            if (name === 'admission_officer') return 'admission_officer';
-            if (name === 'admission_official') return 'admission_officer'; // Handle alternative name
-            return name;
-          }).filter(Boolean);
-          
-          console.log('Final permission names from API:', permissionNames);
-        } else {
-          // No permissions array available, derive from profile fields
-          console.log('No permissions array found, deriving from profile fields');
-          permissionNames = derivePermissionsFromProfiles(user);
-          console.log('Derived permissions from profiles:', permissionNames);
-        }
-        
-        // Ensure we have at least one permission
-        if (permissionNames.length === 0) {
-          console.log('No permissions found, falling back to role-based permission');
-          // Fall back to role-based permission
-          if (user.role_id === 1) permissionNames = ['admin'];
-          else if (user.role_id === 2) permissionNames = ['consultant'];
-          else if (user.role_id === 3) permissionNames = ['content_manager'];
-          else if (user.role_id === 4) permissionNames = ['admission_officer'];
-          else permissionNames = ['admission_officer']; // Default fallback
-        }
-        
-        setCurrentPermissions(permissionNames);
-        
-        // Calculate available permissions (not currently held)
-        // For editing, exclude admin permission
-        const editablePerms = getEditablePermissions(!!editingUser);
-        const available = editablePerms.filter(
-          perm => !permissionNames.includes(perm)
-        );
-        setAvailableToGrant(available);
-        
-        // Set leadership flags
-        setConsultantIsLeader(user.consultant_is_leader || false);
-        setContentManagerIsLeader(user.content_manager_is_leader || false);
-        
-        console.log('Current permissions set to:', permissionNames);
-        console.log('Available to grant:', available);
-      } else {
-        console.log('User not found in staff list');
-        // User not found - try fallback to static data
-        const fallbackPermissions = editingUser?.permissions || [];
-        console.log('Using fallback permissions from editingUser:', fallbackPermissions);
-        
-        // If editingUser permissions are also empty, derive from profiles
-        if (fallbackPermissions.length === 0 && editingUser) {
-          const derivedPermissions = derivePermissionsFromProfiles(editingUser);
-          console.log('Derived fallback permissions:', derivedPermissions);
-          setCurrentPermissions(derivedPermissions);
-          const editablePerms = getEditablePermissions(!!editingUser);
-          setAvailableToGrant(editablePerms.filter(perm => !derivedPermissions.includes(perm)));
-        } else {
-          setCurrentPermissions(fallbackPermissions);
-          const editablePerms = getEditablePermissions(!!editingUser);
-          setAvailableToGrant(editablePerms.filter(perm => !fallbackPermissions.includes(perm)));
-        }
+      if (!user) {
+        throw new Error('User not found in staff list');
       }
       
-    } catch (error) {
-      console.error('Error fetching user permissions:', error);
-      toast.error(`Failed to fetch user permissions: ${error.message}`);
-      // Fallback to static data if fetch fails
-      const fallbackPermissions = editingUser?.permissions || [];
-      console.log('Using fallback permissions due to error:', fallbackPermissions);
+      console.log('✅ Found user:', user);
+      console.log('🔐 User permissions from API:', user.permissions);
       
-      // If editingUser permissions are also empty, derive from profiles
-      if (fallbackPermissions.length === 0 && editingUser) {
+      // Extract and normalize user's current permission names
+      let currentPermissionNames = [];
+      
+      if (user.permissions && Array.isArray(user.permissions) && user.permissions.length > 0) {
+        currentPermissionNames = user.permissions.map(p => {
+          const name = p.permission_name?.toLowerCase().replace(/\s+/g, '_');
+          return name;
+        }).filter(Boolean);
+      }
+      
+      console.log('✅ Current permissions:', currentPermissionNames);
+      
+      // Step 3: Calculate available permissions (all system permissions minus current permissions)
+      // For editing mode, also exclude 'admin' permission
+      let availablePermissionNames = allPermissionNames.filter(perm => {
+        // Exclude current permissions
+        if (currentPermissionNames.includes(perm)) return false;
+        // When editing, exclude admin permission from being granted
+        if (editingUser && perm === 'admin') return false;
+        return true;
+      });
+      
+      console.log('➕ Available to grant:', availablePermissionNames);
+      
+      // Update state
+      setCurrentPermissions(currentPermissionNames);
+      setAvailableToGrant(availablePermissionNames);
+      
+    } catch (error) {
+      console.error('❌ Error fetching user permissions:', error);
+      toast.error(`Failed to fetch user permissions: ${error.message}`);
+      
+      // Fallback: use derived permissions if available
+      if (editingUser) {
         const derivedPermissions = derivePermissionsFromProfiles(editingUser);
-        console.log('Derived error fallback permissions:', derivedPermissions);
+        console.log('⚠️ Using derived fallback permissions:', derivedPermissions);
         setCurrentPermissions(derivedPermissions);
-        const editablePerms = getEditablePermissions(!!editingUser);
+        const editablePerms = getEditablePermissionsList(!!editingUser);
         setAvailableToGrant(editablePerms.filter(perm => !derivedPermissions.includes(perm)));
-      } else {
-        setCurrentPermissions(fallbackPermissions);
-        const editablePerms = getEditablePermissions(!!editingUser);
-        setAvailableToGrant(editablePerms.filter(perm => !fallbackPermissions.includes(perm)));
       }
     } finally {
       setLoadingPermissions(false);
@@ -247,8 +266,6 @@ export function UserFormDialog({
       setPermissionsToGrant([]);
       setCurrentPermissions([]);
       setAvailableToGrant([]);
-      setConsultantIsLeader(false);
-      setContentManagerIsLeader(false);
     }
   }, [isOpen, editingUser]);
 
@@ -302,7 +319,7 @@ export function UserFormDialog({
     );
   };
 
-  const callGrantAPI = async (userId, permissions, consultantLeader, contentManagerLeader) => {
+  const callGrantAPI = async (userId, permissions) => {
     try {
       const token = localStorage.getItem('access_token');
       if (!token) {
@@ -311,7 +328,7 @@ export function UserFormDialog({
 
       const baseUrl = 'http://localhost:8000';
       const permissionIds = permissions
-        .map(permName => PERMISSION_NAME_TO_ID[permName])
+        .map(permName => permissionNameToId[permName])
         .filter(id => id !== undefined);
 
       if (permissionIds.length === 0) {
@@ -322,8 +339,8 @@ export function UserFormDialog({
       const requestBody = {
         user_id: parseInt(userId),
         permission_ids: permissionIds,
-        consultant_is_leader: consultantLeader,
-        content_manager_is_leader: contentManagerLeader
+        consultant_is_leader: false,
+        content_manager_is_leader: false
       };
 
       console.log('Grant API request:', requestBody);
@@ -368,7 +385,7 @@ export function UserFormDialog({
 
       const baseUrl = 'http://localhost:8000';
       const permissionIds = permissions
-        .map(permName => PERMISSION_NAME_TO_ID[permName])
+        .map(permName => permissionNameToId[permName])
         .filter(id => id !== undefined);
 
       if (permissionIds.length === 0) {
@@ -440,7 +457,7 @@ export function UserFormDialog({
       // 2. Grant permissions second
       if (permissionsToGrant.length > 0) {
         console.log('Granting permissions:', permissionsToGrant);
-        const grantResult = await callGrantAPI(userId, permissionsToGrant, consultantIsLeader, contentManagerIsLeader);
+        const grantResult = await callGrantAPI(userId, permissionsToGrant);
         results.push(`Granted: ${grantResult.added?.length || 0} permissions`);
         if (grantResult.skipped?.length > 0) {
           results.push(`Skipped grant: ${grantResult.skipped.length} permissions`);
@@ -497,7 +514,15 @@ export function UserFormDialog({
             }
           </DialogDescription>
         </DialogHeader>
-        
+
+        {/* Show loading state while permissions are being loaded */}
+        {!permissionsLoaded && loadingPermissions ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading permissions...</span>
+          </div>
+        ) : (
+        <>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic User Information */}
           <div className="grid grid-cols-2 gap-4">
@@ -604,7 +629,7 @@ export function UserFormDialog({
                           <div className="p-3 bg-blue-50 border border-blue-200 rounded">
                             <span className="text-sm text-blue-800 flex items-center">
                               <span className="mr-2">🔒</span>
-                              {PERMISSION_LABELS['admin']}
+                              {permissionLabels['admin'] || 'Admin'}
                             </span>
                           </div>
                         </div>
@@ -626,7 +651,7 @@ export function UserFormDialog({
                                   className="rounded border-red-300"
                                 />
                                 <span className="text-sm text-red-800">
-                                  {PERMISSION_LABELS[permission] || permission}
+                                  {permissionLabels[permission] || permission}
                                 </span>
                               </label>
                             ))}
@@ -657,7 +682,7 @@ export function UserFormDialog({
                               className="rounded border-green-300"
                             />
                             <span className="text-sm text-green-800">
-                              {PERMISSION_LABELS[permission] || permission}
+                              {permissionLabels[permission] || permission}
                             </span>
                           </label>
                         ))}
@@ -665,40 +690,13 @@ export function UserFormDialog({
                     </div>
                   )}
 
-                  {/* Leadership Options */}
-                  {(permissionsToGrant.includes('consultant') || (currentPermissions.includes('consultant') && !permissionsToRevoke.includes('consultant'))) && (
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={consultantIsLeader}
-                      onChange={(e) => setConsultantIsLeader(e.target.checked)}
-                    />
-                    <span className="text-sm">Consultant Leader</span>
-                  </label>
-                </div>
-              )}
-
-              {(permissionsToGrant.includes('content_manager') || (currentPermissions.includes('content_manager') && !permissionsToRevoke.includes('content_manager'))) && (
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={contentManagerIsLeader}
-                      onChange={(e) => setContentManagerIsLeader(e.target.checked)}
-                    />
-                    <span className="text-sm">Content Manager Leader</span>
-                  </label>
-                </div>
-              )}
-
                   {/* Summary */}
                   <div className="text-sm text-gray-600">
                     {permissionsToRevoke.length > 0 && (
-                      <p>Will revoke: {permissionsToRevoke.map(p => PERMISSION_LABELS[p]).join(', ')}</p>
+                      <p>Will revoke: {permissionsToRevoke.map(p => permissionLabels[p] || p).join(', ')}</p>
                     )}
                     {permissionsToGrant.length > 0 && (
-                      <p>Will grant: {permissionsToGrant.map(p => PERMISSION_LABELS[p]).join(', ')}</p>
+                      <p>Will grant: {permissionsToGrant.map(p => permissionLabels[p] || p).join(', ')}</p>
                     )}
                     {permissionsToRevoke.length === 0 && permissionsToGrant.length === 0 && (
                       <p>No permission changes selected</p>
@@ -718,6 +716,8 @@ export function UserFormDialog({
             {editingUser ? 'Update User' : 'Create User'}
           </Button>
         </DialogFooter>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );
