@@ -53,28 +53,22 @@ export function DocumentList({ filteredDocuments }) {
               </div>
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-base mb-1">{doc.title}</CardTitle>
-                <CardDescription className="text-sm line-clamp-2">
-                  {doc.description}
-                </CardDescription>
+                {doc.description && (
+                  <CardDescription className="text-sm line-clamp-2">
+                    {doc.description}
+                  </CardDescription>
+                )}
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
             <Separator />
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span>{doc.fileType}</span>
-                <span>•</span>
-                <span>{doc.size}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Download className="h-3 w-3" />
-                <span>{doc.viewCount}</span>
-              </div>
+            <div className="flex items-center text-sm text-muted-foreground">
+              <span>{doc.fileType}</span>
             </div>
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary">{doc.category}</Badge>
-              {doc.tags.map((tag) => (
+              {doc.tags && doc.tags.length > 0 && doc.tags.map((tag) => (
                 <Badge key={tag} variant="outline" className="gap-1">
                   <Tag className="h-3 w-3" />
                   {tag}

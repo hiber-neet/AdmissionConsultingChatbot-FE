@@ -53,15 +53,13 @@ export function QATemplateList({ filteredQATemplates, filteredDocuments, handleV
               <CardContent>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="secondary">{template.category}</Badge>
-                  {template.tags.map((tag) => (
+                  {template.tags && template.tags.length > 0 && template.tags.map((tag) => (
                     <Badge key={tag} variant="outline" className="gap-1">
                       <Tag className="h-3 w-3" />
                       {tag}
                     </Badge>
                   ))}
-                  <div className="ml-auto flex gap-4 text-sm text-muted-foreground">
-                    <span>Sử dụng {template.usageCount} lần</span>
-                    <span>•</span>
+                  <div className="ml-auto text-sm text-muted-foreground">
                     <span>Cập nhật {new Date(template.lastModified).toLocaleDateString('vi-VN')}</span>
                   </div>
                 </div>

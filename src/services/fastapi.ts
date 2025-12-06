@@ -21,8 +21,8 @@ export interface KnowledgeGap {
   id: number;
   question: string;
   frequency: number;
-  priority: 'high' | 'medium' | 'low';
-  category: string;
+  intent_id: number | null;
+  intent_name: string;
   suggestedAction: string;
   last_asked?: string;
   first_asked?: string;
@@ -84,6 +84,7 @@ export interface RiasecResult {
 export const articlesAPI = {
   getAll: () => fastAPIClient.get<Article[]>('/articles'),
   getById: (id: number) => fastAPIClient.get<Article>(`/articles/${id}`),
+  getByUserId: (userId: number) => fastAPIClient.get<Article[]>(`/articles/users/${userId}`),
   create: (data: Partial<Article>) => fastAPIClient.post<Article>('/articles', data),
   update: (id: number, data: Partial<Article>) => fastAPIClient.put<Article>(`/articles/${id}`, data),
   delete: (id: number) => fastAPIClient.delete(`/articles/${id}`),
@@ -195,10 +196,36 @@ export const knowledgeAPI = {
     fastAPIClient.post<TrainingQuestion>('/knowledge/upload/training_question', data),
 
   getDocuments: () => fastAPIClient.get<KnowledgeDocument[]>('/knowledge/documents'),
+  getDocumentById: (id: number) => fastAPIClient.get<KnowledgeDocument>(`/knowledge/documents/${id}`),
   getTrainingQuestions: () => fastAPIClient.get<TrainingQuestion[]>('/knowledge/training_questions'),
 
   deleteDocument: (id: number) => fastAPIClient.delete(`/knowledge/documents/${id}`),
   deleteTrainingQuestion: (id: number) => fastAPIClient.delete(`/knowledge/training_questions/${id}`),
+  
+  downloadDocument: async (id: number) => {
+    const token = localStorage.getItem("access_token");
+    const url = `${API_CONFIG.FASTAPI_BASE_URL}/knowledge/documents/${id}/download`;
+    
+    const response = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    
+    if (!response.ok) {
+      // Try to get error message from response
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.detail) {
+          errorMessage = errorData.detail;
+        }
+      } catch (e) {
+        // If response is not JSON, use default message
+      }
+      throw new Error(errorMessage);
+    }
+    
+    return response.blob();
+  },
 };
 
 // RIASEC API (if needed)
@@ -293,20 +320,28 @@ export interface UnansweredQuestion {
   in_grace_period: boolean;
 }
 
+export interface RecentQuestion {
+  id: number;
+  question: string;
+  timestamp: string;
+  user_name: string;
+  rating?: number;
+}
+
 // Consultant Analytics API
 export const consultantAnalyticsAPI = {
   getStatistics: () =>
     fastAPIClient.get<{ status: string; data: ConsultantStatistics; message: string }>('/analytics/consultant-statistics'),
   getUnansweredQuestions: (days: number = 7, limit: number = 5) =>
     fastAPIClient.get<{ status: string; data: UnansweredQuestion[]; message: string }>(`/analytics/knowledge-gaps?days=${days}&min_frequency=3`),
+  getRecentQuestions: (limit: number = 5) =>
+    fastAPIClient.get<{ status: string; data: RecentQuestion[]; message: string }>(`/analytics/recent-questions?limit=${limit}`),
   getKnowledgeGaps: (days?: number, minFrequency?: number) =>
     fastAPIClient.get<{ status: string; data: KnowledgeGap[]; message: string }>(`/analytics/knowledge-gaps?days=${days || 30}&min_frequency=${minFrequency || 3}`),
   getLowSatisfactionAnswers: (threshold?: number, minUsage?: number) =>
     fastAPIClient.get<{ status: string; data: LowSatisfactionAnswer[]; message: string }>(`/analytics/low-satisfaction-answers?threshold=${threshold || 3.5}&min_usage=${minUsage || 5}`),
   getTrendingTopics: (days?: number, minQuestions?: number) =>
     fastAPIClient.get<{ status: string; data: TrendingTopic[]; message: string }>(`/analytics/trending-topics?days=${days || 14}&min_questions=${minQuestions || 5}`),
-  getAnalyticsSummary: () =>
-    fastAPIClient.get<{ status: string; data: AnalyticsSummary; message: string }>('/analytics/analytics-summary'),
   getCategoryStatistics: (days?: number) =>
     fastAPIClient.get<{ status: string; data: CategoryStatistic[]; message: string }>(`/analytics/category-statistics?days=${days || 30}`)
 };
@@ -319,8 +354,8 @@ export const dashboardAnalyticsAPI = {
     fastAPIClient.get(`/analytics/dashboard/chatbot-requests?days=${days}`),
   getSystemHealth: () =>
     fastAPIClient.get('/analytics/dashboard/system-health'),
-  getQuickStats: () =>
-    fastAPIClient.get('/analytics/dashboard/quick-stats')
+  getAdmissionStats: (days: number = 30) =>
+    fastAPIClient.get(`/analytics/dashboard/admission-stats?days=${days}`)
 };
 
 // Live Chat types

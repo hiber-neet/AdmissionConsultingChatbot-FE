@@ -176,14 +176,8 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-medium">{gap.question}</h4>
-                          <Badge 
-                            variant={gap.priority === 'high' ? 'destructive' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {gap.priority} priority
-                          </Badge>
                           <Badge variant="outline" className="text-xs">
-                            {gap.category}
+                            {gap.intent_name}
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">

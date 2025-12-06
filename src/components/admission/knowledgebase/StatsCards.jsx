@@ -1,9 +1,9 @@
-import { BookOpen, FileText, TrendingUp, Eye } from 'lucide-react';
+import { BookOpen, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/system_users/card';
 
-export function StatsCards({ qaTemplatesCount, documentsCount, totalUsage, totalViews }) {
+export function StatsCards({ qaTemplatesCount, documentsCount }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <Card className="border-l-4 border-l-blue-500">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -29,34 +29,6 @@ export function StatsCards({ qaTemplatesCount, documentsCount, totalUsage, total
         </CardHeader>
         <CardContent>
           <div className="text-3xl">{documentsCount}</div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-l-4 border-l-orange-500">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm text-muted-foreground">
-              Lượt Sử Dụng
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-orange-500" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl">{totalUsage.toLocaleString()}</div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-l-4 border-l-purple-500">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm text-muted-foreground">
-              Lượt Xem
-            </CardTitle>
-            <Eye className="h-4 w-4 text-purple-500" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl">{totalViews.toLocaleString()}</div>
         </CardContent>
       </Card>
     </div>

@@ -27,7 +27,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { consultantAnalyticsAPI, ConsultantStatistics, UnansweredQuestion } from '../../services/fastapi';
+import { consultantAnalyticsAPI, ConsultantStatistics, RecentQuestion } from '../../services/fastapi';
 
 interface DashboardOverviewProps {
   onNavigateToTemplates?: (question: string, action: 'add') => void;
@@ -38,30 +38,30 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
   
   // API state for dashboard statistics
   const [stats, setStats] = useState<ConsultantStatistics | null>(null);
-  const [unansweredQuestions, setUnansweredQuestions] = useState<UnansweredQuestion[]>([]);
+  const [recentQuestions, setRecentQuestions] = useState<RecentQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch dashboard statistics and unanswered questions
+  // Fetch dashboard statistics and recent questions
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // Fetch both statistics and unanswered questions in parallel
+        // Fetch both statistics and recent questions in parallel
         const [statsResponse, questionsResponse] = await Promise.all([
           consultantAnalyticsAPI.getStatistics(),
-          consultantAnalyticsAPI.getUnansweredQuestions(7, 5)
+          consultantAnalyticsAPI.getRecentQuestions(5)
         ]);
         
         console.log('Dashboard statistics:', statsResponse);
-        console.log('Unanswered questions:', questionsResponse);
+        console.log('Recent questions:', questionsResponse);
         
         setStats(statsResponse.data);
         // Handle case where questionsResponse might be an array directly or have .data property
         const questionsData = Array.isArray(questionsResponse) ? questionsResponse : questionsResponse?.data || [];
-        setUnansweredQuestions(questionsData);
+        setRecentQuestions(questionsData);
       } catch (err: any) {
         console.error('Error fetching dashboard data:', err);
         setError(err.response?.data?.detail || 'Failed to fetch dashboard data');
@@ -186,7 +186,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm text-muted-foreground">
-                  Most Active Time
+                  Most Active Day
                 </CardTitle>
                 <Clock className="h-4 w-4 text-[#F59E0B]" />
               </div>
@@ -194,7 +194,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             <CardContent>
               <div className="text-3xl">{stats.overview_stats.most_active_time}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Peak engagement hours
+                Peak engagement day
               </p>
             </CardContent>
           </Card>
@@ -257,65 +257,30 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
               </ResponsiveContainer>
             </CardContent>
           </Card>
-
-          {/* Top Question Categories */}
-          <Card className="lg:col-span-full">
-            <CardHeader>
-              <CardTitle>Top Question Categories</CardTitle>
-              <CardDescription>Distribution by topic</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={stats.question_categories}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {stats.question_categories.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
         </div>
 
-        {/* Recent Unanswered Questions */}
+        {/* Recent Questions */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Recent Unanswered Questions</CardTitle>
+                <CardTitle>Recent Questions</CardTitle>
                 <CardDescription>
-                  Questions the chatbot couldn't answer - add them to improve coverage
+                  The 5 most recent questions asked in the system
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            {!unansweredQuestions || unansweredQuestions.length === 0 ? (
+            {!recentQuestions || recentQuestions.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No recent unanswered questions found.</p>
-                <p className="text-sm">Great job! Your knowledge base seems comprehensive.</p>
+                <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No recent questions found.</p>
+                <p className="text-sm">Questions will appear here as users interact with the chatbot.</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {unansweredQuestions.map((item) => (
+                {recentQuestions.map((item) => (
                   <div
                     key={item.id}
                     className="flex items-start justify-between gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
@@ -323,55 +288,26 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <p className="font-medium">{item.question}</p>
-                        <Badge variant="outline" className="text-xs">
-                          {item.category}
-                        </Badge>
-                        <Badge 
-                          variant={item.priority === 'high' ? 'destructive' : item.priority === 'medium' ? 'default' : 'secondary'} 
-                          className="text-xs"
-                        >
-                          {item.priority} priority
-                        </Badge>
-                        {item.in_grace_period && (
-                          <Badge variant="default" className="text-xs bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
-                            Monitoring
-                          </Badge>
-                        )}
-                        {item.match_score !== undefined && item.match_score > 0.3 && item.match_score < 0.6 && (
-                          <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
-                            Partial Match
-                          </Badge>
-                        )}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>Asked {item.frequency} times</span>
-                        {item.last_asked && (
+                        <span>Asked by {item.user_name}</span>
+                        {item.timestamp && (
                           <>
                             <span>•</span>
-                            <span>{formatRelativeTime(item.last_asked)}</span>
+                            <span>{new Date(item.timestamp).toLocaleDateString()}</span>
+                          </>
+                        )}
+                        {item.rating && (
+                          <>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <span>⭐</span>
+                              <span>{item.rating}/5</span>
+                            </span>
                           </>
                         )}
                       </div>
                     </div>
-                    <Button 
-                      size="sm" 
-                      className={`flex-shrink-0 ${
-                        item.in_grace_period 
-                          ? 'bg-yellow-600 hover:bg-yellow-700' 
-                          : item.match_score !== undefined && item.match_score > 0.3 
-                            ? 'bg-orange-600 hover:bg-orange-700'
-                            : 'bg-[#3B82F6] hover:bg-[#2563EB]'
-                      }`}
-                      onClick={() => onNavigateToTemplates?.(item.question, 'add')}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      {item.in_grace_period 
-                        ? 'Monitor' 
-                        : item.match_score !== undefined && item.match_score > 0.3 
-                          ? 'Improve' 
-                          : 'Add to KB'
-                      }
-                    </Button>
                   </div>
                 ))}
               </div>

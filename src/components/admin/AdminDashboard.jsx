@@ -25,7 +25,7 @@ export function AdminDashboard() {
   });
   const [conversationData, setConversationData] = useState([]);
   const [systemHealth, setSystemHealth] = useState({
-    active_sessions: 0,
+    total_users: 0,
     total_articles: 0,
     total_qa_pairs: 0,
     total_kb_docs: 0,
@@ -87,7 +87,7 @@ export function AdminDashboard() {
       } else {
         console.warn('No system health data received, using defaults');
         setSystemHealth({
-          active_sessions: 0,
+          total_users: 0,
           total_articles: 0,
           total_qa_pairs: 0,
           total_kb_docs: 0,
@@ -239,10 +239,10 @@ export function AdminDashboard() {
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-orange-500" />
-                <span className="text-sm">Active Sessions</span>
+                <Users className="h-4 w-4 text-orange-500" />
+                <span className="text-sm">Total Users</span>
               </div>
-              <span className="text-2xl font-bold">{systemHealth?.active_sessions || 0}</span>
+              <span className="text-2xl font-bold">{systemHealth?.total_users || 0}</span>
             </div>
           </CardContent>
         </Card>

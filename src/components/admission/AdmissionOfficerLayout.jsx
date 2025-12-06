@@ -3,11 +3,8 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   FileEdit,
-  BarChart3,
   MessageCircle,
   Users,
-  Bell,
-  Search,
   ChevronLeft,
   Menu,
   GraduationCap,
@@ -25,7 +22,6 @@ import {
   Shield
 } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
-import { Input } from '../ui/system_users/input';
 import { Badge } from '../ui/system_users/badge';
 import { Avatar, AvatarFallback } from '../ui/system_users/avatar';
 import { useAuth } from '../../contexts/Auth';
@@ -46,8 +42,8 @@ export function AdmissionOfficerLayout() {
 
   const navigation = [
     { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard, path: '/admission/dashboard' },
-    { id: 'request-queue', label: 'Hàng Đợi Yêu Cầu', icon: Clock, badge: 8, path: '/admission/request-queue' },
-    { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admission/consultation' },
+    { id: 'request-queue', label: 'Hàng Đợi Yêu Cầu', icon: Clock, path: '/admission/request-queue' },
+    { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, path: '/admission/consultation' },
     { id: 'knowledge-base', label: 'Cơ Sở Tri Thức', icon: BookOpen, path: '/admission/knowledge-base' },
     { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
     { id: 'profile', label: 'Profile', icon: User, path: '/admission/profile' },
@@ -252,26 +248,6 @@ export function AdmissionOfficerLayout() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="border-b px-6 py-3 flex items-center justify-between bg-white">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Tìm kiếm bài viết, báo cáo, sinh viên..."
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
-            </Button>
-          </div>
-        </header>
-
         {/* Main Content */}
         <main className="flex-1 min-h-screen overflow-hidden flex">
           <div className="flex-1 min-h-screen overflow-hidden">
