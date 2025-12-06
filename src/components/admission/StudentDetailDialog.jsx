@@ -278,16 +278,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
                   )}
                   {student.role_id && renderField('Role ID', student.role_id, User)}
                 </div>
-
-                {/* Raw API Data for Debug */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="mt-4 p-3 bg-gray-100 rounded-lg">
-                    <div className="text-xs text-muted-foreground mb-2">Raw API Data (Dev Only)</div>
-                    <pre className="text-xs overflow-x-auto">
-                      {JSON.stringify(student, null, 2)}
-                    </pre>
-                  </div>
-                )}
               </>
             )}
           </div>

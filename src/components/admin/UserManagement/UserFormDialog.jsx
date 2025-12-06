@@ -592,28 +592,6 @@ export function UserFormDialog({
                 </div>
               ) : (
                 <>
-                  {/* Debug Info */}
-                  <div className="text-xs bg-yellow-100 border border-yellow-300 p-3 rounded">
-                    <h4 className="font-bold text-yellow-800 mb-2">🐛 Debug Information:</h4>
-                    <div className="space-y-1">
-                      <p><strong>EditingUser ID:</strong> {editingUser?.id}</p>
-                      <p><strong>EditingUser Permissions:</strong> {JSON.stringify(editingUser?.permissions)}</p>
-                      <p><strong>EditingUser Role ID:</strong> {editingUser?.role_id}</p>
-                      <p><strong>EditingUser Profiles:</strong></p>
-                      <div className="ml-4 text-xs">
-                        <p>• consultant_profile: {editingUser?.consultant_profile ? 'exists' : 'null'}</p>
-                        <p>• content_manager_profile: {editingUser?.content_manager_profile ? 'exists' : 'null'}</p>
-                        <p>• admission_official_profile: {editingUser?.admission_official_profile ? 'exists' : 'null'}</p>
-                      </div>
-                      <p><strong>Current permissions array length:</strong> {currentPermissions.length}</p>
-                      <p><strong>Current permissions:</strong> {JSON.stringify(currentPermissions)}</p>
-                      <p><strong>Revokable permissions:</strong> {JSON.stringify(getRevokablePermissions(currentPermissions))}</p>
-                      <p><strong>Available to grant:</strong> {JSON.stringify(availableToGrant)}</p>
-                      <p><strong>Is editing mode:</strong> {(!!editingUser).toString()}</p>
-                      <p><strong>Loading state:</strong> {loadingPermissions.toString()}</p>
-                    </div>
-                  </div>
-                  
                   {/* Current Permissions Display */}
                   {currentPermissions.length > 0 ? (
                     <div className="space-y-3">
