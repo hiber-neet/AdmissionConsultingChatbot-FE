@@ -340,10 +340,6 @@ export function DocumentManagement() {
                   <div>{formatDate(selectedDoc.created_at)}</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Last Updated</div>
-                  <div>{selectedDoc.updated_at ? formatDate(selectedDoc.updated_at) : 'N/A'}</div>
-                </div>
-                <div className="space-y-1">
                   <div className="text-sm text-muted-foreground">File Type</div>
                   <div className="capitalize">{getFileType(selectedDoc.file_path)}</div>
                 </div>
@@ -352,21 +348,8 @@ export function DocumentManagement() {
                   <div className="capitalize">{selectedDoc.category || 'General'}</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">File Path</div>
-                  <div className="text-sm text-muted-foreground truncate">{selectedDoc.file_path}</div>
-                </div>
-                <div className="space-y-1">
                   <div className="text-sm text-muted-foreground">Document ID</div>
                   <div>{selectedDoc.document_id}</div>
-                </div>
-              </div>
-
-              <div className="prose max-w-none">
-                <h3>Content Preview</h3>
-                <div className="border rounded-lg p-4 bg-gray-50">
-                  <p className="text-sm text-muted-foreground">
-                    {selectedDoc.content || 'Document content will be displayed here after processing...'}
-                  </p>
                 </div>
               </div>
             </div>

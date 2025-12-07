@@ -14,7 +14,13 @@ import { Progress } from '../ui/system_users/progress';
 import { useState, useEffect } from 'react';
 import { consultantAnalyticsAPI, KnowledgeGap, LowSatisfactionAnswer, TrendingTopic } from '../../services/fastapi';
 
-export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateToKnowledgeBase?: (question: string) => void }) {
+export function ContentOptimization({ 
+  onNavigateToKnowledgeBase,
+  onNavigateToAnalytics 
+}: { 
+  onNavigateToKnowledgeBase?: (question: string) => void;
+  onNavigateToAnalytics?: () => void;
+}) {
   const [knowledgeGaps, setKnowledgeGaps] = useState<KnowledgeGap[]>([]);
   const [confusingAnswers, setConfusingAnswers] = useState<LowSatisfactionAnswer[]>([]);
   const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
@@ -406,22 +412,12 @@ export function ContentOptimization({ onNavigateToKnowledgeBase }: { onNavigateT
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-md mb-3">
-                      <div className="h-5 w-5 rounded-full bg-[#3B82F6] flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <CheckCircle className="h-3 w-3 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-foreground">
-                          <strong>Recommended Action:</strong> {topic.action}
-                        </p>
-                      </div>
-                    </div>
                     <div className="flex gap-2">
-                      <Button size="sm" className="bg-[#3B82F6] hover:bg-[#2563EB]">
-                        <Plus className="h-4 w-4 mr-1" />
-                        Create Content
-                      </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => onNavigateToAnalytics?.()}
+                      >
                         View Questions
                       </Button>
                     </div>
