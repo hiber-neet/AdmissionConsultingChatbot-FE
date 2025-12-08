@@ -4,7 +4,7 @@ import axios from "axios";
 import Footer from "@/components/footer/Footer";
 import Header from "@/components/header/Header";
 import banner from "@/assets/images/login-private.jpg";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/Auth";
 import {
   joinQueue,
@@ -52,6 +52,8 @@ const newConv = () => ({
 
 
 const CHAT_RATING_KEY = "fpt_chatbot_session_ratings_v1";
+const CHATBOT_PREFILL_KEY = "chatbot_prefill_message";
+
 
 const loadRatings = () => {
   if (typeof window === "undefined") return {};
@@ -81,8 +83,20 @@ const loadStoredConvs = () => {
 const UserProfile = () => {
   const { user, isAuthenticated } = useAuth();
   const [tab, setTab] = useState("profile");
+  const location = useLocation();
   const [editing, setEditing] = useState(false);
+  const [prefillSent, setPrefillSent] = useState(false);
 const [sessionRatings, setSessionRatings] = useState(() => loadRatings());
+
+// đọc query param ?tab=...
+useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const qpTab = params.get("tab");
+  if (qpTab && ["profile", "chatbot", "consultant", "transcript"].includes(qpTab)) {
+    setTab(qpTab);
+  }
+}, [location.search]);
+
 useEffect(() => {
   try {
     localStorage.setItem(CHAT_RATING_KEY, JSON.stringify(sessionRatings));
@@ -316,7 +330,10 @@ useEffect(() => {
           const old = prevMap.get(s.session_id);
           return {
             id: s.session_id,
-            title: old?.title || "Cuộc trò chuyện",
+title:
+  old?.title ||
+  s.last_message_preview ||   // dùng preview làm title
+  "Cuộc trò chuyện",
             createdAt: s.start_time ? new Date(s.start_time).getTime() : Date.now(),
             updatedAt: s.last_message_time
               ? new Date(s.last_message_time).getTime()
@@ -458,17 +475,27 @@ const pushToActive = (msg) => {
   const currentId = chatSessionIdRef.current;
   if (!currentId) return;
 
+  const isUser = msg.sender === "user";
+
   setConvs((prev) =>
-    prev.map((c) =>
-      c.id === currentId
-        ? {
-            ...c,
-            last_message_preview:
-              msg.text.length > 50 ? msg.text.slice(0, 50) + "..." : msg.text,
-            updatedAt: Date.now(),
-          }
-        : c
-    )
+    prev.map((c) => {
+      if (c.id !== currentId) return c;
+
+      const preview =
+        msg.text.length > 50 ? msg.text.slice(0, 50) + "..." : msg.text;
+
+      const isDefaultTitle =
+        !c.title ||
+        c.title === "Cuộc trò chuyện" ||
+        c.title === "Cuộc trò chuyện mới";
+
+      return {
+        ...c,
+        last_message_preview: preview,
+        updatedAt: Date.now(),
+        title: isUser && isDefaultTitle ? preview : c.title,
+      };
+    })
   );
 };
 
@@ -549,13 +576,7 @@ useEffect(() => {
 
 
 
-  const renameConversation = (id) => {
-    const title = prompt("Đặt tên phiên chat:");
-    if (!title) return;
-    setConvs((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, title } : c))
-    );
-  };
+ 
 
 const deleteConversation = async (id) => {
   if (!confirm("Xoá phiên chat này?")) return;
@@ -572,7 +593,7 @@ const deleteConversation = async (id) => {
       if (activeId === id) {
         const newActive = next[0] || null;
         setActiveId(newActive ? newActive.id : null);
-        setChatSessionId(newActive ? newActive.id : null);  // 👈 thêm dòng này
+        setChatSessionId(newActive ? newActive.id : null);  
         setMessages([]);
       }
 
@@ -914,6 +935,46 @@ const deleteConversation = async (id) => {
     }
   };
 }, [tab, user, chatSessionId]);  
+
+
+useEffect(() => {
+  // chỉ chạy khi đang ở tab chatbot, đã login, có session & WS sẵn sàng
+  if (
+    tab !== "chatbot" ||
+    !user ||
+    !chatSessionId ||
+    !wsReady ||
+    prefillSent
+  ) {
+    return;
+  }
+
+  const raw = localStorage.getItem(CHATBOT_PREFILL_KEY);
+  if (!raw) return;
+
+  // raw đã là chuỗi JSON mà Riasec lưu, ví dụ:
+  // {"student_id":"guest-1765219998608","answers":{"R":5,"I":5,"A":5,"S":5,"E":5,"C":5}}
+  const text = raw;
+
+  // hiển thị như tin nhắn user
+  const userMsg = { sender: "user", text };
+  setMessages((prev) => [...prev, userMsg]);
+  pushToActive(userMsg);
+
+  if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    wsRef.current.send(
+      JSON.stringify({
+        message: text,                     // <<< GỬI ĐÚNG CHUỖI JSON
+        user_id: user.id,
+        session_id: chatSessionIdRef.current ?? chatSessionId,
+      })
+    );
+  }
+
+  // chỉ gửi 1 lần rồi xoá
+  setPrefillSent(true);
+  localStorage.removeItem(CHATBOT_PREFILL_KEY);
+}, [tab, user, wsReady, chatSessionId, prefillSent]);
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -1420,16 +1481,6 @@ const renderScoreInput = (subject) => (
                               {c.title}
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  renameConversation(c.id);
-                                }}
-                                className="text-xs text-gray-500 hover:text-gray-700"
-                                title="Đổi tên"
-                              >
-                                Sửa
-                              </button>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();

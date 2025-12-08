@@ -1,7 +1,7 @@
 import React from 'react';
 import Footer from "@/components/footer/Footer";
 import Header from "@/components/header/Header";
-import RiasecGuestForm from '../../components/riasec/RiasecGuestForm';
+import RiasecGuestForm from '../../components/riasec/RiasecGuestForm.jsx';
 
 const RiasecPage =() =>{
     return(
