@@ -9,5 +9,14 @@ export function ConsultantOptimizationPage() {
     navigate('/consultant/templates', { state: { question, action: 'add' } });
   };
 
-  return <ContentOptimization onNavigateToKnowledgeBase={handleNavigateToKnowledgeBase} />;
+  const handleNavigateToAnalytics = () => {
+    navigate('/consultant/analytics');
+  };
+
+  return (
+    <ContentOptimization 
+      onNavigateToKnowledgeBase={handleNavigateToKnowledgeBase}
+      onNavigateToAnalytics={handleNavigateToAnalytics}
+    />
+  );
 }

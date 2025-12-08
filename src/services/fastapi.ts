@@ -328,6 +328,28 @@ export interface RecentQuestion {
   rating?: number;
 }
 
+export interface UserQuestion {
+  id: number;
+  question: string;
+  category: string;
+  timestamp: string;
+  status: 'answered' | 'unanswered';
+}
+
+export interface PaginatedResponse<T> {
+  status: string;
+  data: T[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total_count: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+  };
+  message: string;
+}
+
 // Consultant Analytics API
 export const consultantAnalyticsAPI = {
   getStatistics: () =>
@@ -343,7 +365,11 @@ export const consultantAnalyticsAPI = {
   getTrendingTopics: (days?: number, minQuestions?: number) =>
     fastAPIClient.get<{ status: string; data: TrendingTopic[]; message: string }>(`/analytics/trending-topics?days=${days || 14}&min_questions=${minQuestions || 5}`),
   getCategoryStatistics: (days?: number) =>
-    fastAPIClient.get<{ status: string; data: CategoryStatistic[]; message: string }>(`/analytics/category-statistics?days=${days || 30}`)
+    fastAPIClient.get<{ status: string; data: CategoryStatistic[]; message: string }>(`/analytics/category-statistics?days=${days || 30}`),
+  getUserQuestions: (days?: number, page?: number, pageSize?: number, search?: string) =>
+    fastAPIClient.get<PaginatedResponse<UserQuestion>>(
+      `/analytics/user-questions?days=${days || 30}&page=${page || 1}&page_size=${pageSize || 10}${search ? `&search=${encodeURIComponent(search)}` : ''}`
+    )
 };
 
 // Dashboard Analytics API
