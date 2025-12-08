@@ -45,14 +45,52 @@ const newConv = () => ({
   id: crypto.randomUUID(),
   title: "Cuộc trò chuyện mới",
   messages: [],
+  rating: null,           
   createdAt: Date.now(),
   updatedAt: Date.now(),
 });
+
+
+const CHAT_RATING_KEY = "fpt_chatbot_session_ratings_v1";
+
+const loadRatings = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(CHAT_RATING_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const loadStoredConvs = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(CHAT_CONV_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch (e) {
+    console.warn("Cannot parse stored conversations", e);
+    return null;
+  }
+};
 
 const UserProfile = () => {
   const { user, isAuthenticated } = useAuth();
   const [tab, setTab] = useState("profile");
   const [editing, setEditing] = useState(false);
+const [sessionRatings, setSessionRatings] = useState(() => loadRatings());
+useEffect(() => {
+  try {
+    localStorage.setItem(CHAT_RATING_KEY, JSON.stringify(sessionRatings));
+  } catch (e) {
+    console.warn("Không thể lưu rating vào localStorage", e);
+  }
+}, [sessionRatings]);
+
 
   // ====== HỌC BẠ ======
   const [files, setFiles] = useState([]);
@@ -236,22 +274,97 @@ setScores(next);
     };
   }, [uploaded]);
 
-  // =======================
-  // CHATBOT – FE quản lý list phiên, BE chỉ là WebSocket
-  // =======================
-  const [convs, setConvs] = useState(() => [newConv()]);
-  const [activeId, setActiveId] = useState(() =>
-    convs.length ? convs[0].id : null
-  );
+// mỗi conv = 1 ChatSession trong DB
+// { id: session_id, title, createdAt, updatedAt, last_message_preview }
+const [convs, setConvs] = useState([]);
+const [activeId, setActiveId] = useState(null);
+const activeConv = convs.find((c) => c.id === activeId) || null;
+// message đang hiển thị của session active
+const [messages, setMessages] = useState([]);
+
+
   const liveWsRef = useRef(null);
   const convsRef = useRef(convs);
   useEffect(() => {
     convsRef.current = convs;
   }, [convs]);
 
-  const [messages, setMessages] = useState([]);
+
+
   const [chatSessionId, setChatSessionId] = useState(null);
   const chatSessionIdRef = useRef(null);
+
+useEffect(() => {
+  chatSessionIdRef.current = chatSessionId;
+}, [chatSessionId]);
+
+// CHATBOT – quản lý list phiên
+useEffect(() => {
+  if (tab !== "chatbot" || !user) return;
+
+  const fetchSessions = async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE_URL}/chat/user/${user.id}/sessions`,
+        { headers: authHeaders() }
+      );
+      const sessions = res.data?.sessions || [];
+
+      setConvs((prev) => {
+        const prevMap = new Map(prev.map((c) => [c.id, c]));
+        return sessions.map((s) => {
+          const old = prevMap.get(s.session_id);
+          return {
+            id: s.session_id,
+            title: old?.title || "Cuộc trò chuyện",
+            createdAt: s.start_time ? new Date(s.start_time).getTime() : Date.now(),
+            updatedAt: s.last_message_time
+              ? new Date(s.last_message_time).getTime()
+              : (s.start_time ? new Date(s.start_time).getTime() : Date.now()),
+            last_message_preview: s.last_message_preview || "",
+          };
+        });
+      });
+
+      if (sessions.length) {
+        // nếu chưa có session đang chọn thì chọn cái mới nhất
+        setActiveId((current) => current ?? sessions[0].session_id);
+        setChatSessionId((current) => current ?? sessions[0].session_id);
+      } else {
+        // chưa có session nào -> tạo mới
+        try {
+          const resCreate = await axios.post(
+            `${API_BASE_URL}/chat/session/create`,
+            null,
+            {
+              params: { user_id: user.id, session_type: "chatbot" },
+              headers: authHeaders(),
+            }
+          );
+          const newId = resCreate.data.session_id;
+          const newConv = {
+            id: newId,
+            title: "Cuộc trò chuyện mới",
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            last_message_preview: "",
+          };
+          setConvs([newConv]);
+          setActiveId(newId);
+          setChatSessionId(newId);
+        } catch (e) {
+          console.error("Không tạo được session mặc định", e);
+        }
+      }
+    } catch (err) {
+      console.error("Lỗi load danh sách session", err);
+    }
+  };
+
+  fetchSessions();
+}, [tab, user]);
+
+
 
   const [liveStatus, setLiveStatus] = useState("idle");
   const [queueInfo, setQueueInfo] = useState(null);
@@ -341,31 +454,100 @@ setScores(next);
   const [wsReady, setWsReady] = useState(false);
 
   // cập nhật messages của conversation đang active
-  const pushToActive = (msg) => {
-    const currentConvs = convsRef.current;
-    const next = currentConvs.map((c) => {
-      if (c.id !== activeId) return c;
-      return {
-        ...c,
-        messages: [...(c.messages || []), msg],
-        updatedAt: Date.now(),
-      };
-    });
-    setConvs(next);
-  };
+const pushToActive = (msg) => {
+  const currentId = chatSessionIdRef.current;
+  if (!currentId) return;
 
-  const createConversation = () => {
-    const c = newConv();
-    setConvs((prev) => [c, ...prev]);
-    setActiveId(c.id);
+  setConvs((prev) =>
+    prev.map((c) =>
+      c.id === currentId
+        ? {
+            ...c,
+            last_message_preview:
+              msg.text.length > 50 ? msg.text.slice(0, 50) + "..." : msg.text,
+            updatedAt: Date.now(),
+          }
+        : c
+    )
+  );
+};
+
+  //set rating cho phiên đang active
+const setRatingForActive = (value) => {
+  if (!activeId) return;
+  setConvs((prev) =>
+    prev.map((c) =>
+      c.id === activeId
+        ? { ...c, rating: value, updatedAt: Date.now() }
+        : c
+    )
+  );
+};
+
+const createConversation = async () => {
+  if (!user) return;
+  try {
+    const res = await axios.post(
+      `${API_BASE_URL}/chat/session/create`,
+      null,
+      {
+        params: { user_id: user.id, session_type: "chatbot" },
+        headers: authHeaders(),
+      }
+    );
+    const newId = res.data.session_id;
+
+    const newConv = {
+      id: newId,
+      title: "Cuộc trò chuyện mới",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      last_message_preview: "",
+    };
+
+    setConvs((prev) => [newConv, ...prev]);
+    setActiveId(newId);
+    setChatSessionId(newId);
     setMessages([]);
+  } catch (err) {
+    console.error("Không tạo được phiên chat mới", err);
+    alert("Không tạo được phiên chat mới, thử lại sau.");
+  }
+};
+
+const selectConversation = (id) => {
+  setActiveId(id);
+  setChatSessionId(id);      
+};
+
+useEffect(() => {
+  if (tab !== "chatbot" || !user || !chatSessionId) {
+    setMessages([]);
+    return;
+  }
+
+  const fetchHistory = async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE_URL}/chat/session/${chatSessionId}/history`,
+        { headers: authHeaders() }
+      );
+      const msgs = res.data?.messages || [];
+      const mapped = msgs.map((m) => ({
+        sender: m.is_from_bot ? "bot" : "user",
+        text: m.message_text,
+      }));
+      setMessages(mapped);
+    } catch (err) {
+      console.error("Lỗi load lịch sử chat", err);
+      setMessages([]);
+    }
   };
 
-  const selectConversation = (id) => {
-    setActiveId(id);
-    const c = convsRef.current.find((x) => x.id === id);
-    setMessages(c ? c.messages || [] : []);
-  };
+  fetchHistory();
+}, [tab, user, chatSessionId]);
+
+
 
   const renameConversation = (id) => {
     const title = prompt("Đặt tên phiên chat:");
@@ -375,18 +557,32 @@ setScores(next);
     );
   };
 
-  const deleteConversation = (id) => {
-    if (!confirm("Xoá phiên chat này?")) return;
+const deleteConversation = async (id) => {
+  if (!confirm("Xoá phiên chat này?")) return;
+
+  try {
+    await axios.delete(`${API_BASE_URL}/chat/session/${id}`, {
+      params: { user_id: user.id },
+      headers: authHeaders(),
+    });
+
     setConvs((prev) => {
       const next = prev.filter((c) => c.id !== id);
+
       if (activeId === id) {
         const newActive = next[0] || null;
         setActiveId(newActive ? newActive.id : null);
-        setMessages(newActive ? newActive.messages || [] : []);
+        setChatSessionId(newActive ? newActive.id : null);  // 👈 thêm dòng này
+        setMessages([]);
       }
+
       return next;
     });
-  };
+  } catch (err) {
+    console.error("Xoá session trên server lỗi:", err);
+    alert("Không xoá được session, vui lòng thử lại.");
+  }
+};
 
   // ====== LIVE CHAT QUEUE ======
   const handleJoinQueue = async () => {
@@ -489,14 +685,13 @@ setScores(next);
 
         console.log("SSE data parsed:", payload);
 
-        const ev = payload.event; // queued / accepted / chat_ended ...
+        const ev = payload.event;  
 
         switch (ev) {
           case "queued": {
-            // Gọi đúng API: GET /live_chat/livechatcustomer/queue/status/{customer_id}
             try {
               const res = await axios.get(
-                `${API_BASE_URL}/live_chat/livechat/customer/queue/status/${user.id}`,
+                `${API_BASE_URL}/live_chat/livechatcustomer/queue/status/${user.id}`,
                 { headers: authHeaders() }
               );
               setQueueInfo(res.data);
@@ -610,37 +805,34 @@ setScores(next);
 
   // ====== WebSocket Chatbot (LLM) ======
   useEffect(() => {
-    if (tab !== "chatbot" || !user) {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.close();
-      }
-      wsRef.current = null;
-      setWsReady(false);
-      setIsLoading(false);
-      setPartialResponse("");
-      partialRef.current = "";
-      return;
-    }
-
+  // nếu không ở tab chatbot hoặc chưa có user / session -> đóng WS
+  if (tab !== "chatbot" || !user || !chatSessionId) {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      return;
+      wsRef.current.close();
     }
+    wsRef.current = null;
+    setWsReady(false);
+    setIsLoading(false);
+    setPartialResponse("");
+    partialRef.current = "";
+    return;
+  }
 
-    const wsUrl = API_BASE_URL.replace(/^http/, "ws") + "/chat/ws/chat";
+  // đã có session_id -> mở WS mới cho phiên đó
+  const wsUrl = API_BASE_URL.replace(/^http/, "ws") + "/chat/ws/chat";
+  const ws = new WebSocket(wsUrl);
+  wsRef.current = ws;
 
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log("✅ Connected to WebSocket chatbot");
-      ws.send(
-        JSON.stringify({
-          user_id: user.id,
-          session_id: chatSessionIdRef.current ?? null,
-        })
-      );
-      setWsReady(true);
-    };
+  ws.onopen = () => {
+    console.log("✅ Connected to WebSocket chatbot, session:", chatSessionIdRef.current);
+    ws.send(
+      JSON.stringify({
+        user_id: user.id,
+        session_id: chatSessionIdRef.current,   // BE sẽ dùng session này, không tạo mới
+      })
+    );
+    setWsReady(true);
+  };
 
     ws.onmessage = (event) => {
       console.log("📩 WS chatbot:", event.data);
@@ -709,19 +901,19 @@ setScores(next);
     };
 
     ws.onclose = () => {
-      console.log("🔒 WebSocket chatbot closed");
-      setWsReady(false);
-      setIsLoading(false);
-      setPartialResponse("");
-      partialRef.current = "";
-    };
+    console.log("🔒 WebSocket chatbot closed");
+    setWsReady(false);
+    setIsLoading(false);
+    setPartialResponse("");
+    partialRef.current = "";
+  };
 
-    return () => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-    };
-  }, [tab, user]); // KHÔNG phụ thuộc chatSessionId để tránh loop
+  return () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.close();
+    }
+  };
+}, [tab, user, chatSessionId]);  
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -740,13 +932,13 @@ setScores(next);
     setMessages((prev) => [...prev, userMsg]);
     pushToActive(userMsg);
 
-    wsRef.current.send(
-      JSON.stringify({
-        message: text,
-        user_id: user.id,
-        session_id: chatSessionIdRef.current ?? null,
-      })
-    );
+wsRef.current.send(
+  JSON.stringify({
+    message: text,
+    user_id: user.id,
+    session_id: chatSessionIdRef.current ?? null,
+  })
+);
 
     setInput("");
     setPartialResponse("");
@@ -1260,10 +1452,34 @@ const renderScoreInput = (subject) => (
                 </aside>
 
                 {/* RIGHT: khung chat */}
-                <section className="col-span-12 md:col-span-8 flex flex-col">
-                  <div className="bg-[#EB5A0D] text-white px-6 py-3 text-lg font-semibold text-center">
-                    ChatBotFPT
-                  </div>
+               <section className="col-span-12 md:col-span-8 flex flex-col">
+  <div className="bg-[#EB5A0D] text-white px-6 py-3 flex items-center justify-between">
+    <div className="text-lg font-semibold">ChatBotFPT</div>
+
+    {activeConv && (
+      <div className="flex items-center gap-1 text-sm">
+        <span className="hidden sm:inline mr-2">Đánh giá phiên:</span>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => setRatingForActive(star)}
+            className="focus:outline-none"
+          >
+            <span
+              className={
+                star <= (activeConv.rating || 0)
+                  ? "text-yellow-300"
+                  : "text-white/50"
+              }
+            >
+              ★
+            </span>
+          </button>
+        ))}
+      </div>
+    )}
+  </div>
 
                   <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
                     {!messages.length ? (
@@ -1486,7 +1702,7 @@ const renderScoreInput = (subject) => (
         <div>
           <div className="grid grid-cols-2 gap-4 font-semibold mb-3 text-white">
             <div>Môn học</div>
-            <div className="text-center">Học kỳ 2</div>
+            <div className="text-center">Học kỳ</div>
           </div>
 
           <div>
