@@ -3,29 +3,43 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Badge } from '../../ui/system_users/badge';
 import { Button } from '../../ui/system_users/button';
 import { Separator } from '../../ui/system_users/separator';
+import { knowledgeAPI } from '../../../services/fastapi';
+import { toast } from 'react-toastify';
 
 export function DocumentList({ filteredDocuments }) {
-  const handleDownload = (doc) => {
-    if (doc.file_path) {
-      // Create a download link
-      const link = document.createElement('a');
-      link.href = doc.file_path;
-      link.download = doc.title;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      // If no file path, show content as text file
-      const blob = new Blob([doc.content || doc.description], { type: 'text/plain' });
+  const handleDownload = async (doc) => {
+    try {
+      // Use the proper API call with authentication
+      const blob = await knowledgeAPI.downloadDocument(doc.document_id);
+      
+      // Create a download link and trigger it
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${doc.title}.txt`;
+      link.download = doc.title || `document-${doc.document_id}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      
+      toast.success('Document downloaded successfully!');
+    } catch (error) {
+      console.error('Failed to download document:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error stringified:', JSON.stringify(error, null, 2));
+      
+      // Better error message extraction
+      let errorMessage = 'Failed to download document. Please try again.';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error?.detail) {
+        errorMessage = error.detail;
+      }
+      
+      toast.error(`Failed to download: ${errorMessage}`);
     }
   };
   if (filteredDocuments.length === 0) {
