@@ -1,0 +1,352 @@
+import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/Auth";
+
+type Trait = "R" | "I" | "A" | "S" | "E" | "C";
+
+type Question = {
+  id: string;
+  trait: Trait;
+  text: string;
+};
+
+const TRAIT_LABEL: Record<Trait, string> = {
+  R: "Realistic (Thực tế)",
+  I: "Investigative (Nghiên cứu)",
+  A: "Artistic (Nghệ thuật)",
+  S: "Social (Xã hội)",
+  E: "Enterprising (Quản trị/Kinh doanh)",
+  C: "Conventional (Quy củ/Hệ thống)",
+};
+
+const TRAIT_SUMMARY: Record<Trait, string> = {
+  R: "Thực hành, thích làm việc với máy móc, công cụ, môi trường ngoài trời.",
+  I: "Phân tích, thích tìm hiểu nguyên lý, dữ liệu, nghiên cứu.",
+  A: "Sáng tạo, thẩm mỹ, thích thiết kế/biểu đạt.",
+  S: "Giúp đỡ, giao tiếp, đào tạo, chăm sóc cộng đồng.",
+  E: "Dẫn dắt, thuyết phục, kinh doanh, lập chiến lược.",
+  C: "Tổ chức, quy trình, chi tiết, dữ liệu – thích làm việc theo chuẩn.",
+};
+
+// Để dành nếu sau này muốn render ngành theo từng trait
+const TRAIT_MAJORS: Record<Trait, string[]> = {
+  R: ["Kỹ thuật cơ khí", "Xây dựng", "Kỹ thuật điện - điện tử", "Logistics vận hành"],
+  I: ["Khoa học máy tính / AI", "Phân tích dữ liệu", "Sinh học / Hóa học ứng dụng"],
+  A: ["Thiết kế đồ họa", "Thiết kế UX/UI", "Truyền thông đa phương tiện", "Kiến trúc"],
+  S: ["Sư phạm / Đào tạo", "Công tác xã hội", "Y tế cộng đồng", "Tâm lý học"],
+  E: ["Quản trị kinh doanh", "Marketing", "Tài chính - Khởi nghiệp", "Quản trị du lịch"],
+  C: ["Kế toán - Kiểm toán", "Quản trị hệ thống thông tin", "Thư ký - Hành chính"],
+};
+
+// 2 lựa chọn: Đồng ý = 1, Không đồng ý = 0
+const LIKERT = [
+  { value: 1, label: "Đồng ý" },
+  { value: 0, label: "Không đồng ý" },
+];
+
+// 18 câu – 3 câu cho mỗi nhóm
+const QUESTIONS: Question[] = [
+  // R
+  { id: "q1", trait: "R", text: "Tôi thích sửa chữa hoặc lắp ráp máy móc, đồ vật." },
+  { id: "q2", trait: "R", text: "Tôi thích các hoạt động ngoài trời, vận động thể chất." },
+  { id: "q3", trait: "R", text: "Tôi thích dùng công cụ để tạo ra thứ gì đó hữu ích." },
+  // I
+  { id: "q4", trait: "I", text: "Tôi thích phân tích vấn đề và tìm ra nguyên lý đằng sau." },
+  { id: "q5", trait: "I", text: "Tôi hứng thú với nghiên cứu khoa học / dữ liệu." },
+  { id: "q6", trait: "I", text: "Tôi thích viết code, giải thuật hoặc thí nghiệm." },
+  // A
+  { id: "q7", trait: "A", text: "Tôi thích vẽ, thiết kế, chụp ảnh hoặc sáng tác." },
+  { id: "q8", trait: "A", text: "Tôi quan tâm thẩm mỹ và cách thể hiện ý tưởng." },
+  { id: "q9", trait: "A", text: "Tôi thích những công việc không quá gò bó, có tự do sáng tạo." },
+  // S
+  { id: "q10", trait: "S", text: "Tôi thích hỗ trợ, lắng nghe và hướng dẫn người khác." },
+  { id: "q11", trait: "S", text: "Tôi làm việc nhóm tốt và muốn tạo giá trị cho cộng đồng." },
+  { id: "q12", trait: "S", text: "Tôi kiên nhẫn khi giải thích điều khó cho người khác." },
+  // E
+  { id: "q13", trait: "E", text: "Tôi thích dẫn dắt nhóm và đưa ra quyết định." },
+  { id: "q14", trait: "E", text: "Tôi quan tâm kinh doanh/khởi nghiệp, thuyết phục người khác." },
+  { id: "q15", trait: "E", text: "Tôi thích thương lượng, xây dựng quan hệ và đạt mục tiêu." },
+  // C
+  { id: "q16", trait: "C", text: "Tôi chú ý chi tiết và làm việc có trình tự rõ ràng." },
+  { id: "q17", trait: "C", text: "Tôi thấy thoải mái với số liệu, biểu mẫu, quy trình." },
+  { id: "q18", trait: "C", text: "Tôi thích công việc ổn định, quy củ và có hướng dẫn rõ ràng." },
+];
+
+const CHATBOT_PREFILL_KEY = "chatbot_prefill_message";
+const GUEST_ID_KEY = "riasec_guest_id";
+
+export default function RiasecGuestForm() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // key lưu theo user (nếu có login)
+  const SAVE_KEY = user ? `riasec_result_${user.id}` : null;
+
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [loadedAt, setLoadedAt] = useState<string | null>(null);
+
+  // Load kết quả đã lưu (nếu có)
+  useEffect(() => {
+    if (!user || !SAVE_KEY) return;
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+
+    try {
+      const data: {
+        answers: Record<string, number>;
+        savedAt: string;
+      } = JSON.parse(raw);
+      if (data?.answers) {
+        setAnswers(data.answers);
+        setSubmitted(true);
+        setLoadedAt(new Date(data.savedAt).toLocaleString());
+      }
+    } catch {
+      // ignore
+    }
+  }, [user, SAVE_KEY]);
+
+  const allAnswered = Object.keys(answers).length === QUESTIONS.length;
+
+  // Điểm mỗi trait: 0–3 (3 câu, mỗi câu Đồng ý = 1)
+  const scores = useMemo(() => {
+    const init: Record<Trait, number> = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
+    for (const q of QUESTIONS) {
+      const v = answers[q.id] ?? 0;
+      init[q.trait] += v;
+    }
+    return init;
+  }, [answers]);
+
+  const ranking = useMemo(
+    () =>
+      (Object.keys(scores) as Trait[])
+        .map((t) => ({ trait: t, score: scores[t] }))
+        .sort((a, b) => b.score - a.score),
+    [scores]
+  );
+
+  const top3 = ranking.slice(0, 3).map((r) => r.trait).join("");
+
+  // Helper: lấy student_id (user.id hoặc guest-<timestamp>)
+  const getStudentId = () => {
+    if (user && user.id) return user.id;
+
+    let existing = localStorage.getItem(GUEST_ID_KEY);
+    if (existing) return existing;
+
+    const newId = `guest-${Date.now()}`;
+    localStorage.setItem(GUEST_ID_KEY, newId);
+    return newId;
+  };
+
+  // JSON chuẩn gửi cho chatbot 
+  const buildRiasecJson = () => {
+    return {
+      student_id: getStudentId(),
+      answers: {
+        R: scores.R,
+        I: scores.I,
+        A: scores.A,
+        S: scores.S,
+        E: scores.E,
+        C: scores.C,
+      },
+    };
+  };
+
+  const handleChange = (qid: string, value: number) => {
+    setAnswers((prev) => ({ ...prev, [qid]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!allAnswered) {
+      alert("Bạn cần trả lời tất cả câu hỏi trước khi xem kết quả.");
+      return;
+    }
+    setSubmitted(true);
+    setLoadedAt(null);
+  };
+
+  const handleSave = () => {
+    if (!user || !SAVE_KEY) {
+      alert("Bạn cần đăng nhập để lưu kết quả.");
+      return;
+    }
+    if (!submitted) {
+      alert("Hãy hoàn thành bài test rồi hãy lưu.");
+      return;
+    }
+    const existing = localStorage.getItem(SAVE_KEY);
+    if (existing && !confirm("Bạn đã lưu trước đó. Ghi đè kết quả?")) return;
+
+    const payload = {
+      answers,
+      scores,
+      top3,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+    alert("Đã lưu kết quả RIASEC!");
+  };
+
+  const handleClearSaved = () => {
+    if (!user || !SAVE_KEY) return;
+    if (!confirm("Xóa kết quả đã lưu?")) return;
+    localStorage.removeItem(SAVE_KEY);
+    alert("Đã xóa kết quả đã lưu.");
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-6">
+      <header className="mb-6">
+        <h1 className="text-2xl font-semibold">Trắc nghiệm RIASEC</h1>
+        <p className="text-gray-600">
+          Đánh giá xu hướng nghề nghiệp theo 6 nhóm: Realistic, Investigative, Artistic, Social,
+          Enterprising, Conventional.
+        </p>
+        {loadedAt && (
+          <p className="text-xs text-gray-400 mt-1">
+            Đã tải lại kết quả đã lưu lúc: {loadedAt}
+          </p>
+        )}
+      </header>
+
+      {!submitted && (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {QUESTIONS.map((q, idx) => (
+            <div key={q.id} className="rounded-xl border bg-white p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="font-medium">
+                  {idx + 1}. {q.text}
+                </div>
+                <span className="text-xs text-gray-500">{TRAIT_LABEL[q.trait]}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {LIKERT.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className={`flex items-center gap-2 rounded-lg border p-2 cursor-pointer hover:bg-gray-50 ${
+                      answers[q.id] === opt.value ? "border-[#EB5A0D]" : "border-gray-200"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={q.id}
+                      className="accent-[#EB5A0D]"
+                      checked={answers[q.id] === opt.value}
+                      onChange={() => handleChange(q.id, opt.value)}
+                    />
+                    <span className="text-sm">{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-500">
+              Đã trả lời: {Object.keys(answers).length}/{QUESTIONS.length}
+            </div>
+            <button
+              type="submit"
+              disabled={!allAnswered}
+              className={`px-4 py-2 rounded-md text-white ${
+                allAnswered ? "bg-[#EB5A0D] hover:opacity-90" : "bg-gray-300 cursor-not-allowed"
+              }`}
+            >
+              Xem kết quả
+            </button>
+          </div>
+        </form>
+      )}
+
+      {submitted && (
+        <div className="space-y-6">
+          {/* Tóm tắt nhanh cho mọi đối tượng */}
+          <section className="rounded-xl border bg-white p-5">
+            <h2 className="text-lg font-semibold mb-2">Kết quả tóm tắt</h2>
+            <p className="text-gray-600 mb-2">
+              Bộ 3 nổi trội: <b>{top3}</b>
+            </p>
+            <p className="text-sm text-gray-600">
+              Điểm chi tiết (0–3 mỗi nhóm):{" "}
+              {(Object.keys(scores) as Trait[])
+                .map((t) => `${t} = ${scores[t]}`)
+                .join(", ")}
+            </p>
+          </section>
+
+          {/* Guest (chưa login) */}
+          {!user && (
+            <section className="rounded-xl border bg-white p-5">
+              <h3 className="font-semibold mb-2">Gợi ý ngành phù hợp (chi tiết từ Chatbot)</h3>
+              <p className="text-gray-600">
+                Kết quả là {top3} – {ranking[0].trait}: {ranking[0].score} điểm,{" "}
+                {ranking[1].trait}: {ranking[1].score} điểm, {ranking[2].trait}:{" "}
+                {ranking[2].score} điểm.
+              </p>
+              <div className="mt-4 flex gap-3">
+                <button
+                  className="px-4 py-2 rounded-md bg-black text-white hover:opacity-90"
+                  onClick={() => {
+                    const json = buildRiasecJson();
+                    localStorage.setItem(CHATBOT_PREFILL_KEY, JSON.stringify(json));
+                    console.log("RIASC JSON (guest) gửi chatbot:", json);
+                    navigate("/chatbot");
+                  }}
+                >
+                  Đưa kết quả cho chatbot
+                </button>
+                <button
+                  className="px-4 py-2 rounded-md border hover:bg-gray-50"
+                  onClick={() => setSubmitted(false)}
+                >
+                  Làm lại bài
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* User đã login */}
+          {user && (
+            <section className="rounded-xl border bg-white p-5">
+              <h3 className="font-semibold mb-4">Gợi ý ngành học theo điểm mạnh của bạn</h3>
+
+              <div className="mt-4 flex gap-3">
+                <button
+                  className="px-4 py-2 rounded-md bg-black text-white hover:opacity-90"
+                  onClick={() => {
+                    const json = buildRiasecJson();
+                    localStorage.setItem(CHATBOT_PREFILL_KEY, JSON.stringify(json));
+                    console.log("RIASC JSON (user) gửi chatbot:", json);
+                    navigate("/chatbot");
+                  }}
+                >
+                  Đưa kết quả cho chatbot
+                </button>
+
+                <button
+                  className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
+                  onClick={handleSave}
+                >
+                  Save kết quả
+                </button>
+
+                <button
+                  className="px-4 py-2 rounded-md border hover:bg-gray-50"
+                  onClick={() => setSubmitted(false)}
+                >
+                  Làm lại bài
+                </button>
+              </div>
+            </section>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

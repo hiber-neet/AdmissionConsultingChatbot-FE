@@ -79,6 +79,7 @@ export function KnowledgeBaseViewer() {
         const transformedDocuments = Array.isArray(documentsData)
           ? documentsData.map((doc, index) => ({
               id: doc.document_id?.toString() || `D${index + 1}`,
+              document_id: doc.document_id, // ⬅️ KEEP original document_id for API calls
               title: doc.title || 'Untitled Document',
               description: doc.content ? doc.content.substring(0, 150) + '...' : '',
               category: doc.category || 'Khác',

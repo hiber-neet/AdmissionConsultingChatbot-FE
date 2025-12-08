@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { 
   Search, 
   ArrowUpDown,
-  Loader2
+  Loader2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/system_users/card';
 import { Input } from '../ui/system_users/input';
@@ -18,74 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '../ui/system_users/table';
-import { consultantAnalyticsAPI, CategoryStatistic } from '../../services/fastapi';
-
-interface QuestionData {
-  id: number;
-  question: string;
-  category: string;
-  timesAsked: number;
-  status: 'answered' | 'unanswered';
-}
-
-const questionData: QuestionData[] = [
-  {
-    id: 1,
-    question: 'What are the application deadlines for Fall 2025?',
-    category: 'Admission Requirements',
-    timesAsked: 342,
-    status: 'answered',
-  },
-  {
-    id: 2,
-    question: 'How do I apply for financial aid?',
-    category: 'Financial Aid',
-    timesAsked: 289,
-    status: 'answered',
-  },
-  {
-    id: 3,
-    question: 'What GPA do I need for admission?',
-    category: 'Admission Requirements',
-    timesAsked: 256,
-    status: 'answered',
-  },
-  {
-    id: 4,
-    question: 'Can I schedule a campus tour?',
-    category: 'Campus Life',
-    timesAsked: 201,
-    status: 'unanswered',
-  },
-  {
-    id: 5,
-    question: 'What scholarships are available?',
-    category: 'Financial Aid',
-    timesAsked: 187,
-    status: 'answered',
-  },
-  {
-    id: 6,
-    question: 'What majors does the university offer?',
-    category: 'Programs',
-    timesAsked: 165,
-    status: 'answered',
-  },
-  {
-    id: 7,
-    question: 'How long does the application review take?',
-    category: 'Admission Requirements',
-    timesAsked: 143,
-    status: 'unanswered',
-  },
-  {
-    id: 8,
-    question: 'What is the tuition cost?',
-    category: 'Tuition Fees',
-    timesAsked: 128,
-    status: 'answered',
-  },
-];
+import { consultantAnalyticsAPI, CategoryStatistic, UserQuestion } from '../../services/fastapi';
 
 interface AnalyticsStatisticsProps {
   onNavigateToTemplates?: (question?: string, action?: 'edit' | 'add' | 'view') => void;
@@ -93,65 +28,74 @@ interface AnalyticsStatisticsProps {
 
 export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisticsProps = {}) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
-  const [dateRange, setDateRange] = useState('Last 30 Days');
-  const [sortField, setSortField] = useState<keyof QuestionData>('timesAsked');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [dateRange, setDateRange] = useState<number>(30);
   const [categorySortField, setCategorySortField] = useState<'category' | 'total_questions'>('total_questions');
   const [categorySortDirection, setCategorySortDirection] = useState<'asc' | 'desc'>('desc');
   
-  // API state
+  // API state for category stats
   const [categoryStats, setCategoryStats] = useState<CategoryStatistic[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
+  
+  // API state for questions
+  const [questions, setQuestions] = useState<UserQuestion[]>([]);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [questionsError, setQuestionsError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 10;
 
-  // Get days based on date range
-  const getDaysFromRange = (range: string): number => {
-    switch (range) {
-      case 'Last 7 Days': return 7;
-      case 'Last 30 Days': return 30;
-      case 'Last 90 Days': return 90;
-      case 'All Time': return 365 * 10; // Large number for all time
-      default: return 30;
-    }
-  };
-
-  // Fetch category statistics
+  // Fetch category statistics (not affected by date range filter)
   useEffect(() => {
     const fetchCategoryStats = async () => {
       try {
-        setLoading(true);
-        setError(null);
-        const days = getDaysFromRange(dateRange);
-        const response = await consultantAnalyticsAPI.getCategoryStatistics(days);
+        setCategoryLoading(true);
+        setCategoryError(null);
+        const response = await consultantAnalyticsAPI.getCategoryStatistics(30); // Always 30 days for categories
         setCategoryStats(Array.isArray(response) ? response : response?.data || []);
       } catch (err: any) {
         console.error('Error fetching category statistics:', err);
-        setError(err.response?.data?.detail || 'Failed to fetch category statistics');
+        setCategoryError(err.response?.data?.detail || 'Failed to fetch category statistics');
       } finally {
-        setLoading(false);
+        setCategoryLoading(false);
       }
     };
 
     fetchCategoryStats();
-  }, [dateRange]);
+  }, []);
 
-  const filteredData = questionData
-    .filter(item => {
-      const matchesSearch = item.question.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === 'All Categories' || item.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    })
-    .sort((a, b) => {
-      const aVal = a[sortField];
-      const bVal = b[sortField];
-      
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortDirection === 'desc' ? bVal - aVal : aVal - bVal;
+  // Fetch user questions (affected by date range and search filter)
+  useEffect(() => {
+    const fetchUserQuestions = async () => {
+      try {
+        setQuestionsLoading(true);
+        setQuestionsError(null);
+        const response = await consultantAnalyticsAPI.getUserQuestions(
+          dateRange,
+          currentPage,
+          pageSize,
+          searchQuery || undefined
+        );
+        
+        setQuestions(response?.data || []);
+        setTotalPages(response?.pagination?.total_pages || 1);
+        setTotalCount(response?.pagination?.total_count || 0);
+      } catch (err: any) {
+        console.error('Error fetching user questions:', err);
+        setQuestionsError(err.response?.data?.detail || 'Failed to fetch user questions');
+      } finally {
+        setQuestionsLoading(false);
       }
-      
-      return 0;
-    });
+    };
+
+    fetchUserQuestions();
+  }, [dateRange, currentPage, searchQuery]);
+
+  // Reset to page 1 when search query or date range changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, dateRange]);
 
   // Sort category data from API
   const sortedCategoryData = [...(categoryStats || [])].sort((a, b) => {
@@ -169,15 +113,6 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
     return 0;
   });
 
-  const handleSort = (field: keyof QuestionData) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
-    }
-  };
-
   const handleCategorySort = (field: 'category' | 'total_questions') => {
     if (categorySortField === field) {
       setCategorySortDirection(categorySortDirection === 'asc' ? 'desc' : 'asc');
@@ -185,6 +120,16 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
       setCategorySortField(field);
       setCategorySortDirection('desc');
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const handleDateRangeChange = (value: string) => {
+    setDateRange(parseInt(value));
   };
 
   return (
@@ -198,50 +143,6 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
           </p>
         </div>
 
-        {/* Filters Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Filters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search questions..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Last 7 Days">Last 7 Days</SelectItem>
-                  <SelectItem value="Last 30 Days">Last 30 Days</SelectItem>
-                  <SelectItem value="Last 90 Days">Last 90 Days</SelectItem>
-                  <SelectItem value="All Time">All Time</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-full sm:w-56">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All Categories">All Categories</SelectItem>
-                  <SelectItem value="Admission Requirements">Admission Requirements</SelectItem>
-                  <SelectItem value="Financial Aid">Financial Aid</SelectItem>
-                  <SelectItem value="Tuition Fees">Tuition Fees</SelectItem>
-                  <SelectItem value="Programs">Programs</SelectItem>
-                  <SelectItem value="Campus Life">Campus Life</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Category Interest Section */}
         <Card>
           <CardHeader>
@@ -251,14 +152,14 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            {loading ? (
+            {categoryLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
                 <span>Loading category statistics...</span>
               </div>
-            ) : error ? (
+            ) : categoryError ? (
               <div className="text-center py-8 text-red-600">
-                <p>Error: {error}</p>
+                <p>Error: {categoryError}</p>
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -270,7 +171,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
               </div>
             ) : sortedCategoryData.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No category data available for the selected time period.</p>
+                <p>No category data available.</p>
               </div>
             ) : (
               <Table>
@@ -319,111 +220,191 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
           </CardContent>
         </Card>
 
+        {/* Filters Section - Moved Below Category Interest */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Filter Questions</CardTitle>
+            <CardDescription>
+              Filter questions by date range and search query
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search questions..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={dateRange.toString()} onValueChange={handleDateRangeChange}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">Last 7 Days</SelectItem>
+                  <SelectItem value="14">Last 14 Days</SelectItem>
+                  <SelectItem value="30">Last 30 Days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Results Count */}
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing <span className="font-semibold text-foreground">{filteredData.length}</span> questions
+            Showing <span className="font-semibold text-foreground">{questions.length}</span> of{' '}
+            <span className="font-semibold text-foreground">{totalCount}</span> questions
           </div>
         </div>
 
-        {/* Content Area */}
+        {/* Questions Detail Section */}
         <Card>
           <CardHeader>
             <CardTitle>Questions Detail</CardTitle>
             <CardDescription>
-              Individual questions with their performance metrics
+              Individual questions from chatbot sessions with their metrics
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-                <TableHeader>
-                  <TableRow className="h-12">
-                    <TableHead className="w-[40%] py-3">
-                      <button
-                        onClick={() => handleSort('question')}
-                        className="flex items-center gap-1 hover:text-foreground font-medium"
-                      >
-                        Question Text
-                        <ArrowUpDown className="h-3.5 w-3.5" />
-                      </button>
-                    </TableHead>
-                    <TableHead className="py-3">
-                      <button
-                        onClick={() => handleSort('category')}
-                        className="flex items-center gap-1 hover:text-foreground font-medium"
-                      >
-                        Category
-                        <ArrowUpDown className="h-3.5 w-3.5" />
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-right py-3">
-                      <button
-                        onClick={() => handleSort('timesAsked')}
-                        className="flex items-center gap-1 hover:text-foreground ml-auto font-medium"
-                      >
-                        Times Asked
-                        <ArrowUpDown className="h-3.5 w-3.5" />
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-center py-3">
-                      <button
-                        onClick={() => handleSort('status')}
-                        className="flex items-center gap-1 hover:text-foreground mx-auto font-medium"
-                      >
-                        Status
-                        <ArrowUpDown className="h-3.5 w-3.5" />
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-center py-3">
-                      <span className="font-medium">Action</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredData.map((item) => (
-                    <TableRow key={item.id} className="h-16">
-                      <TableCell className="font-medium py-4 text-base">{item.question}</TableCell>
-                      <TableCell className="py-4">
-                        <Badge variant="outline" className="text-sm px-2.5 py-1">{item.category}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right py-4 text-base">{item.timesAsked}</TableCell>
-                      <TableCell className="text-center py-4">
-                        <Badge 
-                          className={`text-sm px-2.5 py-1 ${
-                            item.status === 'answered' 
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                              : 'bg-red-100 text-red-800 hover:bg-red-200'
-                          }`}
-                        >
-                          {item.status === 'answered' ? 'Answered' : 'Unanswered'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center py-4">
-                        {item.status === 'answered' ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 px-3 text-xs"
-                            onClick={() => onNavigateToTemplates?.(item.question, 'view')}
-                          >
-                            View Details
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            className="h-8 px-3 text-xs bg-blue-600 hover:bg-blue-700"
-                            onClick={() => onNavigateToTemplates?.(item.question, 'add')}
-                          >
-                            Add to KB
-                          </Button>
-                        )}
-                      </TableCell>
+            {questionsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                <span>Loading questions...</span>
+              </div>
+            ) : questionsError ? (
+              <div className="text-center py-8 text-red-600">
+                <p>Error: {questionsError}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : questions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No questions found matching your filters.</p>
+              </div>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="h-12">
+                      <TableHead className="w-[50%] py-3">
+                        <span className="font-medium">Question Text</span>
+                      </TableHead>
+                      <TableHead className="py-3">
+                        <span className="font-medium">Category</span>
+                      </TableHead>
+                      <TableHead className="text-center py-3">
+                        <span className="font-medium">Status</span>
+                      </TableHead>
+                      <TableHead className="text-center py-3">
+                        <span className="font-medium">Action</span>
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {questions.map((item) => (
+                      <TableRow key={item.id} className="h-16">
+                        <TableCell className="font-medium py-4 text-base">{item.question}</TableCell>
+                        <TableCell className="py-4">
+                          <Badge variant="outline" className="text-sm px-2.5 py-1">{item.category}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center py-4">
+                          <Badge 
+                            className={`text-sm px-2.5 py-1 ${
+                              item.status === 'answered' 
+                                ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                : 'bg-red-100 text-red-800 hover:bg-red-200'
+                            }`}
+                          >
+                            {item.status === 'answered' ? 'Answered' : 'Unanswered'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center py-4">
+                          {item.status === 'unanswered' && (
+                            <Button
+                              size="sm"
+                              className="h-8 px-3 text-xs bg-blue-600 hover:bg-blue-700"
+                              onClick={() => onNavigateToTemplates?.(item.question, 'add')}
+                            >
+                              Add to KB
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between px-6 py-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Previous
+                      </Button>
+                      
+                      {/* Page numbers */}
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              className="w-8 h-8 p-0"
+                              onClick={() => handlePageChange(pageNum)}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </ScrollArea>
   );
