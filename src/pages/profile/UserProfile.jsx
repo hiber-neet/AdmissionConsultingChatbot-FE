@@ -54,7 +54,7 @@ const UserProfile = () => {
   const [tab, setTab] = useState("profile");
   const [editing, setEditing] = useState(false);
 
-  // ====== HỌC BẠ (giữ nguyên) ======
+  // ====== HỌC BẠ ======
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState([]);
@@ -132,64 +132,55 @@ const buildAcademicPayload = () => {
   };
 };
 
-// --- Save academic scores to backend ---
- const saveAcademicScores = async (e) => {
-    e?.preventDefault?.();
+// --- Save academic scores ---
+ // --- Save academic scores ---
+const saveAcademicScores = async (e) => {
+  e?.preventDefault?.();
 
-    // Build payload đúng format BE: { math, literature, ... }
-    const payload = {};
+  const payload = {};
 
-    Object.entries(SUBJECT_API_FIELDS).forEach(([label, apiField]) => {
-      const s = scores[label] || {};
-      const v11 = parseFloat(s["11"]);
-      const v12 = parseFloat(s["12"]);
+  Object.entries(SUBJECT_API_FIELDS).forEach(([label, apiField]) => {
+    const s = scores[label] || {};
+    const vRaw = s["12"]; // chỉ dùng Học kỳ 2
 
-      let val = null;
-
-      if (!isNaN(v11) && !isNaN(v12)) {
-        // nếu nhập cả 2 cột thì lấy trung bình, làm tròn 1 số lẻ
-        val = Number(((v11 + v12) / 2).toFixed(1));
-      } else if (!isNaN(v11)) {
-        val = v11;
-      } else if (!isNaN(v12)) {
-        val = v12;
+    if (vRaw !== undefined && vRaw !== "") {
+      const n = parseFloat(vRaw);
+      if (!Number.isNaN(n)) {
+        payload[apiField] = n;
       }
+    }
+  });
 
-      if (val !== null) {
-        payload[apiField] = val;
+  const filledSubjects = Object.keys(payload).length;
+  if (filledSubjects < 6) {
+    alert("Cần nhập tối thiểu 06 môn.");
+    return;
+  }
+
+  setUploading(true);
+
+  try {
+    const res = await axios.post(
+      `${API_BASE_URL}/academic-score/upload`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders(),
+        },
       }
-    });
+    );
 
-    const filledSubjects = Object.keys(payload).length;
-    if (filledSubjects < 6) {
-      alert("Cần nhập tối thiểu 06 môn.");
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      const res = await axios.post(
-        `${API_BASE_URL}/academic-score/upload`,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            ...authHeaders(),
-          },
-        }
-      );
-
-      console.log("Uploaded OK:", res.data);
-      alert("Lưu học bạ thành công!");
-    } catch (err) {
-      console.error("Upload error:", err);
-      console.error("Server message:", err?.response?.data);
-      alert("Lưu thất bại, vui lòng kiểm tra lại.");
-    } finally {
-      setUploading(false);
-    }
-  };
+    console.log("Uploaded OK:", res.data);
+    alert("Lưu học bạ thành công!");
+  } catch (err) {
+    console.error("Upload error:", err);
+    console.error("Server message:", err?.response?.data);
+    alert("Lưu thất bại, vui lòng kiểm tra lại.");
+  } finally {
+    setUploading(false);
+  }
+};
 
 
 // call once when tab/transcript visible or when user changes
@@ -206,25 +197,23 @@ useEffect(() => {
         const data = res.data;
         if (!data) return;
 
-        // Map từ object BE -> state scores của UI
+        // Map từ object BE
         const next = {};
-        Object.entries(SUBJECT_API_FIELDS).forEach(([label, apiField]) => {
-          const v = data[apiField];
-          if (v !== null && v !== undefined) {
-            // cho hiển thị cả 2 cột giống nhau,
-            // hoặc bạn muốn thì chỉ gán vào 1 cột cũng được
-            next[label] = {
-              "11": v.toString(),
-              "12": v.toString(),
-            };
-          }
-        });
+Object.entries(SUBJECT_API_FIELDS).forEach(([label, apiField]) => {
+  const v = data[apiField];
+  if (v !== null && v !== undefined) {
+    next[label] = {
+      "12": v.toString(),  
+    };
+  }
+});
+
+setScores(next);
 
         setScores(next);
       } catch (err) {
         const status = err?.response?.status;
 
-        // 404 hoặc 500: coi như chưa có điểm => không log đỏ, không alert
         if (status === 404 || status === 500) {
           console.log(
             "Không load được học bạ (chưa có hoặc BE trả lỗi).",
@@ -234,7 +223,6 @@ useEffect(() => {
           return;
         }
 
-        // các lỗi khác vẫn log để biết
         console.error("fetch academic scores", err);
       }
     };
@@ -797,15 +785,15 @@ useEffect(() => {
       alert("Số điện thoại phải bắt đầu bằng 0 và gồm 10 chữ số.");
       return;
     }
-    if (
-      form.admissionScore === "" ||
-      Number.isNaN(Number(form.admissionScore)) ||
-      Number(form.admissionScore) > 30 ||
-      Number(form.admissionScore) < 0
-    ) {
-      alert("Admission score chỉ được nhập số từ 0 đến 30.");
-      return;
-    }
+    // if (
+    //   form.admissionScore === "" ||
+    //   Number.isNaN(Number(form.admissionScore)) ||
+    //   Number(form.admissionScore) > 30 ||
+    //   Number(form.admissionScore) < 0
+    // ) {
+    //   alert("Admission score chỉ được nhập số từ 0 đến 30.");
+    //   return;
+    // }
 
     try {
       alert("Profile saved!");
@@ -875,15 +863,15 @@ useEffect(() => {
     }));
   };
 
-  const renderScoreInput = (subject, grade) => (
-    <input
-      type="text"
-      maxLength={4}
-      value={scores?.[subject]?.[grade] ?? ""}
-      onChange={(e) => handleScoreChange(subject, grade, e.target.value)}
-      className="w-full px-3 py-2 rounded-md text-black placeholder-gray-400"
-    />
-  );
+const renderScoreInput = (subject) => (
+  <input
+    type="text"
+    maxLength={4}
+    value={scores?.[subject]?.["12"] ?? ""}
+    onChange={(e) => handleScoreChange(subject, "12", e.target.value)}
+    className="w-full px-3 py-2 rounded-md text-black placeholder-gray-400"
+  />
+);
 
   if (!isAuthenticated) {
     return (
@@ -989,7 +977,7 @@ useEffect(() => {
                     </div>
 
                     {/* Giới tính */}
-                    <div>
+                    {/* <div>
                       <label className="text-sm text-gray-500">Gender</label>
                       <select
                         name="gender"
@@ -1004,10 +992,10 @@ useEffect(() => {
                           </option>
                         ))}
                       </select>
-                    </div>
+                    </div> */}
 
                     {/* Ngày sinh */}
-                    <div>
+                    {/* <div>
                       <label className="text-sm text-gray-500">
                         Date of Birth
                       </label>
@@ -1019,7 +1007,7 @@ useEffect(() => {
                         disabled={!editing}
                         className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
                       />
-                    </div>
+                    </div> */}
 
                     {/* Email */}
                     <div>
@@ -1049,7 +1037,7 @@ useEffect(() => {
                     </div>
 
                     {/* Address */}
-                    <div>
+                    {/* <div>
                       <label className="text-sm text-gray-500">Address</label>
                       <input
                         name="address"
@@ -1058,10 +1046,10 @@ useEffect(() => {
                         disabled={!editing}
                         className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
                       />
-                    </div>
+                    </div> */}
 
                     {/* Trường */}
-                    <div>
+                    {/* <div>
                       <label className="text-sm text-gray-500">
                         High School
                       </label>
@@ -1072,10 +1060,10 @@ useEffect(() => {
                         disabled={!editing}
                         className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
                       />
-                    </div>
+                    </div> */}
 
                     {/* Lớp/Khối */}
-                    <div>
+                    {/* <div>
                       <label className="text-sm text-gray-500">Grade</label>
                       <select
                         name="grade"
@@ -1090,10 +1078,10 @@ useEffect(() => {
                           </option>
                         ))}
                       </select>
-                    </div>
+                    </div> */}
 
                     {/* Điểm xét tuyển */}
-                    <div>
+                    {/* <div>
                       <label className="text-sm text-gray-500">
                         Admission score
                       </label>
@@ -1109,10 +1097,10 @@ useEffect(() => {
                         disabled={!editing}
                         className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
                       />
-                    </div>
+                    </div> */}
 
                     {/* Tổ hợp môn */}
-                    <div>
+                    {/* <div>
                       <label className="text-sm text-gray-500">
                         Combination of 3 subjects
                       </label>
@@ -1133,7 +1121,7 @@ useEffect(() => {
                         <option value="D07">D07 - Toán, Hóa, Anh</option>
                         <option value="D90">D90 - Toán, Anh, KHTN</option>
                       </select>
-                    </div>
+                    </div> */}
 
                     {/* Ngành mong muốn */}
                     <div>
@@ -1159,7 +1147,7 @@ useEffect(() => {
                     </div>
 
                     {/* Mã RIASEC */}
-                    <div>
+                    {/* <div>
                       <label className="text-sm text-gray-500">
                         RIASEC code
                       </label>
@@ -1170,7 +1158,7 @@ useEffect(() => {
                         disabled={!editing}
                         className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
                       />
-                    </div>
+                    </div> */}
 
                     {/* Actions */}
                     <div className="col-span-1 sm:col-span-2 flex items-center justify-center gap-3 mt-2">
@@ -1486,82 +1474,72 @@ useEffect(() => {
 
             {/* TRANSCRIPT TAB */}
             {tab === "transcript" && (
-              <div className="rounded-2xl border border-gray-200 bg-white p-6">
-                <div className="bg-orange-500 p-6 rounded-lg text-white">
-                  <p className="mb-6 text-sm">
-                    Cần nhập tối thiểu 06 môn cho cả bảng điểm, nếu điểm là số
-                    thập phân, sử dụng dấu chấm
-                  </p>
+<div className="rounded-2xl border border-gray-200 bg-white p-6">
+    <div className="bg-orange-500 p-6 rounded-lg text-white">
+      <p className="mb-6 text-sm">
+        Cần nhập tối thiểu 06 môn cho cả bảng điểm, nếu điểm là số
+        thập phân, sử dụng dấu chấm
+      </p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    {/* LEFT */}
-                    <div>
-                      <div className="grid grid-cols-3 gap-4 font-semibold mb-3 text-white">
-                        <div>Môn học</div>
-                        <div className="text-center">Học kỳ 1</div>
-                        <div className="text-center">Học kỳ 2</div>
-                      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        {/* LEFT */}
+        <div>
+          <div className="grid grid-cols-2 gap-4 font-semibold mb-3 text-white">
+            <div>Môn học</div>
+            <div className="text-center">Học kỳ 2</div>
+          </div>
 
-                      <div>
-                        {subjectsLeft.map((subject) => (
-                          <div
-                            key={subject}
-                            className="grid grid-cols-3 gap-4 items-center mb-3"
-                          >
-                            <div className="font-semibold">{subject}</div>
-                            <div>{renderScoreInput(subject, "11")}</div>
-                            <div>{renderScoreInput(subject, "12")}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* RIGHT */}
-                    <div>
-                      <div className="grid grid-cols-3 gap-4 font-semibold mb-3 text-white">
-                        <div>Môn học</div>
-                        <div className="text-center">Học Kỳ 1</div>
-                        <div className="text-center">Học Kỳ 2</div>
-                      </div>
-
-                      <div>
-                        {subjectsRight.map((subject) => (
-                          <div
-                            key={subject}
-                            className="grid grid-cols-3 gap-4 items-center mb-3"
-                          >
-                            <div className="font-semibold">{subject}</div>
-                            <div>{renderScoreInput(subject, "11")}</div>
-                            <div>{renderScoreInput(subject, "12")}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-center mt-10">
-                   <button
-  onClick={saveAcademicScores}
-  className="bg-purple-700 hover:bg-purple-800 text-white font-bold text-2xl px-16 py-3 rounded-full"
-  disabled={uploading}
->
-  {uploading ? "Đang lưu..." : "Save"}
-</button>
-                  </div>
-                </div>
+          <div>
+            {subjectsLeft.map((subject) => (
+              <div
+                key={subject}
+                className="grid grid-cols-2 gap-4 items-center mb-3"
+              >
+                <div className="font-semibold">{subject}</div>
+                <div>{renderScoreInput(subject)}</div>
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT */}
+        <div>
+          <div className="grid grid-cols-2 gap-4 font-semibold mb-3 text-white">
+            <div>Môn học</div>
+            <div className="text-center">Học kỳ 2</div>
+          </div>
+
+          <div>
+            {subjectsRight.map((subject) => (
+              <div
+                key={subject}
+                className="grid grid-cols-2 gap-4 items-center mb-3"
+              >
+                <div className="font-semibold">{subject}</div>
+                <div>{renderScoreInput(subject)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-center mt-10">
+        <button
+          onClick={saveAcademicScores}
+          className="bg-purple-700 hover:bg-purple-800 text-white font-bold text-2xl px-16 py-3 rounded-full"
+          disabled={uploading}
+        >
+          {uploading ? "Đang lưu..." : "Save"}
+        </button>
+      </div>
+    </div>
+  </div>
             )}
           </section>
         </div>
       </div>
-
-
-
-
-
       <Footer />
     </>
   );
 };
-
 export default UserProfile;
