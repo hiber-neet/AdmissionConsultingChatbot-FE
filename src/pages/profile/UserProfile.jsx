@@ -7,6 +7,11 @@ import banner from "@/assets/images/login-private.jpg";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/Auth";
 // Removed: liveChat.ts imports - now using dedicated /live-chat page
+import { liveChatAPI } from "@/services/fastapi";
+import { toast } from "react-toastify";
+import { useWebSocket } from "@/components/admission/chat/useWebSocket";
+
+
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
@@ -291,15 +296,10 @@ const activeConv = convs.find((c) => c.id === activeId) || null;
 // message đang hiển thị của session active
 const [messages, setMessages] = useState([]);
 
-
-  const liveWsRef = useRef(null);
   const convsRef = useRef(convs);
   useEffect(() => {
     convsRef.current = convs;
   }, [convs]);
-
-
-
   const [chatSessionId, setChatSessionId] = useState(null);
   const chatSessionIdRef = useRef(null);
 
@@ -376,87 +376,22 @@ title:
   fetchSessions();
 }, [tab, user]);
 
+const [queueStatus, setQueueStatus] = useState('idle');
+const [queueInfo, setQueueInfo] = useState(null);
+const [sessionId, setSessionId] = useState(null);
+const [liveMessages, setLiveMessages] = useState([]);
+const [liveInput, setLiveInput] = useState('');
+const [loading, setLoading] = useState(false);
+const handleMessageReceived = (newMsg) => {
+  console.log('[UserProfile Consultant] 📨 WS message:', newMsg);
+  setLiveMessages((prev) => [...prev, newMsg]);
+};
 
+const { isConnected, sendMessage: wsSendMessage, disconnect } = useWebSocket(sessionId, handleMessageReceived);
 
-  const [liveStatus, setLiveStatus] = useState("idle");
-  const [queueInfo, setQueueInfo] = useState(null);
-  const [sessionInfo, setSessionInfo] = useState(null);
-  const [liveMessages, setLiveMessages] = useState([]);
-  const [liveInput, setLiveInput] = useState("");
-  const customerEventSourceRef = useRef(null);
   useEffect(() => {
     chatSessionIdRef.current = chatSessionId;
   }, [chatSessionId]);
-
-  // WebSocket live chat với tư vấn viên
- useEffect(() => {
-  if (liveStatus !== "chatting" || !sessionInfo?.session_id || !user) {
-    if (liveWsRef.current && liveWsRef.current.readyState === WebSocket.OPEN) {
-      liveWsRef.current.close();
-    }
-    liveWsRef.current = null;
-    return;
-  }
-
-  // close existing WS if any (prevent duplicates)
-  if (liveWsRef.current && liveWsRef.current.readyState === WebSocket.OPEN) {
-    try { liveWsRef.current.close(); } catch (e) { console.warn(e); }
-    liveWsRef.current = null;
-  }
-
-  const wsUrl = API_BASE_URL.replace(/^http/, "ws") +
-    `/live_chat/livechat/chat/${sessionInfo.session_id}`;
-
-  const ws = new WebSocket(wsUrl);
-  liveWsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log("Live chat WS connected");
-    };
-
-   ws.onmessage = (event) => {
-  try {
-    const data = JSON.parse(event.data);
-
-    // server broadcast payload (see LiveChatService.broadcast_message):
-    // { event: "message", session_id, sender_id, message, timestamp }
-
-    // ensure we only handle 'message' events here (server may send other events)
-    if (data.event === "message") {
-      // Build the message object for UI
-      const msg = {
-        sender: data.sender_id === user.id ? "customer" : "official",
-        content: data.message,
-        // server sends ISO timestamp in `timestamp`
-        created_at: data.timestamp ?? new Date().toISOString(),
-      };
-
-      // Append the message (do NOT append optimistically when sending)
-      setLiveMessages((prev) => [...prev, msg]);
-    } else if (data.event === "chat_ended") {
-      // optionally handle end event here
-      setLiveStatus("ended");
-    } else {
-      // handle other events if needed
-      console.log("Live WS unhandled event:", data);
-    }
-  } catch (err) {
-    console.warn("Cannot parse WS message:", event.data, err);
-  }
-};
-
-    ws.onerror = (err) => {
-      console.error("Live chat WS error", err);
-    };
-
-    ws.onclose = () => {
-      console.log("Live chat WS closed");
-    };
-
-     return () => {
-    if (ws && ws.readyState === WebSocket.OPEN) ws.close();
-  };
-}, [liveStatus, sessionInfo?.session_id, user]);
 
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -602,170 +537,110 @@ const deleteConversation = async (id) => {
 
   // ====== LIVE CHAT QUEUE ======
   const handleJoinQueue = async () => {
-    if (!user) {
-      alert("Bạn cần đăng nhập trước.");
-      return;
-    }
-    try {
-      setLiveStatus("in_queue");
-      // tạm thời hard-code official_id = 3 (đúng theo Swagger anh gửi)
-      const data = await joinQueue(user.id, 3);
-      setQueueInfo(data);
-      console.log("join_queue result:", data);
-    } catch (err) {
-      console.error("joinQueue error:", err);
-      const msg =
-        err?.response?.data?.detail ||
-        err?.response?.data?.message ||
-        "Không thể tham gia hàng chờ, vui lòng thử lại.";
-      alert(msg);
-      setLiveStatus("idle");
-    }
-  };
-
- const handleSendLiveMessage = async (e) => {
-  e.preventDefault();
-  if (!liveInput.trim() || !sessionInfo?.session_id) return;
-  const content = liveInput.trim();
-
-  // Do NOT append locally here; server will broadcast the message back to all participants
-  setLiveInput("");
-
-  if (!liveWsRef.current || liveWsRef.current.readyState !== WebSocket.OPEN) {
-    console.warn("Live chat WS not ready");
+  if (!user) {
+    toast.error("Please login first");
     return;
   }
-
-  liveWsRef.current.send(
-    JSON.stringify({
-      sender_id: user.id,
-      message: content,
-    })
-  );
-};
-
-  const handleEndLiveChat = async () => {
-    if (!sessionInfo?.session_id) return;
-    try {
-      await endSession(sessionInfo.session_id, user.id);
-    } catch (err) {
-      console.error(err);
-    }
-    setLiveStatus("ended");
-    setSessionInfo(null);
-  };
-
-  // ====== SSE CUSTOMER (queue + accepted + chat_ended) ======
-  useEffect(() => {
-    if (tab !== "consultant" || !user) {
-      if (customerEventSourceRef.current) {
-        customerEventSourceRef.current.close();
-        customerEventSourceRef.current = null;
-      }
+  setLoading(true);
+  try {
+    const response = await liveChatAPI.joinQueue(parseInt(user.id));
+    if (response.error) {
+      let msg = "Cannot join queue";
+      if (response.error === "no_officers_available") msg = "No admission officers online.";
+      if (response.error === "customer_banned") msg = "Your account has been deactivated.";
+      toast.error(msg);
       return;
     }
+    setQueueInfo(response);
+    setQueueStatus("in_queue");
+    toast.success("Joined queue successfully!");
+  } catch (err) {
+    console.error("Join queue error:", err);
+    toast.error("Failed to join queue.");
+  } finally {
+    setLoading(false);
+  }
+};
 
-    const token = localStorage.getItem("access_token") || "";
-    const url =
-      `${API_BASE_URL}/live_chat/livechat/sse/customer/` +
-      `${user.id}?token=${encodeURIComponent(token)}`;
+const handleCancelQueue = async () => {
+  if (!user) return;
+  try {
+    const response = await liveChatAPI.cancelQueueRequest(parseInt(user.id));
+    if (response.error) return toast.error("Failed to cancel request");
+    setQueueStatus("idle");
+    setQueueInfo(null);
+    toast.info("Queue request canceled");
+  } catch {
+    toast.error("Failed to cancel request");
+  }
+};
 
-    const es = new EventSource(url);
-    customerEventSourceRef.current = es;
+const handleEndLiveChat = async () => {
+  if (!sessionId || !user) return;
+  try {
+    await liveChatAPI.endSession(sessionId, parseInt(user.id));
+    disconnect();
+    setQueueStatus("ended");
+    setSessionId(null);
+    setLiveMessages([]);
+    toast.success("Chat session ended");
+  } catch {
+    toast.error("Failed to end session");
+  }
+};
 
-    es.onopen = () => {
-      console.log("SSE customer connected");
-    };
+const handleSendLiveMessage = (e) => {
+  e.preventDefault();
+  if (!liveInput.trim() || !sessionId || !user) return;
+  const success = wsSendMessage(user.id, liveInput);
+  if (success) setLiveInput("");
+};
 
-    es.onerror = (err) => {
-      console.error("SSE error", err);
-    };
+  // ====== SSE CUSTOMER (queue + accepted + chat_ended) ======
+useEffect(() => {
+  if (!user || queueStatus !== "in_queue") return;
 
-    const handleSseEvent = async (event) => {
-      try {
-        let payload;
+  const token = localStorage.getItem("access_token") || "";
+  const sseUrl = `${API_BASE_URL}/live_chat/livechat/sse/customer/${user.id}?token=${encodeURIComponent(token)}`;
+  const eventSource = new EventSource(sseUrl);
 
-        try {
-          // trường hợp server đã trả đúng JSON
-          payload = JSON.parse(event.data);
-        } catch {
-          // fallback cho format hiện tại: {'event': 'queued', ...}
-          const normalized = event.data
-            .replace(/'/g, '"')
-            .replace(/\bNone\b/g, "null")
-            .replace(/\bTrue\b/g, "true")
-            .replace(/\bFalse\b/g, "false");
-
-          payload = JSON.parse(normalized);
+  eventSource.onopen = () => console.log("[Consultant SSE] Connected");
+  eventSource.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      const ev = data.event || data.data?.event;
+      if (ev === "accepted") {
+        const newSessionId = data.session_id || data.data?.session_id;
+        if (newSessionId) {
+          setSessionId(newSessionId);
+          setQueueStatus("chatting");
+          toast.success("Connected to consultant!");
         }
-
-        console.log("SSE data parsed:", payload);
-
-        const ev = payload.event;  
-
-        switch (ev) {
-          case "queued": {
-            try {
-              const res = await axios.get(
-                `${API_BASE_URL}/live_chat/livechatcustomer/queue/status/${user.id}`,
-                { headers: authHeaders() }
-              );
-              setQueueInfo(res.data);
-            } catch (err) {
-              console.error("getQueueStatus error:", err);
-            }
-            setLiveStatus("in_queue");
-            break;
-          }
-          case "accepted": {
-            const sessionId = payload.session_id;
-            setSessionInfo({
-              session_id: sessionId,
-              official_name: "Tư vấn viên",
-            });
-            setLiveStatus("chatting");
-            if (sessionId) {
-              const msgs = await getSessionMessages(sessionId);
-              setLiveMessages(msgs || []);
-            }
-            break;
-          }
-          case "chat_ended": {
-            setLiveStatus("ended");
-            break;
-          }
-          default:
-            console.log("Unhandled SSE:", payload);
-        }
-      } catch (e) {
-        console.warn("SSE parse error:", event.data, e);
+      } else if (ev === "chat_ended") {
+        disconnect();
+        setQueueStatus("ended");
+        setSessionId(null);
+        setLiveMessages([]);
+        toast.info("Chat session ended");
       }
-    };
+    } catch (err) {
+      console.warn("[Consultant SSE] parse error:", err);
+    }
+  };
+  eventSource.onerror = (err) => console.error("SSE error:", err);
 
-    es.addEventListener("queued", handleSseEvent);
-    es.addEventListener("accepted", handleSseEvent);
-    es.addEventListener("chat_ended", handleSseEvent);
-    es.onmessage = handleSseEvent;
-
-    return () => {
-      es.close();
-    };
-  }, [tab, user]);
+  return () => eventSource.close();
+}, [user, queueStatus]);
 
   // ====== PROFILE ======
   const [form, setForm] = useState({
     fullName: "",
-    gender: "male",
-    dob: "",
     email: "",
     phone: "",
-    address: "",
-    school: "",
-    grade: "12",
     admissionScore: "",
     subjects: "",
-    preferredMajor: "",
-    riasecCode: "",
+    preferredMajor: "",   
+    region: "",    
   });
 
   useEffect(() => {
@@ -785,32 +660,31 @@ const deleteConversation = async (id) => {
           },
         });
 
-        const data = res.data;
-        const sp = data.student_profile || {};
+ const data = res.data;
+const sp = data.student_profile || {};
+const interest = sp.interest || {};   // ✅ lấy interest từ trong student_profile
 
-        const preferredMajor =
-          sp.preferred_major ||
-          data.interest_desired_major ||
-          sp.interest?.desired_major ||
-          "";
+const preferredMajor =
+  interest.desired_major ||
+  sp.preferred_major ||
+  data.interest_desired_major ||
+  "";
 
-        const riasecCode = sp.riasec_code || sp.riasec_result?.result || "";
+const riasecCode =
+  sp.riasec_code ||
+  sp.riasec_result?.result ||
+  interest.riasec_code ||
+  "";
 
-        setForm({
-          fullName: data.full_name || "",
-          gender: sp.gender || "male",
-          dob: sp.dob || "",
-          email: data.email || user.email,
-          phone: data.phone_number || "",
-          address: sp.address || "",
-          school: sp.school || "",
-          grade: sp.grade || "12",
-          admissionScore:
-            sp.admission_score != null ? String(sp.admission_score) : "",
-          subjects: sp.subjects || "",
-          preferredMajor,
-          riasecCode,
-        });
+setForm({
+  fullName: data.full_name || "",
+  email: data.email || user.email,
+  phone: data.phone_number || "",
+  subjects: sp.subjects || "",
+  preferredMajor,              // sẽ là "design"
+  region: interest.region || "", // sẽ là "student"
+  riasecCode,
+});
       } catch (error) {
         console.error("Failed to fetch profile:", error);
       }
@@ -844,7 +718,7 @@ const deleteConversation = async (id) => {
     ws.send(
       JSON.stringify({
         user_id: user.id,
-        session_id: chatSessionIdRef.current,   // BE sẽ dùng session này, không tạo mới
+        session_id: chatSessionIdRef.current,    
       })
     );
     setWsReady(true);
@@ -883,21 +757,19 @@ const deleteConversation = async (id) => {
           break;
         }
 
-        case "done": {
-          const finalText =
-            partialRef.current && partialRef.current.trim() !== ""
-              ? partialRef.current
-              : "(không có phản hồi)";
+case "done": {
+  const finalText = (partialRef.current || "").trim();
+  if (finalText) {
+    const botMsg = { sender: "bot", text: finalText };
+    setMessages((prev) => [...prev, botMsg]);
+    pushToActive(botMsg);
+  }
 
-          const botMsg = { sender: "bot", text: finalText };
-          setMessages((prev) => [...prev, botMsg]);
-          pushToActive(botMsg);
-
-          partialRef.current = "";
-          setPartialResponse("");
-          setIsLoading(false);
-          break;
-        }
+  partialRef.current = "";
+  setPartialResponse("");
+  setIsLoading(false);
+  break;
+}
 
         case "error": {
           console.error("⚠️ WS error:", data.message || data);
@@ -947,8 +819,6 @@ useEffect(() => {
   const raw = localStorage.getItem(CHATBOT_PREFILL_KEY);
   if (!raw) return;
 
-  // raw đã là chuỗi JSON mà Riasec lưu, ví dụ:
-  // {"student_id":"guest-1765219998608","answers":{"R":5,"I":5,"A":5,"S":5,"E":5,"C":5}}
   const text = raw;
 
   // hiển thị như tin nhắn user
@@ -959,7 +829,7 @@ useEffect(() => {
   if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
     wsRef.current.send(
       JSON.stringify({
-        message: text,                     // <<< GỬI ĐÚNG CHUỖI JSON
+        message: text,
         user_id: user.id,
         session_id: chatSessionIdRef.current ?? chatSessionId,
       })
@@ -970,6 +840,7 @@ useEffect(() => {
   setPrefillSent(true);
   localStorage.removeItem(CHATBOT_PREFILL_KEY);
 }, [tab, user, wsReady, chatSessionId, prefillSent]);
+
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -1394,6 +1265,20 @@ const renderScoreInput = (subject) => (
                       </select>
                     </div>
 
+                    {/* Khu vực (region) */}
+<div>
+  <label className="text-sm text-gray-500">Region</label>
+  <input
+    name="region"
+    value={form.region}
+    onChange={handleChange}
+    disabled={!editing}
+    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm 
+       focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
+    placeholder="Ví dụ: HCM, HN, Miền Nam..."
+  />
+</div>
+
                     {/* Mã RIASEC */}
                     {/* <div>
                       <label className="text-sm text-gray-500">
@@ -1592,147 +1477,156 @@ const renderScoreInput = (subject) => (
               </div>
             )}
 
-            {/* CONSULTANT TAB */}
-            {tab === "consultant" && (
-              <div className="rounded-2xl border border-gray-200 bg-white flex flex-col min-h-[600px]">
-                <div className="bg-[#EB5A0D] text-white px-6 py-3 flex items-center justify-between">
-                  <div className="text-lg font-semibold">
-                    Live chat với tư vấn viên
-                  </div>
-                  <div className="text-sm">
-                    Trạng thái:{" "}
-                    <span className="font-semibold">
-                      {liveStatus === "idle" && "Chưa bắt đầu"}
-                      {liveStatus === "in_queue" && "Đang trong hàng chờ"}
-                      {liveStatus === "chatting" && "Đang trò chuyện"}
-                      {liveStatus === "ended" && "Đã kết thúc"}
-                    </span>
-                  </div>
-                </div>
+{/* CONSULTANT TAB */}
+{tab === "consultant" && (
+  <div className="rounded-2xl border border-gray-200 bg-white flex flex-col min-h-[600px]">
+    {/* Header */}
+    <div className="bg-[#EB5A0D] text-white px-6 py-3 flex items-center justify-between">
+      <div className="text-lg font-semibold">
+        Live chat với tư vấn viên
+      </div>
+      <div className="text-sm">
+        Trạng thái:{" "}
+        <span className="font-semibold">
+          {queueStatus === "idle" && "Chưa bắt đầu"}
+          {queueStatus === "in_queue" && "Đang trong hàng chờ"}
+          {queueStatus === "chatting" && "Đang trò chuyện"}
+          {queueStatus === "ended" && "Đã kết thúc"}
+        </span>
+      </div>
+    </div>
 
-                {/* Info hàng chờ / tư vấn viên */}
-                <div className="px-6 py-3 border-b border-gray-100 flex flex-wrap items-center gap-4 text-sm text-gray-700">
-                  {liveStatus === "idle" && (
-                    <>
-                      <p>
-                        Ấn nút dưới đây để vào hàng chờ và kết nối với tư vấn
-                        viên tuyển sinh.
-                      </p>
-                      <button
-                        onClick={handleJoinQueue}
-                        className="ml-auto bg-[#EB5A0D] text-white px-4 py-2 rounded-md hover:opacity-90"
-                      >
-                        Bắt đầu chat
-                      </button>
-                    </>
-                  )}
+    {/* Info hàng chờ / tư vấn viên */}
+    <div className="px-6 py-3 border-b border-gray-100 flex flex-wrap items-center gap-4 text-sm text-gray-700">
+      {queueStatus === "idle" && (
+        <>
+          <p>
+            Ấn nút dưới đây để vào hàng chờ và kết nối với tư vấn viên tuyển sinh.
+          </p>
+          <button
+            onClick={handleJoinQueue}
+            disabled={loading}
+            className="ml-auto bg-[#EB5A0D] text-white px-4 py-2 rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Đang vào hàng chờ..." : "Bắt đầu chat"}
+          </button>
+        </>
+      )}
 
-                  {liveStatus === "in_queue" && (
-                    <>
-                      <p>
-                        Bạn đang trong hàng chờ…
-                        {queueInfo?.position != null && (
-                          <span> Vị trí hiện tại: {queueInfo.position}</span>
-                        )}
-                      </p>
-                    </>
-                  )}
-
-                  {liveStatus === "chatting" && (
-                    <>
-                      <p>
-                        Đang trò chuyện với{" "}
-                        <span className="font-semibold">
-                          {sessionInfo?.official_name || "tư vấn viên"}
-                        </span>
-                      </p>
-                      <button
-                        onClick={handleEndLiveChat}
-                        className="ml-auto text-sm text-red-600 hover:underline"
-                      >
-                        Kết thúc phiên
-                      </button>
-                    </>
-                  )}
-
-                  {liveStatus === "ended" && (
-                    <>
-                      <p>
-                        Phiên chat đã kết thúc. Bạn có thể bắt đầu lại nếu cần.
-                      </p>
-                      <button
-                        onClick={handleJoinQueue}
-                        className="ml-auto bg-[#EB5A0D] text-white px-4 py-2 rounded-md hover:opacity-90"
-                      >
-                        Bắt đầu lại
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                {/* KHUNG CHAT */}
-                <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-3">
-                  {!liveMessages.length ? (
-                    <p className="text-gray-400 text-center mt-10">
-                      {liveStatus === "idle"
-                        ? "Chưa có cuộc hội thoại nào."
-                        : "Đang chờ tin nhắn..."}
-                    </p>
-                  ) : (
-                    liveMessages.map((m, idx) => (
-                      <div
-                        key={idx}
-                        className={`flex ${
-                          m.sender === "customer"
-                            ? "justify-end"
-                            : "justify-start"
-                        }`}
-                      >
-                        <div
-                          className={`px-4 py-2 max-w-[70%] rounded-xl text-sm ${
-                            m.sender === "customer"
-                              ? "bg-[#EB5A0D] text-white"
-                              : "bg-white text-gray-800 border border-gray-200"
-                          }`}
-                        >
-                          {m.content}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                {/* INPUT */}
-                <form
-                  onSubmit={handleSendLiveMessage}
-                  className="flex items-center gap-3 border-t border-gray-200 p-4"
-                >
-                  <input
-                    type="text"
-                    placeholder={
-                      liveStatus === "chatting"
-                        ? "Nhập tin nhắn..."
-                        : "Hãy vào hàng chờ để bắt đầu chat..."
-                    }
-                    value={liveInput}
-                    onChange={(e) => setLiveInput(e.target.value)}
-                    disabled={liveStatus !== "chatting"}
-                    className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D] disabled:bg-gray-100"
-                  />
-                  <button
-                    type="submit"
-                    disabled={liveStatus !== "chatting" || !liveInput.trim()}
-                    className={`px-4 py-2 rounded-md text-white ${
-                      liveStatus !== "chatting" || !liveInput.trim()
-                        ? "bg-gray-300 cursor-not-allowed"
-                        : "bg-[#EB5A0D] hover:opacity-90"
-                    }`}
-                  >
-                    Gửi
-                  </button>
-                </form>
-              </div>
+      {queueStatus === "in_queue" && (
+        <>
+          <p>
+            Bạn đang trong hàng chờ…
+            {queueInfo?.position != null && (
+              <span> Vị trí hiện tại: {queueInfo.position}</span>
             )}
+          </p>
+          <button
+            onClick={handleCancelQueue}
+            className="ml-auto text-sm text-red-600 hover:underline"
+          >
+            Hủy yêu cầu
+          </button>
+        </>
+      )}
+
+      {queueStatus === "chatting" && sessionId && (
+        <>
+          <p>
+            Đang trò chuyện với{" "}
+            <span className="font-semibold">tư vấn viên tuyển sinh</span>
+          </p>
+          <span className="text-xs text-green-200">
+            {isConnected ? "🟢 Đã kết nối" : "🔴 Mất kết nối, đang thử lại..."}
+          </span>
+          <button
+            onClick={handleEndLiveChat}
+            className="ml-auto text-sm text-red-600 hover:underline"
+          >
+            Kết thúc phiên
+          </button>
+        </>
+      )}
+
+      {queueStatus === "ended" && (
+        <>
+          <p>Phiên chat đã kết thúc. Bạn có thể bắt đầu lại nếu cần.</p>
+          <button
+            onClick={handleJoinQueue}
+            className="ml-auto bg-[#EB5A0D] text-white px-4 py-2 rounded-md hover:opacity-90"
+          >
+            Bắt đầu lại
+          </button>
+        </>
+      )}
+    </div>
+
+    {/* KHUNG CHAT */}
+    <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-3">
+      {!liveMessages.length ? (
+        <p className="text-gray-400 text-center mt-10">
+          {queueStatus === "idle"
+            ? "Chưa có cuộc hội thoại nào."
+            : "Đang chờ tin nhắn..."}
+        </p>
+      ) : (
+        liveMessages.map((msg, index) => {
+          const isMyMessage = msg.sender_id === parseInt(user.id);
+          return (
+            <div
+              key={msg.interaction_id || index}
+              className={`flex ${
+                isMyMessage ? "justify-end" : "justify-start"
+              }`}
+            >
+              <div
+                className={`px-4 py-2 max-w-[70%] rounded-xl text-sm ${
+                  isMyMessage
+                    ? "bg-[#EB5A0D] text-white"
+                    : "bg-white text-gray-800 border border-gray-200"
+                }`}
+              >
+                {msg.message_text}
+              </div>
+            </div>
+          );
+        })
+      )}
+    </div>
+
+    {/* INPUT */}
+    <form
+      onSubmit={handleSendLiveMessage}
+      className="flex items-center gap-3 border-t border-gray-200 p-4"
+    >
+      <input
+        type="text"
+        placeholder={
+          queueStatus === "chatting"
+            ? "Nhập tin nhắn..."
+            : "Hãy vào hàng chờ để bắt đầu chat..."
+        }
+        value={liveInput}
+        onChange={(e) => setLiveInput(e.target.value)}
+        disabled={queueStatus !== "chatting" || !isConnected}
+        className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D] disabled:bg-gray-100"
+      />
+      <button
+        type="submit"
+        disabled={
+          queueStatus !== "chatting" || !liveInput.trim() || !isConnected
+        }
+        className={`px-4 py-2 rounded-md text-white ${
+          queueStatus !== "chatting" || !liveInput.trim() || !isConnected
+            ? "bg-gray-300 cursor-not-allowed"
+            : "bg-[#EB5A0D] hover:opacity-90"
+        }`}
+      >
+        Gửi
+      </button>
+    </form>
+  </div>
+)}
 
             {/* TRANSCRIPT TAB */}
             {tab === "transcript" && (
