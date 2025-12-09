@@ -17,6 +17,7 @@ export default function ChatGuestPage() {
   const wsRef = useRef(null);
   const listRef = useRef(null);
 
+    const prefillSentRef = useRef(false);   
   // Tạo guestId + sessionId cố định cho guest (lưu vào localStorage)
   const [guestId] = useState(() => {
     let id = localStorage.getItem(GUEST_ID_KEY);
@@ -81,17 +82,18 @@ export default function ChatGuestPage() {
             });
             break;
 
-          case "done": {
-            const final =
-              partialRef.current && partialRef.current.trim() !== ""
-                ? partialRef.current
-                : "(không có phản hồi)";
-            setMessages((prev) => [...prev, { sender: "bot", text: final }]);
-            setPartial("");
-            partialRef.current = "";
-            setIsLoading(false);
-            break;
-          }
+case "done": {
+  const finalText = (partialRef.current || "").trim();
+  if (finalText) {
+    const botMsg = { sender: "bot", text: finalText };
+    setMessages((prev) => [...prev, botMsg]);
+  }
+
+  partialRef.current = "";
+  setPartial("");             
+  setIsLoading(false);
+  break;
+}
 
           case "error":
             console.error("⚠️ WS error:", data.message);
@@ -161,20 +163,23 @@ export default function ChatGuestPage() {
     }
   }, []);
 
-  // Khi WS sẵn sàng và có prefillMessage thì gửi lên server
-  useEffect(() => {
-    if (!wsReady || !prefillMessage) return;
-    if (wsRef.current?.readyState !== WebSocket.OPEN) return;
 
-    wsRef.current.send(
-      JSON.stringify({
-        message: prefillMessage,
-        user_id: guestId,
-        session_id: sessionId,
-      })
-    );
-    setPrefillMessage(null);
-  }, [wsReady, prefillMessage, guestId, sessionId]);
+  useEffect(() => {
+  if (!wsReady || !prefillMessage) return;
+  if (wsRef.current?.readyState !== WebSocket.OPEN) return;
+  if (prefillSentRef.current) return;
+
+  wsRef.current.send(
+    JSON.stringify({
+      message: prefillMessage,
+      user_id: guestId,
+      session_id: sessionId,
+    })
+  );
+
+  prefillSentRef.current = true; 
+  setPrefillMessage(null);
+}, [wsReady, prefillMessage, guestId, sessionId]);
 
   const send = (text) => {
     if (!text.trim()) return;
