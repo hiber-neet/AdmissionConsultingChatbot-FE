@@ -39,7 +39,7 @@ export default function BannerIntro() {
           </h1>
 
           {/* Subheading */}
-          <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-orange-700 max-w-3xl mx-auto leading-relaxed">
             Nơi đào tạo nhân tài công nghệ hàng đầu Việt Nam với phương pháp học tập hiện đại, môi trường quốc tế và cơ hội việc làm 100%
           </p>
 

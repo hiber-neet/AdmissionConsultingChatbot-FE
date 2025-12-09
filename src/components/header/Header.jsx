@@ -1,14 +1,16 @@
 // src/components/header/Header.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { GraduationCap, Menu, X, User as UserIcon, LogOut, MessageSquare } from "lucide-react";
 import { useAuth } from "@/contexts/Auth";
+
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();    
   const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
@@ -17,6 +19,8 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const isHome = location.pathname === "/";
+  const isSolidHeader = !isHome || isScrolled;
 const scrollToSection = (id) => {
   if (window.location.pathname !== "/") {
     navigate("/", { state: { scrollTo: id } });
@@ -70,7 +74,7 @@ const scrollToSection = (id) => {
   return (
     <nav
       className={`fixed w-full z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white shadow-md" : "bg-transparent"
+        isSolidHeader ? "bg-white shadow-md" : "bg-transparent"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -89,14 +93,14 @@ const scrollToSection = (id) => {
             <div>
               <h1
                 className={`text-xl font-bold ${
-                  isScrolled ? "text-gray-900" : "text-white"
+                  isSolidHeader ? "text-gray-900" : "text-white"
                 }`}
               >
                 FPT University
               </h1>
               <p
                 className={`text-xs ${
-                  isScrolled ? "text-gray-600" : "text-white/90"
+                  isSolidHeader ? "text-gray-600" : "text-white/90"
                 }`}
               >
                 Đại học FPT
@@ -109,7 +113,7 @@ const scrollToSection = (id) => {
             <button
               onClick={() => scrollToSection("home")}
               className={`text-sm font-medium transition-colors ${
-                isScrolled
+                isSolidHeader
                   ? "text-gray-700 hover:text-orange-600"
                   : "text-white hover:text-orange-200"
               }`}
@@ -119,7 +123,7 @@ const scrollToSection = (id) => {
             <button
               onClick={() => scrollToSection("about")}
               className={`text-sm font-medium transition-colors ${
-                isScrolled
+                isSolidHeader
                   ? "text-gray-700 hover:text-orange-600"
                   : "text-white hover:text-orange-200"
               }`}
@@ -129,7 +133,7 @@ const scrollToSection = (id) => {
             <button
               onClick={() => scrollToSection("programs")}
               className={`text-sm font-medium transition-colors ${
-                isScrolled
+                isSolidHeader
                   ? "text-gray-700 hover:text-orange-600"
                   : "text-white hover:text-orange-200"
               }`}
@@ -139,7 +143,7 @@ const scrollToSection = (id) => {
             <button
               onClick={() => scrollToSection("admissions")}
               className={`text-sm font-medium transition-colors ${
-                isScrolled
+                isSolidHeader
                   ? "text-gray-700 hover:text-orange-600"
                   : "text-white hover:text-orange-200"
               }`}
@@ -149,7 +153,8 @@ const scrollToSection = (id) => {
             <button
               onClick={() => scrollToSection("contact")}
               className={`text-sm font-medium transition-colors ${
-                isScrolled
+                isSolidHeader
+              
                   ? "text-gray-700 hover:text-orange-600"
                   : "text-white hover:text-orange-200"
               }`}
@@ -160,7 +165,7 @@ const scrollToSection = (id) => {
             <button
               onClick={goarticles}
               className={`text-sm font-medium transition-colors ${
-                isScrolled
+                isSolidHeader
                   ? "text-gray-700 hover:text-orange-600"
                   : "text-white hover:text-orange-200"
               }`}
@@ -172,7 +177,7 @@ const scrollToSection = (id) => {
   <button
     onClick={goChatbot}
     className={`text-sm font-medium transition-colors ${
-      isScrolled
+      isSolidHeader
         ? "text-gray-700 hover:text-orange-600"
         : "text-white hover:text-orange-200"
     }`}
@@ -251,13 +256,13 @@ const scrollToSection = (id) => {
             {isMobileMenuOpen ? (
               <X
                 className={`h-6 w-6 ${
-                  isScrolled ? "text-gray-900" : "text-white"
+                  isSolidHeader ? "text-gray-900" : "text-white"
                 }`}
               />
             ) : (
               <Menu
                 className={`h-6 w-6 ${
-                  isScrolled ? "text-gray-900" : "text-white"
+                  isSolidHeader ? "text-gray-900" : "text-white"
                 }`}
               />
             )}

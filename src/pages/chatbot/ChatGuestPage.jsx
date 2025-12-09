@@ -52,7 +52,7 @@ export default function ChatGuestPage() {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log("✅ Guest WS connected");
+      console.log("Guest WS connected");
       setWsReady(true);
 
       // Gửi user_id + session_id giống code Chatbot demo
