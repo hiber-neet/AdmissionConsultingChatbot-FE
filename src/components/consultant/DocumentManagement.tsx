@@ -10,6 +10,7 @@ import { knowledgeAPI, intentAPI } from '../../services/fastapi';
 import { useAuth } from '../../contexts/Auth';
 import { API_CONFIG } from '../../config/api.js';
 import { toast } from 'react-toastify';
+import { t } from '../../utils/i18n';
 
 // Use KnowledgeDocument interface directly from fastapi-client
 type Document = KnowledgeDocument;
@@ -35,7 +36,7 @@ const formatDate = (dateString: string) => {
 };
 
 export function DocumentManagement() {
-  const { user } = useAuth();
+  const { user, isConsultantLeader } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,24 +54,29 @@ export function DocumentManagement() {
   const [documentTitle, setDocumentTitle] = useState('');
   const [documentCategory, setDocumentCategory] = useState('');
 
-  // Check if user is leader
-  const isLeader = user?.role === 'Admin' || user?.role === 'ConsultantLeader';
+  // Check if user is leader (Admin or Consultant with leader flag)
+  const isLeader = isConsultantLeader();
 
-  // Fetch documents on component mount
+  // Fetch documents on component mount and when status filter changes
   useEffect(() => {
     fetchDocuments();
     fetchIntents();
-  }, []);
+  }, [statusFilter]);
 
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      const data = await knowledgeAPI.getDocuments();
+      // Fetch documents with status filter if not 'all'
+      const data = statusFilter !== 'all' 
+        ? await knowledgeAPI.getDocuments(statusFilter)
+        : await knowledgeAPI.getDocuments();
       setDocuments(data);
       
       // Set first document as selected if available
       if (data.length > 0 && !selectedDoc) {
         await fetchDocumentDetails(data[0].document_id);
+      } else if (data.length === 0) {
+        setSelectedDoc(null);
       }
     } catch (error) {
       console.error('Failed to fetch documents:', error);
@@ -192,8 +198,7 @@ export function DocumentManagement() {
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || doc.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
   
   // Helper function to get status badge color
@@ -207,6 +212,17 @@ export function DocumentManagement() {
     }
   };
 
+  // Helper function to get status label in Vietnamese
+  const getStatusLabel = (status?: string) => {
+    switch (status) {
+      case 'approved': return 'Đã duyệt';
+      case 'draft': return 'Nháp';
+      case 'rejected': return 'Từ chối';
+      case 'deleted': return 'Đã xóa';
+      default: return status;
+    }
+  };
+
   return (
     <div className="min-h-screen h-full flex bg-[#F8FAFC]">
       {/* Left Panel - Document List */}
@@ -214,7 +230,7 @@ export function DocumentManagement() {
         {/* Header */}
         <div className="p-4 border-b border-gray-200 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Documents</h2>
+            <h2 className="text-lg font-semibold">{t('documents.title')}</h2>
             <Button 
               variant="outline" 
               size="sm" 
@@ -225,39 +241,37 @@ export function DocumentManagement() {
               }}
             >
               <Plus className="h-4 w-4" />
-              Upload File
+              {t('common.upload')}
             </Button>
           </div>
           
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Tìm kiếm tài liệu..."
+              placeholder={t('common.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
           </div>
 
-          {/* Status Filter - Only show for leaders */}
-          {isLeader && (
-            <div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {/* Status Filter - Available to all users */}
+          <div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t('common.filter')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('status.all_statuses')}</SelectItem>
+                <SelectItem value="draft">{t('status.draft')}</SelectItem>
+                <SelectItem value="approved">{t('status.approved')}</SelectItem>
+                <SelectItem value="rejected">{t('status.rejected')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="text-sm text-muted-foreground">
-            {filteredDocuments.length} documents found
+            {filteredDocuments.length} {t('documents.title').toLowerCase()}
           </div>
         </div>
 
@@ -266,16 +280,16 @@ export function DocumentManagement() {
           {loading ? (
             <div className="flex items-center justify-center p-8">
               <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="ml-2">Loading documents...</span>
+              <span className="ml-2">{t('common.loading')}</span>
             </div>
           ) : filteredDocuments.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center">
               <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No Documents Found</h3>
+              <h3 className="text-lg font-medium mb-2">{t('documents.no_documents_found')}</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 {searchQuery 
-                  ? `No documents match "${searchQuery}"`
-                  : 'No documents have been uploaded yet'
+                  ? `${t('documents.no_documents_found')} "${searchQuery}"`
+                  : t('documents.upload_first_document')
                 }
               </p>
               {!searchQuery && (
@@ -322,7 +336,7 @@ export function DocumentManagement() {
                         <div className="font-medium truncate flex-1">{doc.title}</div>
                         {doc.status && (
                           <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(doc.status)}`}>
-                            {doc.status}
+                            {getStatusLabel(doc.status)}
                           </span>
                         )}
                       </div>
@@ -354,7 +368,7 @@ export function DocumentManagement() {
                     className="gap-2"
                     onClick={() => handleDownload(selectedDoc)}
                   >
-                    <Download className="h-4 w-4" />Tải Xuống</Button>
+                    <Download className="h-4 w-4" />{t('common.download')}</Button>
                   <Button 
                     variant="destructive" 
                     size="sm"
@@ -367,7 +381,7 @@ export function DocumentManagement() {
                     ) : (
                       <Trash2 className="h-4 w-4" />
                     )}
-                    Delete
+                    {t('common.delete')}
                   </Button>
                 </div>
               </div>
@@ -376,87 +390,43 @@ export function DocumentManagement() {
               {selectedDoc.status && (
                 <div className="mb-4">
                   <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedDoc.status)}`}>
-                    Status: {selectedDoc.status.charAt(0).toUpperCase() + selectedDoc.status.slice(1)}
+                    {t('common.status')}: {getStatusLabel(selectedDoc.status)}
                   </span>
-                </div>
-              )}
-
-              {/* Review Actions - Only for leaders */}
-              {isLeader && selectedDoc.status === 'draft' && (
-                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <h3 className="font-medium mb-3">Review Actions</h3>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                      onClick={async () => {
-                        try {
-                          await knowledgeAPI.approveDocument(selectedDoc.document_id);
-                          toast.success('Document approved successfully!');
-                          fetchDocuments();
-                          fetchDocumentDetails(selectedDoc.document_id);
-                        } catch (error) {
-                          toast.error('Failed to approve document');
-                        }
-                      }}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={async () => {
-                        const reason = prompt('Reason for rejection:');
-                        if (reason) {
-                          try {
-                            await knowledgeAPI.rejectDocument(selectedDoc.document_id, reason);
-                            toast.success('Document rejected');
-                            fetchDocuments();
-                            fetchDocumentDetails(selectedDoc.document_id);
-                          } catch (error) {
-                            toast.error('Failed to reject document');
-                          }
-                        }
-                      }}
-                    >
-                      Reject
-                    </Button>
-                  </div>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Created</div>
+                  <div className="text-sm text-muted-foreground">{t('common.created')}</div>
                   <div>{formatDate(selectedDoc.created_at)}</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">File Type</div>
+                  <div className="text-sm text-muted-foreground">{t('documents.file_type')}</div>
                   <div className="capitalize">{getFileType(selectedDoc.file_path)}</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Danh Mục</div>
+                  <div className="text-sm text-muted-foreground">{t('common.category')}</div>
                   <div className="capitalize">{selectedDoc.category || 'General'}</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Document ID</div>
+                  <div className="text-sm text-muted-foreground">{t('documents.document_id')}</div>
                   <div>{selectedDoc.document_id}</div>
                 </div>
                 {selectedDoc.status && (
                   <div className="space-y-1">
-                    <div className="text-sm text-muted-foreground">Status</div>
+                    <div className="text-sm text-muted-foreground">{t('common.status')}</div>
                     <div className="capitalize">{selectedDoc.status}</div>
                   </div>
                 )}
                 {selectedDoc.reviewed_by && (
                   <div className="space-y-1">
-                    <div className="text-sm text-muted-foreground">Reviewed By</div>
+                    <div className="text-sm text-muted-foreground">{t('documents.reviewed_by')}</div>
                     <div>User ID: {selectedDoc.reviewed_by}</div>
                   </div>
                 )}
                 {selectedDoc.reviewed_at && (
                   <div className="space-y-1">
-                    <div className="text-sm text-muted-foreground">Reviewed At</div>
+                    <div className="text-sm text-muted-foreground">{t('documents.reviewed_at')}</div>
                     <div>{formatDate(selectedDoc.reviewed_at)}</div>
                   </div>
                 )}
@@ -467,11 +437,11 @@ export function DocumentManagement() {
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center space-y-2">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto" />
-              <h3 className="font-medium">No Document Selected</h3>
+              <h3 className="font-medium">{t('documents.no_document_selected')}</h3>
               <p className="text-sm text-muted-foreground">
                 {documents.length === 0 
-                  ? 'Upload your first document to get started'
-                  : 'Select a document from the list to view its details'
+                  ? t('documents.upload_first_document')
+                  : t('documents.select_document_prompt')
                 }
               </p>
             </div>
@@ -512,19 +482,19 @@ export function DocumentManagement() {
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Upload Document</DialogTitle>
+            <DialogTitle>{t('documents.upload_document')}</DialogTitle>
             <DialogDescription>
-              Select a document file and specify its intent for the knowledge base.
+              {t('documents.upload_dialog_description')}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             {/* Intent Selection */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-red-600">Intent *</label>
+              <label className="text-sm font-medium text-red-600">{t('documents.intent_required')}</label>
               <Select value={selectedIntent} onValueChange={setSelectedIntent}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an intent for this document" />
+                  <SelectValue placeholder={t('documents.select_intent_placeholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {intents.map((intent) => (
@@ -535,41 +505,41 @@ export function DocumentManagement() {
                 </SelectContent>
               </Select>
               {intents.length === 0 && (
-                <p className="text-xs text-muted-foreground">Loading intents...</p>
+                <p className="text-xs text-muted-foreground">{t('documents.loading_intents')}</p>
               )}
             </div>
 
             {/* Document Title */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Document Title</label>
+              <label className="text-sm font-medium">{t('documents.document_title')}</label>
               <Input
                 type="text"
-                placeholder="Enter document title (optional)"
+                placeholder={t('documents.enter_title_placeholder')}
                 value={documentTitle}
                 onChange={(e) => setDocumentTitle(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Leave empty to use filename as title
+                {t('documents.title_helper_text')}
               </p>
             </div>
 
             {/* Category */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Danh Mục</label>
+              <label className="text-sm font-medium">{t('documents.category_label')}</label>
               <Input
                 type="text"
-                placeholder="Enter category (optional)"
+                placeholder={t('documents.enter_category_placeholder')}
                 value={documentCategory}
                 onChange={(e) => setDocumentCategory(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                e.g., FAQ, Guidelines, Procedures (defaults to 'general')
+                {t('documents.category_helper_text')}
               </p>
             </div>
 
             {/* File Selection */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-red-600">Select Document File *</label>
+              <label className="text-sm font-medium text-red-600">{t('documents.file_required')}</label>
               <div className="flex items-center gap-4">
                 <Input
                   type="file"
@@ -580,7 +550,7 @@ export function DocumentManagement() {
                       // Check file size (max 50MB)
                       const maxSize = 50 * 1024 * 1024;
                       if (file.size > maxSize) {
-                        toast.error('File size must be less than 50MB');
+                        toast.error(t('documents.file_size_limit'));
                         e.target.value = '';
                         return;
                       }
@@ -599,12 +569,12 @@ export function DocumentManagement() {
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm font-medium">{uploadedFile.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    Size: {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                    {t('documents.file_size')}: {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
-                Supported formats: PDF, DOC, DOCX, TXT, HTML, XLSX, PPTX (Max 50MB)
+                {t('documents.supported_formats')}
               </p>
             </div>
           </div>
@@ -616,7 +586,7 @@ export function DocumentManagement() {
               setDocumentTitle('');
               setDocumentCategory('');
               setShowUploadDialog(false);
-            }}>Hủy</Button>
+            }}>{t('common.cancel')}</Button>
             <Button 
               onClick={handleUpload}
               disabled={!uploadedFile || !selectedIntent || uploading}
@@ -624,10 +594,10 @@ export function DocumentManagement() {
               {uploading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Uploading...
+                  {t('documents.uploading')}
                 </>
               ) : (
-                'Upload Document'
+                t('documents.upload_document')
               )}
             </Button>
           </DialogFooter>

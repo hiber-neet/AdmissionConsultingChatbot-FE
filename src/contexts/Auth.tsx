@@ -27,6 +27,7 @@ type AuthCtx = {
   logout: () => void;
   hasPermission: (permission: Permission) => boolean;
   isContentManagerLeader: () => boolean; // Check if user is Content Manager Leader
+  isConsultantLeader: () => boolean; // Check if user is Consultant Leader
   getDefaultRoute: (role: Role) => string; // Add this new function
   switchToRole: (role: Role) => void; // Switch active role for navigation
   getAccessibleRoles: () => Role[]; // Get all roles user can switch to
@@ -527,6 +528,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return checkUserPermission('Content Manager') && user.contentManagerIsLeader === true;
   };
 
+  // Check if user is Consultant Leader
+  const isConsultantLeader = (): boolean => {
+    if (!user) return false;
+    
+    // Admin bypasses leader check (same as backend)
+    if (checkUserPermission('Admin')) return true;
+    
+    // Must be Consultant AND have consultant leadership status
+    return checkUserPermission('Consultant') && user.consultantIsLeader === true;
+  };
+
   // Function to switch active role for navigation
   const switchToRole = (role: Role) => {
     if (!user?.permissions) return;
@@ -568,6 +580,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout, 
       hasPermission: checkUserPermission,
       isContentManagerLeader,
+      isConsultantLeader,
       getDefaultRoute,
       switchToRole,
       getAccessibleRoles

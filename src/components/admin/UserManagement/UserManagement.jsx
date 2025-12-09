@@ -548,6 +548,46 @@ export function UserManagement() {
           throw new Error(`Invalid role: ${formData.role}`);
         }
         
+        // Determine permissions based on role
+        let permissionIds = [];
+        
+        // First, get all available permissions from API
+        const permissionsResponse = await fetch(`${baseUrl}/users/permissions`, {
+          method: 'GET',
+          headers: {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (permissionsResponse.ok) {
+          const allPermissions = await permissionsResponse.json();
+          
+          if (formData.role === 'SYSTEM_ADMIN') {
+            // Admin gets ALL permissions
+            permissionIds = allPermissions.map(p => p.permission_id);
+          } else {
+            // For other staff roles, assign matching permission
+            const roleToPermissionName = {
+              'CONSULTANT': 'Consultant',
+              'CONTENT_MANAGER': 'ContentManager',
+              'ADMISSION_OFFICER': 'AdmissionOfficial'
+            };
+            
+            const targetPermissionName = roleToPermissionName[formData.role];
+            if (targetPermissionName) {
+              const matchingPermission = allPermissions.find(p => 
+                p.permission_name === targetPermissionName || 
+                p.permission_name.replace(/\s+/g, '') === targetPermissionName
+              );
+              
+              if (matchingPermission) {
+                permissionIds = [matchingPermission.permission_id];
+              }
+            }
+          }
+        }
+        
         // Prepare API request body for new user
         const requestBody = {
           full_name: formData.name,
@@ -555,7 +595,7 @@ export function UserManagement() {
           status: true,
           password: formData.password,
           role_id: roleId,
-          permissions: [], // Start with no permissions, can be added later
+          permissions: permissionIds, // Automatically assign permissions based on role
           phone_number: formData.phone_number || '',
           consultant_is_leader: false,
           content_manager_is_leader: false,
@@ -563,7 +603,7 @@ export function UserManagement() {
           interest_region: formData.interest_region || ''
         };
 
-        const response = await fetch(`${baseUrl}/users/create`, {
+        const response = await fetch(`${baseUrl}/auth/register`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -588,19 +628,43 @@ export function UserManagement() {
 
         const newUser = await response.json();
         
+        // Determine permissions for local state based on role
+        let assignedPermissions = [];
+        if (formData.role === 'SYSTEM_ADMIN') {
+          assignedPermissions = ['admin'];
+        } else {
+          const roleToPermission = {
+            'CONSULTANT': 'consultant',
+            'CONTENT_MANAGER': 'content_manager',
+            'ADMISSION_OFFICER': 'admission_officer'
+          };
+          const permission = roleToPermission[formData.role];
+          if (permission) {
+            assignedPermissions = [permission];
+          }
+        }
+        
         // Add to local state
         setUsers([...users, {
-          id: newUser.user_id,
+          id: newUser.user_id?.toString() || Date.now().toString(),
           name: newUser.full_name,
+          username: newUser.email?.split('@')[0] || 'user',
           email: newUser.email,
           role: formData.role,
-          permissions: [], // New user starts with no permissions
+          permissions: assignedPermissions,
+          status: 'active',
           phone_number: newUser.phone_number || '',
+          lastActive: 'Just now',
+          createdAt: new Date().toISOString().split('T')[0],
+          isBanned: false,
+          banReason: null,
+          consultant_is_leader: false,
+          content_manager_is_leader: false,
           interest_desired_major: newUser.interest_desired_major || '',
           interest_region: newUser.interest_region || ''
         }]);
         
-        toast.success('Tạo người dùng thành công! Bạn có thể thêm quyền hạn ngay bây giờ.');
+        toast.success(`Tạo người dùng thành công với quyền ${assignedPermissions.join(', ')}!`);
       }
 
       // Close dialog and refresh

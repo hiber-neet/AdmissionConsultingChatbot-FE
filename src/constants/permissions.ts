@@ -98,9 +98,8 @@ export { PAGE_PERMISSIONS, ROLE_PERMISSIONS, PERMISSION_HIERARCHY };
 export async function initializePermissions(): Promise<void> {
   try {
     await loadPermissions();
-    console.log('✅ Permissions system initialized successfully');
   } catch (error) {
-    console.warn('⚠️ Failed to initialize permissions system, using fallbacks:', error);
+    // Fallback to hardcoded permissions - silent fail expected
   }
 }
 

@@ -56,7 +56,7 @@ export function ConsultantLayout() {
     { id: 'documents', label: 'Documents', icon: FileText, path: '/consultant/documents' },
     { id: 'optimization', label: 'Tối Ưu Hóa Nội Dung', icon: Lightbulb, path: '/consultant/optimization' },
     ...(user?.isLeader ? [
-      { id: 'leader', label: 'Đánh Giá Lãnh Đạo', icon: Database, path: '/consultant/leader' }
+      { id: 'leader', label: 'Duyệt Cơ Sở Tri Thức', icon: Database, path: '/consultant/leader' }
     ] : []),
     { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/consultant/profile' }
   ];

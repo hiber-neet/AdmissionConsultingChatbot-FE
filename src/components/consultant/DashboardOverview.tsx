@@ -8,6 +8,7 @@ import {
   Plus,
   Loader2
 } from 'lucide-react';
+import { t } from '../../utils/i18n';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/system_users/card';
 import { Button } from '../ui/system_users/button';
 import { ScrollArea } from '../ui/system_users/scroll-area';
@@ -55,9 +56,6 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
           consultantAnalyticsAPI.getRecentQuestions(5)
         ]);
         
-        console.log('Dashboard statistics:', statsResponse);
-        console.log('Recent questions:', questionsResponse);
-        
         setStats(statsResponse.data);
         // Handle case where questionsResponse might be an array directly or have .data property
         const questionsData = Array.isArray(questionsResponse) ? questionsResponse : questionsResponse?.data || [];
@@ -96,7 +94,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
         <div className="p-6 pb-8 space-y-6">
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-3 text-muted-foreground">Đang tải dữ liệu dashboard...</span>
+            <span className="ml-3 text-muted-foreground">{t('dashboard.loading_data')}</span>
           </div>
         </div>
       </ScrollArea>
@@ -111,7 +109,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-              <p className="text-destructive font-medium">Failed to load dashboard data</p>
+              <p className="text-destructive font-medium">{t('dashboard.loading_failed')}</p>
               <p className="text-sm text-muted-foreground mt-2">{error}</p>
             </div>
           </div>
@@ -126,7 +124,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
       <ScrollArea className="min-h-screen h-full">
         <div className="p-6 pb-8 space-y-6">
           <div className="flex items-center justify-center h-64">
-            <p className="text-muted-foreground">No dashboard data available</p>
+            <p className="text-muted-foreground">{t('dashboard.no_data')}</p>
           </div>
         </div>
       </ScrollArea>
@@ -138,9 +136,9 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
       <div className="p-6 pb-8 space-y-6">
         {/* Page Header */}
         <div>
-          <h1>Dashboard Overview</h1>
+          <h1>{t('dashboard.overview_title')}</h1>
           <p className="text-muted-foreground">
-            Monitor chatbot performance and user engagement at a glance
+            {t('dashboard.overview_description')}
           </p>
         </div>
 
@@ -150,7 +148,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm text-muted-foreground">
-                  Total User Queries
+                  {t('dashboard.total_user_queries')}
                 </CardTitle>
                 <MessageSquare className="h-4 w-4 text-[#3B82F6]" />
               </div>
@@ -160,7 +158,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
               <p className="text-xs text-muted-foreground mt-1">
                 <span className={stats.overview_stats.queries_growth >= 0 ? "text-[#10B981]" : "text-[#EF4444]"}>
                   {stats.overview_stats.queries_growth >= 0 ? '↑' : '↓'} {Math.abs(stats.overview_stats.queries_growth)}%
-                </span> from last {timeRange === 'today' ? 'hour' : 'week'}
+                </span> {t(timeRange === 'today' ? 'dashboard.from_last_hour' : 'dashboard.from_last_week')}
               </p>
             </CardContent>
           </Card>
@@ -169,7 +167,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm text-muted-foreground">
-                  Accuracy Rate
+                  {t('dashboard.accuracy_rate')}
                 </CardTitle>
                 <Target className="h-4 w-4 text-[#10B981]" />
               </div>
@@ -177,7 +175,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             <CardContent>
               <div className="text-3xl">{stats.overview_stats.accuracy_rate}%</div>
               <p className="text-xs text-muted-foreground mt-1">
-                <span className="text-[#10B981]">↑ {stats.overview_stats.accuracy_improvement}%</span> improvement
+                <span className="text-[#10B981]">↑ {stats.overview_stats.accuracy_improvement}%</span> {t('dashboard.improvement')}
               </p>
             </CardContent>
           </Card>
@@ -186,7 +184,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm text-muted-foreground">
-                  Most Active Day
+                  {t('dashboard.most_active_day')}
                 </CardTitle>
                 <Clock className="h-4 w-4 text-[#F59E0B]" />
               </div>
@@ -194,7 +192,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             <CardContent>
               <div className="text-3xl">{stats.overview_stats.most_active_time}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Peak engagement day
+                {t('dashboard.peak_engagement_day')}
               </p>
             </CardContent>
           </Card>
@@ -203,7 +201,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm text-muted-foreground">
-                  Unanswered Queries
+                  {t('dashboard.unanswered_queries')}
                 </CardTitle>
                 <AlertCircle className="h-4 w-4 text-[#EF4444]" />
               </div>
@@ -211,7 +209,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             <CardContent>
               <div className="text-3xl">{stats.overview_stats.unanswered_queries}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Requires attention
+                {t('dashboard.requires_attention')}
               </p>
             </CardContent>
           </Card>
@@ -222,8 +220,8 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
           {/* Questions Over Time Chart */}
           <Card className="lg:col-span-full">
             <CardHeader>
-              <CardTitle>Questions Over Time</CardTitle>
-              <CardDescription>Daily query volume for the last 7 days</CardDescription>
+              <CardTitle>{t('dashboard.questions_over_time')}</CardTitle>
+              <CardDescription>{t('dashboard.daily_query_volume')}</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -264,9 +262,9 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Câu Hỏi Gần Đây</CardTitle>
+                <CardTitle>{t('dashboard.recent_questions')}</CardTitle>
                 <CardDescription>
-                  The 5 most recent questions asked in the system
+                  {t('dashboard.recent_questions_description')}
                 </CardDescription>
               </div>
             </div>
@@ -275,8 +273,8 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             {!recentQuestions || recentQuestions.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No recent questions found.</p>
-                <p className="text-sm">Questions will appear here as users interact with the chatbot.</p>
+                <p>{t('dashboard.no_questions_found')}</p>
+                <p className="text-sm">{t('dashboard.no_questions_yet')}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -290,7 +288,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
                         <p className="font-medium">{item.question}</p>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>Asked by {item.user_name}</span>
+                        <span>{t('dashboard.asked_by')} {item.user_name}</span>
                         {item.timestamp && (
                           <>
                             <span>•</span>

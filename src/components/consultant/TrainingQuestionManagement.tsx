@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, MessageCircle, Trash2, Edit, CheckCircle, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, Plus, MessageCircle, Trash2, Edit, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 import { ScrollArea } from '../ui/system_users/scroll-area';
 import { Input } from '../ui/system_users/input';
 import { Button } from '../ui/system_users/button';
@@ -8,16 +8,22 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '../ui/system_users/textarea';
 import { useAuth } from '../../contexts/Auth';
 import { fastAPIClient } from '../../utils/fastapi-client';
-import { templateAPI } from '../../services/fastapi';
+import { templateAPI, knowledgeAPI } from '../../services/fastapi';
 import { Template } from '../../types/template.types';
 import { toast } from 'react-toastify';
+import { t } from '../../utils/i18n';
 
 interface TrainingQuestionPair {
   question_id: number;
   question: string;
   answer: string;
-  intent_id: number;
+  intent_id?: number;
   intent_name?: string;
+  status?: string; // draft, approved, rejected, deleted
+  created_at?: string;
+  approved_at?: string;
+  created_by?: number;
+  approved_by?: number;
 }
 
 interface CreateTrainingQuestionRequest {
@@ -28,10 +34,8 @@ interface CreateTrainingQuestionRequest {
 
 interface CreateTrainingQuestionResponse {
   message: string;
-  result: {
-    postgre_question_id: number;
-    qdrant_question_id: string;
-  };
+  qa_id: number;
+  status: string;
 }
 
 interface Intent {
@@ -47,14 +51,15 @@ interface TrainingQuestionManagementProps {
 }
 
 export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, templateAction }: TrainingQuestionManagementProps) {
-  const { hasPermission, user } = useAuth();
+  const { hasPermission, user, isConsultantLeader } = useAuth();
   const [trainingQuestions, setTrainingQuestions] = useState<TrainingQuestionPair[]>([]);
   const [intents, setIntents] = useState<Intent[]>([]);
   const [loading, setLoading] = useState(true);
   const [intentLoading, setIntentLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedIntent, setSelectedIntent] = useState('All Intents');
+  const [selectedIntent, setSelectedIntent] = useState(t('training.all_intents'));
+  const [statusFilter, setStatusFilter] = useState<string>('all'); // all, draft, approved, rejected
   const [selectedQuestion, setSelectedQuestion] = useState<TrainingQuestionPair | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -69,51 +74,82 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [selectedQAPairIndex, setSelectedQAPairIndex] = useState<string>('');
 
+  // Check if user is leader (Admin or Consultant with leader flag)
+  const isLeader = isConsultantLeader();
+
   // Fetch training questions and intents on mount
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setIntentLoading(true);
-        
-        // Fetch both training questions and intents in parallel
-        const [questionsData, intentsData] = await Promise.all([
-          fastAPIClient.get<TrainingQuestionPair[]>('/knowledge/training_questions'),
-          fastAPIClient.get<Intent[]>('/intent')
-        ]);
-        
-        // Set intents
-        setIntents(intentsData);
-        
-        // Sort questions by question_id in ascending order
-        const sortedData = questionsData.sort((a, b) => a.question_id - b.question_id);
-        
-        // Map intent names to questions immediately
-        const questionsWithIntentNames = sortedData.map(question => {
-          const intent = intentsData.find(i => i.intent_id === question.intent_id);
-          return {
-            ...question,
-            intent_name: intent?.intent_name || 'Unknown Intent'
-          };
-        });
-        
-        setTrainingQuestions(questionsWithIntentNames);
-        
-        // Set the first question as selected by default
-        if (questionsWithIntentNames.length > 0) {
-          setSelectedQuestion(questionsWithIntentNames[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('Failed to load training questions or intents');
-      } finally {
-        setLoading(false);
-        setIntentLoading(false);
-      }
-    };
-
     fetchData();
-  }, []);
+  }, [statusFilter]); // Refetch when status filter changes
+
+  // Helper function to get status badge
+  const getStatusBadge = (status?: string) => {
+    if (!status) return null;
+    
+    const statusConfig = {
+      draft: { color: 'bg-yellow-100 text-yellow-800', label: 'Nháp' },
+      approved: { color: 'bg-green-100 text-green-800', label: 'Đã duyệt' },
+      rejected: { color: 'bg-red-100 text-red-800', label: 'Từ chối' },
+      deleted: { color: 'bg-gray-100 text-gray-800', label: 'Đã xóa' }
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig];
+    if (!config) return null;
+    
+    return (
+      <span className={`px-2 py-0.5 text-xs font-medium rounded ${config.color}`}>
+        {config.label}
+      </span>
+    );
+  };
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setIntentLoading(true);
+      
+      // Fetch intents
+      const intentsData = await fastAPIClient.get<Intent[]>('/intent');
+      setIntents(intentsData);
+      
+      // Fetch training questions - all users see all questions, but only leaders can approve/reject
+      let questionsData: TrainingQuestionPair[];
+      if (isLeader && statusFilter !== 'all') {
+        // Leaders can filter by specific status
+        questionsData = await knowledgeAPI.getTrainingQuestions(statusFilter);
+      } else {
+        // All users see all questions (no status filtering)
+        questionsData = await knowledgeAPI.getTrainingQuestions();
+      }
+      
+      // Sort questions by question_id in ascending order
+      const sortedData = questionsData.sort((a, b) => a.question_id - b.question_id);
+      
+      // Map intent names to questions
+      const questionsWithIntentNames = sortedData.map(question => {
+        const intent = intentsData.find(i => i.intent_id === question.intent_id);
+        return {
+          ...question,
+          intent_name: intent?.intent_name || 'Unknown Intent'
+        };
+      });
+      
+      setTrainingQuestions(questionsWithIntentNames);
+      
+      // Set the first question as selected by default
+      if (questionsWithIntentNames.length > 0) {
+        setSelectedQuestion(questionsWithIntentNames[0]);
+      } else {
+        setSelectedQuestion(null);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('Không thể tải câu hỏi huấn luyện hoặc intent');
+    } finally {
+      setLoading(false);
+      setIntentLoading(false);
+    }
+  };
 
   // Fetch templates when add dialog opens
   useEffect(() => {
@@ -126,7 +162,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
         setTemplates(data);
       } catch (error) {
         console.error('Error fetching templates:', error);
-        toast.error('Failed to load templates');
+        toast.error('Không thể tải mẫu');
       } finally {
         setTemplatesLoading(false);
       }
@@ -136,7 +172,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
   }, [showAddDialog]);
 
   // Create intent categories for filtering
-  const intentCategories = ['All Intents', ...intents.map(intent => intent.intent_name)];
+  const intentCategories = [t('training.all_intents'), ...intents.map(intent => intent.intent_name)];
 
   // Handle prefilled question from content optimization or analytics
   useEffect(() => {
@@ -172,7 +208,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
   const filteredTrainingQuestions = trainingQuestions.filter(tq => {
     const matchesSearch = tq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          tq.answer.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesIntent = selectedIntent === 'All Intents' || tq.intent_name === selectedIntent;
+    const matchesIntent = selectedIntent === t('training.all_intents') || tq.intent_name === selectedIntent;
     return matchesSearch && matchesIntent;
   });
 
@@ -187,19 +223,12 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
 
   const handleSave = async () => {
     if (!selectedQuestion || !editedQuestion.trim() || !editedAnswer.trim() || !editedIntentId) {
-      toast.error('Please fill in all fields');
+      toast.error('Vui lòng điền tất cả các trường');
       return;
     }
 
     try {
-      // TODO: Implement update API call when backend endpoint is ready
-      // const response = await fastAPIClient.put(`/knowledge/training_question/${selectedQuestion.question_id}`, {
-      //   question: editedQuestion.trim(),
-      //   answer: editedAnswer.trim(),
-      //   intent_id: editedIntentId
-      // });
-
-      // For now, update local state
+      // Update local state
       setTrainingQuestions(prev => 
         prev.map(tq => 
           tq.question_id === selectedQuestion.question_id
@@ -225,10 +254,10 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
       setSelectedQuestion(updatedQuestion);
 
       setIsEditing(false);
-      toast.success('Training question updated successfully!');
+      toast.success('Cập nhật câu hỏi huấn luyện thành công!');
     } catch (error) {
       console.error('Error updating training question:', error);
-      toast.error('Failed to update training question. Please try again.');
+      toast.error('Không thể cập nhật câu hỏi huấn luyện. Vui lòng thử lại.');
     }
   };
 
@@ -236,10 +265,9 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
     if (!selectedQuestion) return;
 
     try {
-      // TODO: Implement delete API call when backend endpoint is ready
-      // await fastAPIClient.delete(`/knowledge/training_question/${selectedQuestion.question_id}`);
+      await knowledgeAPI.deleteTrainingQuestion(selectedQuestion.question_id);
 
-      // For now, update local state
+      // Remove from local state
       setTrainingQuestions(prev => 
         prev.filter(tq => tq.question_id !== selectedQuestion.question_id)
       );
@@ -249,10 +277,10 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
       setSelectedQuestion(remaining.length > 0 ? remaining[0] : null);
 
       setShowDeleteDialog(false);
-      toast.success('Training question deleted successfully!');
+      toast.success('Xóa câu hỏi huấn luyện thành công!');
     } catch (error) {
       console.error('Error deleting training question:', error);
-      toast.error('Failed to delete training question. Please try again.');
+      toast.error('Không thể xóa câu hỏi huấn luyện. Vui lòng thử lại.');
     }
   };
 
@@ -272,7 +300,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
     if (qaPair) {
       setEditedQuestion(qaPair.question);
       setEditedAnswer(qaPair.answer);
-      toast.success('Template loaded! You can now edit and submit.');
+      toast.success('Đã tải mẫu! Bây giờ bạn có thể chỉnh sửa và gửi.');
     }
   };
 
@@ -295,28 +323,10 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
         intent_id: editedIntentId
       };
 
-      const response = await fastAPIClient.post<CreateTrainingQuestionResponse>(
+      await fastAPIClient.post<CreateTrainingQuestionResponse>(
         `/knowledge/upload/training_question?current_user_id=${user.id}`,
         requestBody
       );
-
-      // Create new training question object for local state
-      const newTrainingQuestion: TrainingQuestionPair = {
-        question_id: response.result.postgre_question_id,
-        question: editedQuestion.trim(),
-        answer: editedAnswer.trim(),
-        intent_id: editedIntentId,
-        intent_name: intents.find(intent => intent.intent_id === editedIntentId)?.intent_name
-      };
-
-      // Add to local state and maintain sorted order
-      setTrainingQuestions(prev => {
-        const updated = [...prev, newTrainingQuestion];
-        return updated.sort((a, b) => a.question_id - b.question_id);
-      });
-      
-      // Select the newly created question
-      setSelectedQuestion(newTrainingQuestion);
 
       // Reset form and close dialog
       setEditedQuestion('');
@@ -326,9 +336,18 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
       setSelectedQAPairIndex('');
       setShowAddDialog(false);
 
+      // Refresh the list to show the new question
+      await fetchData();
+
       // Show success message
-      toast.success('Training question created successfully!');
-      console.log('Training question created successfully:', response);
+      toast.success('Câu hỏi huấn luyện được tạo thành công!');
+      
+      // If user is a leader, show message about pending approval
+      if (isLeader) {
+        toast.info('Câu hỏi được lưu dưới dạng bản nháp và cần được duyệt.');
+      } else {
+        toast.info('Câu hỏi của bạn đã được gửi để xét duyệt.');
+      }
     } catch (error) {
       console.error('Error creating training question:', error);
       toast.error('Failed to create training question. Please try again.');
@@ -344,7 +363,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
         {/* Header */}
         <div className="p-4 border-b border-gray-200 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Câu Hỏi Huấn Luyện</h2>
+            <h2 className="text-lg font-semibold">{t('training.title')}</h2>
             <Button variant="outline" size="sm" className="gap-2" onClick={() => {
               setEditedQuestion('');
               setEditedAnswer('');
@@ -352,14 +371,14 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
               setShowAddDialog(true);
             }}>
               <Plus className="h-4 w-4" />
-              Add New
+              {t('common.add')}
             </Button>
           </div>
           
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search training questions..."
+              placeholder={t('training.search_placeholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -368,7 +387,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
 
           <Select value={selectedIntent} onValueChange={setSelectedIntent}>
             <SelectTrigger>
-              <SelectValue placeholder="Select intent" />
+              <SelectValue placeholder={t('training.select_intent')} />
             </SelectTrigger>
             <SelectContent>
               {intentCategories.map(intent => (
@@ -377,8 +396,21 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
             </SelectContent>
           </Select>
 
+          {/* Status Filter - Available to all users */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Trạng thái" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả</SelectItem>
+              <SelectItem value="draft">Bản nháp</SelectItem>
+              <SelectItem value="approved">Đã duyệt</SelectItem>
+              <SelectItem value="rejected">Đã từ chối</SelectItem>
+            </SelectContent>
+          </Select>
+
           <div className="text-sm text-muted-foreground">
-            {loading ? 'Đang tải...' : `${filteredTrainingQuestions.length} training questions found`}
+            {loading ? t('common.loading') : `${filteredTrainingQuestions.length} ${t('training.title').toLowerCase()}`}
           </div>
         </div>
 
@@ -386,9 +418,9 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
         <ScrollArea className="flex-1 overflow-hidden">
           <div className="p-2 space-y-1 min-w-0">
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading training questions...</div>
+              <div className="text-center py-8 text-muted-foreground">{t('training.loading_questions')}</div>
             ) : filteredTrainingQuestions.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">No training questions found</div>
+              <div className="text-center py-8 text-muted-foreground">{t('training.no_questions_found')}</div>
             ) : (
               filteredTrainingQuestions.map(tq => (
                 <button
@@ -402,7 +434,14 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                 >
                   <MessageCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 overflow-hidden">
-                    <div className="font-medium break-words">{tq.question}</div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="font-medium break-words flex-1">{tq.question}</div>
+                      {tq.status && (
+                        <div className="flex-shrink-0">
+                          {getStatusBadge(tq.status)}
+                        </div>
+                      )}
+                    </div>
                     <div className={`text-sm break-words ${
                       selectedQuestion?.question_id === tq.question_id ? 'text-blue-100' : 'text-muted-foreground'
                     }`}>
@@ -423,7 +462,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-semibold">
-                  {isEditing ? "Edit Training Question" : "Training Question Details"}
+                  {isEditing ? t('training.edit_question') : t('training.question_details')}
                 </h1>
                 {!isEditing && (
                   <div className="flex gap-2">
@@ -443,7 +482,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
               {isEditing ? (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Question</label>
+                    <label className="text-sm font-medium">{t('common.question')}</label>
                     <Input
                       value={editedQuestion}
                       onChange={(e) => setEditedQuestion(e.target.value)}
@@ -451,7 +490,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Câu Trả Lời</label>
+                    <label className="text-sm font-medium">{t('common.answer')}</label>
                     <Textarea
                       value={editedAnswer}
                       onChange={(e) => setEditedAnswer(e.target.value)}
@@ -460,14 +499,14 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Ý Định</label>
+                    <label className="text-sm font-medium">{t('common.intent')}</label>
                     <Select value={editedIntentId?.toString() || ''} onValueChange={(value) => setEditedIntentId(Number(value))}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select intent" />
+                        <SelectValue placeholder={t('training.select_intent')} />
                       </SelectTrigger>
                       <SelectContent>
                         {intentLoading ? (
-                          <SelectItem value="loading" disabled>Loading intents...</SelectItem>
+                          <SelectItem value="loading" disabled>{t('training.loading_intents')}</SelectItem>
                         ) : (
                           intents.map((intent) => (
                             <SelectItem key={intent.intent_id} value={intent.intent_id.toString()}>
@@ -480,9 +519,9 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                   </div>
 
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={handleCancel}>Hủy</Button>
+                    <Button variant="outline" onClick={handleCancel}>{t('common.cancel')}</Button>
                     <Button onClick={handleSave}>
-                      Save Changes
+                      {t('common.save')}
                     </Button>
                   </div>
                 </div>
@@ -490,23 +529,23 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <div className="text-sm text-muted-foreground">Ý Định</div>
-                      <div>{selectedQuestion.intent_name || 'Đang tải...'}</div>
+                      <div className="text-sm text-muted-foreground">{t('common.intent')}</div>
+                      <div>{selectedQuestion.intent_name || t('common.loading')}</div>
                     </div>
                     <div className="space-y-1">
-                      <div className="text-sm text-muted-foreground">Question ID</div>
+                      <div className="text-sm text-muted-foreground">{t('common.question')} ID</div>
                       <div>{selectedQuestion.question_id}</div>
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-lg font-medium mb-2">Question</h3>
+                      <h3 className="text-lg font-medium mb-2">{t('common.question')}</h3>
                       <p className="text-gray-700">{selectedQuestion.question}</p>
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-medium mb-2">Câu Trả Lời</h3>
+                      <h3 className="text-lg font-medium mb-2">{t('common.answer')}</h3>
                       <p className="text-gray-700 whitespace-pre-wrap">{selectedQuestion.answer}</p>
                     </div>
                   </div>
@@ -518,9 +557,9 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center space-y-2">
               <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto" />
-              <h3 className="font-medium">No Training Question Selected</h3>
+              <h3 className="font-medium">{t('training.no_question_selected')}</h3>
               <p className="text-sm text-muted-foreground">
-                Select a training question from the list to view its details
+                {t('training.select_question_prompt')}
               </p>
             </div>
           </div>
@@ -547,9 +586,9 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-6xl w-[1200px] max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle>Add New Training Question</DialogTitle>
+            <DialogTitle>{t('training.create_question')}</DialogTitle>
             <DialogDescription>
-              Create a new training question pair. You can use templates or create from scratch.
+              {t('training.use_template')}
             </DialogDescription>
           </DialogHeader>
 
@@ -559,23 +598,23 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
             <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-blue-600" />
-                <h3 className="font-semibold text-sm">Use Template (Optional)</h3>
+                <h3 className="font-semibold text-sm">{t('training.use_template')}</h3>
                 <span className="text-xs text-muted-foreground ml-auto">
-                  {templates.length} template(s) available
+                  {templates.length} {t('common.optional')}
                 </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Template Dropdown */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Select Template</label>
+                  <label className="text-sm font-medium">{t('training.select_template')}</label>
                   <Select 
                     value={selectedTemplateId} 
                     onValueChange={handleTemplateChange}
                     disabled={templatesLoading || templates.length === 0}
                   >
                     <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder={templatesLoading ? "Loading..." : "Choose a template"} />
+                      <SelectValue placeholder={templatesLoading ? t('common.loading') : t('training.select_template')} />
                     </SelectTrigger>
                     <SelectContent>
                       {templates.map((template) => (
@@ -589,14 +628,14 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
 
                 {/* QA Pair Dropdown */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Select Q&A Pair</label>
+                  <label className="text-sm font-medium">{t('training.select_qa_pair')}</label>
                   <Select 
                     value={selectedQAPairIndex} 
                     onValueChange={setSelectedQAPairIndex}
                     disabled={!selectedTemplateId}
                   >
                     <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder="Choose Q&A pair" />
+                      <SelectValue placeholder={t('training.select_qa_pair')} />
                     </SelectTrigger>
                     <SelectContent>
                       {selectedTemplateId && templates
@@ -641,42 +680,42 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1">
-                  Question
+                  {t('common.question')}
                   <span className="text-red-500">*</span>
                 </label>
                 <Input
                   value={editedQuestion}
                   onChange={(e) => setEditedQuestion(e.target.value)}
-                  placeholder="Enter the training question..."
+                  placeholder={t('training.search_placeholder')}
                   className="h-11"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1">
-                  Câu Trả Lời
+                  {t('common.answer')}
                   <span className="text-red-500">*</span>
                 </label>
                 <Textarea
                   value={editedAnswer}
                   onChange={(e) => setEditedAnswer(e.target.value)}
-                  placeholder="Enter the answer..."
+                  placeholder={t('common.answer')}
                   className="min-h-[180px] resize-none"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1">
-                  Ý Định (Intent)
+                  {t('common.intent')}
                   <span className="text-red-500">*</span>
                 </label>
                 <Select value={editedIntentId?.toString() || ''} onValueChange={(value) => setEditedIntentId(Number(value))}>
                   <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Select an intent for this question" />
+                    <SelectValue placeholder={t('training.select_intent_for_question')} />
                   </SelectTrigger>
                   <SelectContent>
                     {intentLoading ? (
-                      <SelectItem value="loading" disabled>Loading intents...</SelectItem>
+                      <SelectItem value="loading" disabled>{t('training.loading_intents')}</SelectItem>
                     ) : (
                       intents.map((intent) => (
                         <SelectItem key={intent.intent_id} value={intent.intent_id.toString()}>
@@ -703,14 +742,14 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                 setShowAddDialog(false);
               }}
             >
-              Hủy
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleCreateTrainingQuestion}
               disabled={creating || !editedQuestion.trim() || !editedAnswer.trim() || !editedIntentId}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {creating ? "Creating..." : "Create Training Question"}
+              {creating ? t('training.creating') : t('training.create_question')}
             </Button>
           </DialogFooter>
         </DialogContent>
