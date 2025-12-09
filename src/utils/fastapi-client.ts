@@ -64,19 +64,14 @@ class FastAPIClient {
       const hasToken = typeof window !== 'undefined' && localStorage.getItem('access_token');
       
       // Only log if it's not an auth issue, or if user should be authenticated
-      if (!isAuthError || hasToken) {
-        console.error(`API request failed: ${url}`, error);
-      }
+      // Errors are handled by caller through try/catch
       
       throw error;
     }
   }
 
   async get<T>(endpoint: string): Promise<T> {
-    console.log(`🌐 FastAPI GET request to: ${endpoint}`);
-    const result = await this.request<T>(endpoint, { method: 'GET' });
-    console.log(`✅ FastAPI GET response from ${endpoint}:`, result);
-    return result;
+    return await this.request<T>(endpoint, { method: 'GET' });
   }
 
   async post<T>(endpoint: string, data: any): Promise<T> {

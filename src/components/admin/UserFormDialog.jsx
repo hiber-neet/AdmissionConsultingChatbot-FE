@@ -4,6 +4,7 @@ import { Label } from '../ui/system_users/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/system_users/dialog';
 import { RoleSelector } from './RoleSelector';
 import { PermissionSelector } from './PermissionSelector';
+import { t } from '../../utils/i18n';
 import PropTypes from 'prop-types';
 
 export function UserFormDialog({
@@ -50,90 +51,90 @@ export function UserFormDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] max-w-lg">
         <DialogHeader>
-          <DialogTitle>{editingUser ? 'Chỉnh Sửa Người Dùng' : 'Thêm Người Dùng Mới'}</DialogTitle>
+          <DialogTitle>{editingUser ? t('users.edit_user') : t('users.add_user')}</DialogTitle>
           <DialogDescription>
-            {editingUser ? 'Update user information and role' : 'Create a new user account'}
+            {editingUser ? t('users.update_user_description') : t('users.create_user_description')}
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4 overflow-y-auto max-h-[60vh]">
           <div className="space-y-2">
-            <Label htmlFor="name">Họ và Tên</Label>
+            <Label htmlFor="name">{t('users.full_name')}</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={handleNameChange}
-              placeholder="Enter full name"
+              placeholder={t('users.enter_full_name')}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
+            <Label htmlFor="email">{t('users.email_address')}</Label>
             <Input
               id="email"
               type="email"
               value={formData.email}
               onChange={handleEmailChange}
-              placeholder="user@university.edu"
+              placeholder={t('users.enter_email')}
             />
           </div>
 
           {!editingUser && (
             <div className="space-y-2">
-              <Label htmlFor="password">Mật Khẩu</Label>
+              <Label htmlFor="password">{t('users.password')}</Label>
               <Input
                 id="password"
                 type="password"
                 value={formData.password}
                 onChange={handlePasswordChange}
-                placeholder="Enter password"
+                placeholder={t('users.enter_password')}
               />
             </div>
           )}
 
           {editingUser && (
             <div className="space-y-2">
-              <Label htmlFor="password">New Password (leave blank to keep current)</Label>
+              <Label htmlFor="password">{t('users.new_password_keep_current')}</Label>
               <Input
                 id="password"
                 type="password"
                 value={formData.password}
                 onChange={handlePasswordChange}
-                placeholder="Enter new password or leave blank"
+                placeholder={t('users.enter_new_password')}
               />
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Số Điện Thoại</Label>
+            <Label htmlFor="phone">{t('users.phone_number')}</Label>
             <Input
               id="phone"
               type="tel"
               value={formData.phone_number || ''}
               onChange={handlePhoneChange}
-              placeholder="Enter phone number"
+              placeholder={t('users.enter_phone')}
             />
           </div>
 
           {!editingUser && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="interest_major">Interest - Desired Major (Optional)</Label>
+                <Label htmlFor="interest_major">{t('users.interest_major')}</Label>
                 <Input
                   id="interest_major"
                   value={formData.interest_desired_major || ''}
                   onChange={handleInterestMajorChange}
-                  placeholder="e.g. Computer Science"
+                  placeholder={t('users.interest_major_placeholder')}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="interest_region">Interest - Region (Optional)</Label>
+                <Label htmlFor="interest_region">{t('users.interest_region')}</Label>
                 <Input
                   id="interest_region"
                   value={formData.interest_region || ''}
                   onChange={handleInterestRegionChange}
-                  placeholder="e.g. Hanoi"
+                  placeholder={t('users.interest_region_placeholder')}
                 />
               </div>
             </>
@@ -160,9 +161,9 @@ export function UserFormDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Hủy</Button>
+          <Button variant="outline" onClick={onClose}>{t('common.cancel')}</Button>
           <Button onClick={onSubmit}>
-            {editingUser ? 'Update' : 'Tạo Mới'} User
+            {editingUser ? t('users.update_user') : t('users.create_new_user')}
           </Button>
         </DialogFooter>
       </DialogContent>
