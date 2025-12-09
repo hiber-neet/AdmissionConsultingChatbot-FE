@@ -21,6 +21,7 @@ export type User = {
 type AuthCtx = {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean; // Track if session restoration is in progress
   activeRole: Role | null; // Current active role for navigation
   login: (email: string, password: string) => Promise<{ ok: boolean; message?: string; token?: string }>;
   logout: () => void;
@@ -36,12 +37,143 @@ const AuthContext = createContext<AuthCtx | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [activeRole, setActiveRole] = useState<Role | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // Start as loading during restoration
 
-  // Initialize permissions system when auth provider mounts
+  // Restore user session from localStorage on mount
   useEffect(() => {
-    initializePermissions().catch(error => {
-      console.warn('Failed to initialize permissions system:', error);
-    });
+    const restoreSession = async () => {
+      const token = localStorage.getItem("access_token");
+      
+      if (!token) {
+        console.log('🔓 No token found in localStorage - user not logged in');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('🔄 Restoring user session from localStorage...');
+
+      try {
+        // Decode token to get user information
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        console.log('🔍 JWT Payload decoded:', payload);
+        
+        const userId = payload.user_id;
+        const userEmail = payload.sub;
+        
+        if (!userId || !userEmail) {
+          console.error('❌ Invalid token in localStorage - clearing session');
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("token_type");
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if token is expired
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          console.log('⏰ Token expired - clearing session');
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("token_type");
+          setIsLoading(false);
+          return;
+        }
+
+        console.log('👤 Restoring user info from token:', { userId, userEmail });
+        
+        // Fetch user profile to restore full user data
+        try {
+          const profileResponse = await fetch(`http://localhost:8000/profile/${userId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (profileResponse.ok) {
+            const profileData = await profileResponse.json();
+            console.log('✅ Profile restored:', profileData);
+            
+            // Map backend permissions to frontend permissions
+            const mapBackendPermissionToFrontend = (backendPermission: string): Permission[] => {
+              const permissionMap: Record<string, Permission[]> = {
+                'Admin': ['Admin', 'Content Manager', 'Admission Official', 'Consultant', 'Student'],
+                'Content Manager': ['Content Manager', 'Student'],
+                'Admission Official': ['Admission Official', 'Student'],
+                'Consultant': ['Consultant', 'Student'],
+                'Student': ['Student']
+              };
+              
+              return permissionMap[backendPermission] || ['Student'];
+            };
+            
+            // Get permissions from profile
+            let userPermissions: Permission[] = ['Student'];
+            if (profileData.permission && Array.isArray(profileData.permission)) {
+              userPermissions = profileData.permission.flatMap((perm: string) => 
+                mapBackendPermissionToFrontend(perm)
+              );
+              userPermissions = Array.from(new Set(userPermissions));
+            }
+            
+            // Determine role from permissions
+            let appRole: Role = "Student";
+            if (userPermissions.includes('Admin')) {
+              appRole = "Admin";
+            } else if (userPermissions.includes('Content Manager')) {
+              appRole = "Content Manager";
+            } else if (userPermissions.includes('Admission Official')) {
+              appRole = "Admission Official";
+            } else if (userPermissions.includes('Consultant')) {
+              appRole = "Consultant";
+            }
+            
+            // Get leadership status
+            let isLeader = false;
+            if (profileData.consultant_is_leader === true) {
+              isLeader = true;
+            }
+            if (profileData.content_manager_is_leader === true) {
+              isLeader = true;
+            }
+            if (profileData.role_name === 'admin') {
+              isLeader = true;
+            }
+            
+            const userData: User = {
+              id: userId.toString(),
+              name: profileData.full_name || userEmail.split('@')[0],
+              role: appRole,
+              email: profileData.email || userEmail,
+              isLeader: isLeader,
+              consultantIsLeader: profileData.consultant_is_leader === true,
+              contentManagerIsLeader: profileData.content_manager_is_leader === true,
+              permissions: userPermissions
+            };
+
+            setUser(userData);
+            setActiveRole(userData.role);
+            console.log('✅ Session restored successfully!');
+            
+          } else {
+            console.log('❌ Profile API failed during restore - token may be invalid');
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("token_type");
+          }
+        } catch (error) {
+          console.error('❌ Error restoring session:', error);
+          // Keep user logged out on error
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("token_type");
+        }
+      } catch (error) {
+        console.error('❌ Error decoding token:', error);
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("token_type");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    restoreSession();
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -270,11 +402,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Login error:', error);
       
       // Handle FastAPI error responses
+      let errorMessage = "Login failed. Please check your credentials.";
+      
       if (error.message) {
-        return { ok: false, message: error.message };
+        errorMessage = error.message;
+        // Check if it's a ban/deactivation error
+        if (error.message.includes('deactivated') || error.message.includes('Inactive')) {
+          errorMessage = "⚠️ Your account has been deactivated. Please contact the administrator.";
+        }
       }
       
-      return { ok: false, message: "Login failed. Please check your credentials." };
+      return { ok: false, message: errorMessage };
     }
   };
 
@@ -285,6 +423,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const roleMappings: Record<string, Role> = {
       'admin': 'Admin',
       'system_admin': 'Admin',
+      'consultantleader': 'ConsultantLeader',
+      'consultant_leader': 'ConsultantLeader',
       'consultant': 'Consultant', 
       'content_manager': 'Content Manager',
       'content': 'Content Manager',
@@ -300,6 +440,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getDefaultRoute = (role: Role): string => {
     const roleRoutes: Record<Role, string> = {
       'Admin': '/admin/dashboard',
+      'ConsultantLeader': '/consultant',
       'Content Manager': '/content/dashboard',
       'Consultant': '/consultant',
       'Admission Official': '/admission/dashboard',
@@ -420,7 +561,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({ 
       user, 
-      isAuthenticated: !!user, 
+      isAuthenticated: !!user,
+      isLoading, // Expose loading state
       activeRole,
       login, 
       logout, 
@@ -430,7 +572,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       switchToRole,
       getAccessibleRoles
     }),
-    [user, activeRole]
+    [user, activeRole, isLoading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

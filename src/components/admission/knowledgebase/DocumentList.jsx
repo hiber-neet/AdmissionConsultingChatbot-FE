@@ -22,7 +22,7 @@ export function DocumentList({ filteredDocuments }) {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      toast.success('Document downloaded successfully!');
+      toast.success('Tải tài liệu thành công!');
     } catch (error) {
       console.error('Failed to download document:', error);
       console.error('Error type:', typeof error);

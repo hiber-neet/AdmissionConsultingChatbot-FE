@@ -22,17 +22,17 @@ const getRoleColor = (role) => {
   return colorMap[role] || 'secondary';
 };
 
-// Helper function to get role label
+// Helper function to get role label (Vietnamese)
 const getRoleLabel = (role) => {
   const labelMap = {
-    SYSTEM_ADMIN: 'System Admin',
-    ADMIN: 'Admin',
-    CONTENT_MANAGER: 'Content Manager',
-    ADMISSION_OFFICER: 'Admission Officer',
-    CONSULTANT: 'Consultant',
-    CUSTOMER: 'Customer',
-    STUDENT: 'Student',
-    PARENT: 'Parent',
+    SYSTEM_ADMIN: 'Quản Trị Viên',
+    ADMIN: 'Quản Trị Viên',
+    CONTENT_MANAGER: 'Quản Lý Nội Dung',
+    ADMISSION_OFFICER: 'Nhân Viên Tuyển Sinh',
+    CONSULTANT: 'Tư Vấn Viên',
+    CUSTOMER: 'Khách Hàng',
+    STUDENT: 'Sinh Viên',
+    PARENT: 'Phụ Huynh',
   };
   
   // If role is in the map, use it; otherwise convert underscores to spaces and title case
@@ -43,7 +43,7 @@ const getRoleLabel = (role) => {
   // Convert SOME_ROLE to "Some Role"
   return role
     ? role.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')
-    : 'Unknown';
+    : 'Không xác định';
 };
 
 export function UserTable({ 
@@ -89,8 +89,8 @@ export function UserTable({
       <Card>
         <div className="text-center py-12 text-muted-foreground">
           <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No users found.</p>
-          <p className="text-sm">Try adjusting your search or filters.</p>
+          <p>Không tìm thấy người dùng.</p>
+          <p className="text-sm">Hãy thử điều chỉnh tìm kiếm hoặc bộ lọc của bạn.</p>
         </div>
       </Card>
     );
@@ -101,12 +101,10 @@ export function UserTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>User</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Last Active</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead>Người Dùng</TableHead>
+            <TableHead>Vai Trò</TableHead>
+            <TableHead>Trạng Thái</TableHead>
+            <TableHead className="text-right">Thao Tác</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -130,35 +128,16 @@ export function UserTable({
                 </div>
               </TableCell>
               <TableCell>
-                <div className="flex flex-wrap gap-1">
-                  <Badge variant={getRoleColor(user.role)} className="gap-1">
-                    {getRoleIcon(user.role)}
-                    {getRoleLabel(user.role)}
-                  </Badge>
-                  {hasMultipleRoles(user.permissions) && (
-                    <Badge variant="outline" className="gap-1 border-blue-300 text-blue-700">
-                      <Crown className="h-3 w-3" />
-                      Multi-Role
-                    </Badge>
-                  )}
-                  {user.permissions?.includes('SYSTEM_ADMIN') && (
-                    <Badge variant="outline" className="gap-1 border-red-300 text-red-700">
-                      <Crown className="h-3 w-3" />
-                      Admin
-                    </Badge>
-                  )}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {user.permissions?.length || 0} role permissions
-                </div>
+                <Badge variant={getRoleColor(user.role)} className="gap-1">
+                  {getRoleIcon(user.role)}
+                  {getRoleLabel(user.role)}
+                </Badge>
               </TableCell>
               <TableCell>
                 <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
-                  {user.status}
+                  {user.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
                 </Badge>
               </TableCell>
-              <TableCell className="text-muted-foreground">{user.lastActive}</TableCell>
-              <TableCell className="text-muted-foreground">{user.createdAt}</TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -170,9 +149,7 @@ export function UserTable({
                     {/* Only show Edit for staff members, not customers */}
                     {!isCustomerSection && onEdit && (
                       <DropdownMenuItem onClick={() => onEdit(user)} disabled={loading}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
+                        <Edit className="h-4 w-4 mr-2" />Chỉnh Sửa</DropdownMenuItem>
                     )}
                     <DropdownMenuItem 
                       onClick={() => user.status === 'active' ? onBanUser(user.id, false) : onBanUser(user.id, true)} 
@@ -188,12 +165,12 @@ export function UserTable({
                       {user.status === 'active' ? (
                         <>
                           <Ban className="h-4 w-4 mr-2" />
-                          {isAdminUser(user) ? 'Cannot Ban Admin' : 'Deactivate (Ban)'}
+                          {isAdminUser(user) ? 'Không thể vô hiệu Admin' : 'Vô Hiệu Hóa (Cấm)'}
                         </>
                       ) : (
                         <>
                           <UserCheck className="h-4 w-4 mr-2" />
-                          {isAdminUser(user) ? 'Cannot Unban Admin' : 'Activate (Unban)'}
+                          {isAdminUser(user) ? 'Không thể kích hoạt Admin' : 'Kích Hoạt (Bỏ cấm)'}
                         </>
                       )}
                     </DropdownMenuItem>

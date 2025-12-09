@@ -134,7 +134,9 @@ export function RequestQueuePage() {
       // Success case - handle ChatSession object response
       if (response && response.chat_session_id) {
         // New response format: ChatSession object with chat_session_id
-        console.log('🎉 Got chat_session_id, navigating to consultation:', response.chat_session_id);
+        console.log('🎉 [OFFICER] Got chat_session_id from API:', response.chat_session_id);
+        console.log('🎉 [OFFICER] Full response object:', response);
+        console.log('🎉 [OFFICER] Navigating to consultation with sessionId:', response.chat_session_id);
         toast.success('✅ Request accepted successfully! Redirecting to consultation...');
         
         // Navigate to consultation page with session info
@@ -147,7 +149,7 @@ export function RequestQueuePage() {
         });
       } else if (response && response.session_id) {
         // Legacy response format: { session_id: number }
-        console.log('🎉 Got session_id, navigating to consultation:', response.session_id);
+        console.log('🎉 [OFFICER] Got session_id (legacy format):', response.session_id);
         toast.success('✅ Request accepted successfully! Redirecting to consultation...');
         
         // Navigate to consultation page with session info

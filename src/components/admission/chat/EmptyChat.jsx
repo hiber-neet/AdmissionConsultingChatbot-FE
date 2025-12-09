@@ -12,9 +12,7 @@ export function EmptyChat({ onGoToQueue }) {
           variant="outline"
           className="mt-4"
           onClick={onGoToQueue}
-        >
-          Go to Request Queue
-        </Button>
+        >Đến Hàng Đợi Yêu Cầu</Button>
       </div>
     </div>
   );

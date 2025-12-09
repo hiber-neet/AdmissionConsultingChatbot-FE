@@ -208,7 +208,8 @@ export function LiveChatView() {
         return;
       }
 
-      console.log('Setting up session:', selectedSessionId);
+      console.log('[OFFICER] 🎯 Setting up session:', selectedSessionId);
+      console.log('[OFFICER] 🎯 This is the session_id I will connect WebSocket to');
       await loadSessionData();
     };
 

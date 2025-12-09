@@ -20,7 +20,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
 }) {
   const { user, hasPermission, isContentManagerLeader } = useAuth();
   const [q, setQ] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("All Status");
+  const [statusFilter, setStatusFilter] = useState<string>("Tất Cả Trạng Thái");
   const [categoryFilter, setCategoryFilter] = useState<string>("All Majors");
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -114,10 +114,10 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   const filtered = useMemo(
     () => articles.filter((article) => {
       const matchesSearch = article.title.toLowerCase().includes(q.toLowerCase());
-      const matchesStatus = statusFilter === "All Status" || 
-        (statusFilter === "Drafted" && article.status === "draft") ||
-        (statusFilter === "Rejected" && article.status === "rejected") ||
-        (statusFilter === "Published" && article.status === "published");
+      const matchesStatus = statusFilter === "Tất Cả Trạng Thái" || 
+        (statusFilter === "Bản Nháp" && article.status === "draft") ||
+        (statusFilter === "Bị Từ Chối" && article.status === "rejected") ||
+        (statusFilter === "Đã Xuất Bản" && article.status === "published");
       const matchesCategory = categoryFilter === "All Majors" || 
         article.major_name === categoryFilter;
       return matchesSearch && matchesStatus && matchesCategory;
@@ -299,11 +299,11 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500">
               <tr>
-                <th className="text-left px-4 py-3">Title</th>
+                <th className="text-left px-4 py-3">Tiêu Đề</th>
                 <th className="text-left px-2 py-3">Major</th>
                 <th className="text-left px-2 py-3">Status</th>
                 <th className="text-left px-2 py-3">Author</th>
-                <th className="text-left px-2 py-3">Created At</th>
+                <th className="text-left px-2 py-3">Được Tạo Lúc</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -356,9 +356,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
                               fetchArticleDetails(article.article_id);
                             }}
                           >
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </DropdownMenuItem>
+                            <Eye className="h-4 w-4 mr-2" />Xem</DropdownMenuItem>
                           
                           {/* Show Edit/Delete only for Admin or Content Manager Leader */}
                           {(hasPermission("Admin") || isContentManagerLeader()) && (
@@ -370,9 +368,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
                                   setEditingArticle(article);
                                 }}
                               >
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
+                                <Edit className="h-4 w-4 mr-2" />Chỉnh Sửa</DropdownMenuItem>
                               <DropdownMenuItem 
                                 className="text-destructive"
                                 onClick={(e) => {
@@ -380,9 +376,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
                                   setDeleteConfirmArticle(article);
                                 }}
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
+                                <Trash2 className="h-4 w-4 mr-2" />Xóa</DropdownMenuItem>
                             </>
                           )}
                         </DropdownMenuContent>
@@ -631,9 +625,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
                     <button
                       onClick={closeModal}
                       className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      Close
-                    </button>
+                    >Đóng</button>
                   </div>
                 </div>
               )}
@@ -903,9 +895,7 @@ function EditArticleModal({
               onClick={onClose}
               disabled={loading}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
+            >Hủy</button>
           </div>
         </form>
       </div>
@@ -970,15 +960,13 @@ function DeleteConfirmModal({
             disabled={loading}
             className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Deleting...' : 'Delete'}
+            {loading ? 'Deleting...' : 'Xóa'}
           </button>
           <button
             onClick={onClose}
             disabled={loading}
             className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Cancel
-          </button>
+          >Hủy</button>
         </div>
       </div>
     </div>

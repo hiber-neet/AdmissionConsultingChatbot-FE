@@ -103,7 +103,7 @@ export function AdminDashboard() {
       
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      toast.error('Failed to load dashboard data');
+      toast.error('Không thể tải dữ liệu bảng điều khiển');
       
     } finally {
       setLoading(false);
@@ -124,7 +124,7 @@ export function AdminDashboard() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <p className="text-gray-600">Đang tải bảng điều khiển...</p>
         </div>
       </div>
     );
@@ -135,8 +135,8 @@ export function AdminDashboard() {
         {/* Header */}
         <div className="flex justify-between items-start">
           <div>
-            <h1>System Dashboard</h1>
-            <p className="text-muted-foreground">Real-time admission chatbot analytics and monitoring</p>
+            <h1>Bảng Điều Khiển Hệ Thống</h1>
+            <p className="text-muted-foreground">Phân tích và giám sát chatbot tuyển sinh theo thời gian thực</p>
           </div>
           <Button 
             variant="outline"
@@ -144,43 +144,41 @@ export function AdminDashboard() {
             disabled={loading}
             className="gap-2"
           >
-            <TrendingUp className="h-4 w-4" />
-            Refresh Data
-          </Button>
+            <TrendingUp className="h-4 w-4" />Làm Mới Dữ Liệu</Button>
         </div>
 
         {/* Key Metrics */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm">Active Chatbot Sessions</CardTitle>
+              <CardTitle className="text-sm">Phiên Chatbot Đang Hoạt Động</CardTitle>
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl">{metrics?.active_chatbot_sessions || 0}</div>
-              <p className="text-xs text-muted-foreground">AI-powered conversations</p>
+              <p className="text-xs text-muted-foreground">Cuộc trò chuyện được hỗ trợ bởi AI</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm">Total Customers</CardTitle>
+              <CardTitle className="text-sm">Tổng Số Khách Hàng</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl">{metrics?.total_customers || 0}</div>
-              <p className="text-xs text-muted-foreground">Unique students & parents</p>
+              <p className="text-xs text-muted-foreground">Học sinh và phụ huynh duy nhất</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm">Active Live Sessions</CardTitle>
+              <CardTitle className="text-sm">Phiên Trực Tiếp Đang Hoạt Động</CardTitle>
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl">{metrics?.active_live_sessions || 0}</div>
-              <p className="text-xs text-muted-foreground">Human agent chats</p>
+              <p className="text-xs text-muted-foreground">Trò chuyện với nhân viên</p>
             </CardContent>
           </Card>
         </div>
@@ -188,8 +186,8 @@ export function AdminDashboard() {
         {/* Charts */}
         <Card>
           <CardHeader>
-            <CardTitle>Chatbot Requests (Last 30 Days)</CardTitle>
-            <CardDescription>Customer messages vs chatbot responses</CardDescription>
+            <CardTitle>Yêu Cầu Chatbot (30 Ngày Qua)</CardTitle>
+            <CardDescription>Tin nhắn khách hàng so với phản hồi chatbot</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -199,8 +197,8 @@ export function AdminDashboard() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="customer" fill="#3B82F6" name="Customer Messages" />
-                <Bar dataKey="chatbot" fill="#10B981" name="Chatbot Responses" />
+                <Bar dataKey="customer" fill="#3B82F6" name="Tin Nhắn Khách Hàng" />
+                <Bar dataKey="chatbot" fill="#10B981" name="Phản Hồi Chatbot" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -209,14 +207,14 @@ export function AdminDashboard() {
         {/* System Statistics */}
         <Card>
           <CardHeader>
-            <CardTitle>System Statistics</CardTitle>
-            <CardDescription>Knowledge base and content metrics</CardDescription>
+            <CardTitle>Thống Kê Hệ Thống</CardTitle>
+            <CardDescription>Số liệu cơ sở tri thức và nội dung</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Database className="h-4 w-4 text-blue-500" />
-                <span className="text-sm">Published Articles</span>
+                <span className="text-sm">Bài Viết Đã Xuất Bản</span>
               </div>
               <span className="text-2xl font-bold">{systemHealth?.total_articles || 0}</span>
             </div>
@@ -224,7 +222,7 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Database className="h-4 w-4 text-green-500" />
-                <span className="text-sm">KB Documents</span>
+                <span className="text-sm">Tài Liệu Cơ Sở Tri Thức</span>
               </div>
               <span className="text-2xl font-bold">{systemHealth?.total_kb_docs || 0}</span>
             </div>
@@ -232,7 +230,7 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-purple-500" />
-                <span className="text-sm">Training Q&A Pairs</span>
+                <span className="text-sm">Cặp Câu Hỏi & Trả Lời Huấn Luyện</span>
               </div>
               <span className="text-2xl font-bold">{systemHealth?.total_qa_pairs || 0}</span>
             </div>
@@ -240,7 +238,7 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-orange-500" />
-                <span className="text-sm">Total Users</span>
+                <span className="text-sm">Tổng Số Người Dùng</span>
               </div>
               <span className="text-2xl font-bold">{systemHealth?.total_users || 0}</span>
             </div>

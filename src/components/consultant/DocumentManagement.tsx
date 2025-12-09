@@ -39,6 +39,7 @@ export function DocumentManagement() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all'); // all, draft, approved, rejected
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -51,6 +52,9 @@ export function DocumentManagement() {
   const [selectedIntent, setSelectedIntent] = useState<string>('');
   const [documentTitle, setDocumentTitle] = useState('');
   const [documentCategory, setDocumentCategory] = useState('');
+
+  // Check if user is leader
+  const isLeader = user?.role === 'Admin' || user?.role === 'ConsultantLeader';
 
   // Fetch documents on component mount
   useEffect(() => {
@@ -178,7 +182,7 @@ export function DocumentManagement() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
-      toast.success('Document downloaded successfully!');
+      toast.success('Tải tài liệu thành công!');
     } catch (error: any) {
       console.error('Failed to download document:', error);
       const errorMessage = error?.message || 'Failed to download document. Please try again.';
@@ -188,8 +192,20 @@ export function DocumentManagement() {
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+    const matchesStatus = statusFilter === 'all' || doc.status === statusFilter;
+    return matchesSearch && matchesStatus;
   });
+  
+  // Helper function to get status badge color
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'draft': return 'bg-yellow-100 text-yellow-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'deleted': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <div className="min-h-screen h-full flex bg-[#F8FAFC]">
@@ -216,12 +232,29 @@ export function DocumentManagement() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search documents..."
+              placeholder="Tìm kiếm tài liệu..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
           </div>
+
+          {/* Status Filter - Only show for leaders */}
+          {isLeader && (
+            <div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="text-sm text-muted-foreground">
             {filteredDocuments.length} documents found
@@ -265,7 +298,7 @@ export function DocumentManagement() {
               {filteredDocuments.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-sm">No documents found</p>
+                  <p className="text-sm">Không tìm thấy tài liệu</p>
                   {searchQuery ? (
                     <p className="text-xs mt-1">Try adjusting your search terms</p>
                   ) : (
@@ -285,7 +318,14 @@ export function DocumentManagement() {
                   >
                     <FileText className="h-5 w-5 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{doc.title}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium truncate flex-1">{doc.title}</div>
+                        {doc.status && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(doc.status)}`}>
+                            {doc.status}
+                          </span>
+                        )}
+                      </div>
                       <div className={`text-sm truncate ${
                         selectedDoc?.document_id === doc.document_id ? 'text-blue-100' : 'text-muted-foreground'
                       }`}>
@@ -314,9 +354,7 @@ export function DocumentManagement() {
                     className="gap-2"
                     onClick={() => handleDownload(selectedDoc)}
                   >
-                    <Download className="h-4 w-4" />
-                    Download
-                  </Button>
+                    <Download className="h-4 w-4" />Tải Xuống</Button>
                   <Button 
                     variant="destructive" 
                     size="sm"
@@ -334,6 +372,59 @@ export function DocumentManagement() {
                 </div>
               </div>
 
+              {/* Status Badge */}
+              {selectedDoc.status && (
+                <div className="mb-4">
+                  <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedDoc.status)}`}>
+                    Status: {selectedDoc.status.charAt(0).toUpperCase() + selectedDoc.status.slice(1)}
+                  </span>
+                </div>
+              )}
+
+              {/* Review Actions - Only for leaders */}
+              {isLeader && selectedDoc.status === 'draft' && (
+                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <h3 className="font-medium mb-3">Review Actions</h3>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                      onClick={async () => {
+                        try {
+                          await knowledgeAPI.approveDocument(selectedDoc.document_id);
+                          toast.success('Document approved successfully!');
+                          fetchDocuments();
+                          fetchDocumentDetails(selectedDoc.document_id);
+                        } catch (error) {
+                          toast.error('Failed to approve document');
+                        }
+                      }}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={async () => {
+                        const reason = prompt('Reason for rejection:');
+                        if (reason) {
+                          try {
+                            await knowledgeAPI.rejectDocument(selectedDoc.document_id, reason);
+                            toast.success('Document rejected');
+                            fetchDocuments();
+                            fetchDocumentDetails(selectedDoc.document_id);
+                          } catch (error) {
+                            toast.error('Failed to reject document');
+                          }
+                        }
+                      }}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="space-y-1">
                   <div className="text-sm text-muted-foreground">Created</div>
@@ -344,13 +435,31 @@ export function DocumentManagement() {
                   <div className="capitalize">{getFileType(selectedDoc.file_path)}</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Category</div>
+                  <div className="text-sm text-muted-foreground">Danh Mục</div>
                   <div className="capitalize">{selectedDoc.category || 'General'}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-sm text-muted-foreground">Document ID</div>
                   <div>{selectedDoc.document_id}</div>
                 </div>
+                {selectedDoc.status && (
+                  <div className="space-y-1">
+                    <div className="text-sm text-muted-foreground">Status</div>
+                    <div className="capitalize">{selectedDoc.status}</div>
+                  </div>
+                )}
+                {selectedDoc.reviewed_by && (
+                  <div className="space-y-1">
+                    <div className="text-sm text-muted-foreground">Reviewed By</div>
+                    <div>User ID: {selectedDoc.reviewed_by}</div>
+                  </div>
+                )}
+                {selectedDoc.reviewed_at && (
+                  <div className="space-y-1">
+                    <div className="text-sm text-muted-foreground">Reviewed At</div>
+                    <div>{formatDate(selectedDoc.reviewed_at)}</div>
+                  </div>
+                )}
               </div>
             </div>
           </ScrollArea>
@@ -380,9 +489,7 @@ export function DocumentManagement() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Hủy</Button>
             <Button 
               variant="destructive" 
               onClick={handleDelete}
@@ -394,7 +501,7 @@ export function DocumentManagement() {
                   Deleting...
                 </>
               ) : (
-                'Delete'
+                'Xóa'
               )}
             </Button>
           </DialogFooter>
@@ -448,7 +555,7 @@ export function DocumentManagement() {
 
             {/* Category */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Category</label>
+              <label className="text-sm font-medium">Danh Mục</label>
               <Input
                 type="text"
                 placeholder="Enter category (optional)"
@@ -509,9 +616,7 @@ export function DocumentManagement() {
               setDocumentTitle('');
               setDocumentCategory('');
               setShowUploadDialog(false);
-            }}>
-              Cancel
-            </Button>
+            }}>Hủy</Button>
             <Button 
               onClick={handleUpload}
               disabled={!uploadedFile || !selectedIntent || uploading}

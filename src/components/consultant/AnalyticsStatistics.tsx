@@ -137,7 +137,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
       <div className="p-6 pb-8 space-y-6">
         {/* Page Header */}
         <div>
-          <h1>Analytics & Statistics</h1>
+          <h1>Phân Tích & Thống Kê</h1>
           <p className="text-muted-foreground">
             Deep dive into user questions and interaction patterns
           </p>
@@ -146,7 +146,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
         {/* Category Interest Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Category Interest</CardTitle>
+            <CardTitle>Danh Mục Quan Tâm</CardTitle>
             <CardDescription>
               Overview of question distribution across categories
             </CardDescription>
@@ -255,8 +255,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
 
         {/* Results Count */}
         <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing <span className="font-semibold text-foreground">{questions.length}</span> of{' '}
+          <div className="text-sm text-muted-foreground">Hiển thị<span className="font-semibold text-foreground">{questions.length}</span> of{' '}
             <span className="font-semibold text-foreground">{totalCount}</span> questions
           </div>
         </div>
@@ -264,7 +263,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
         {/* Questions Detail Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Questions Detail</CardTitle>
+            <CardTitle>Chi Tiết Câu Hỏi</CardTitle>
             <CardDescription>
               Individual questions from chatbot sessions with their metrics
             </CardDescription>
@@ -303,7 +302,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
                         <span className="font-medium">Category</span>
                       </TableHead>
                       <TableHead className="text-center py-3">
-                        <span className="font-medium">Status</span>
+                        <span className="font-medium">Trạng Thái</span>
                       </TableHead>
                       <TableHead className="text-center py-3">
                         <span className="font-medium">Action</span>
@@ -325,7 +324,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
                                 : 'bg-red-100 text-red-800 hover:bg-red-200'
                             }`}
                           >
-                            {item.status === 'answered' ? 'Answered' : 'Unanswered'}
+                            {item.status === 'answered' ? 'Đã Trả Lời' : 'Chưa Trả Lời'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center py-4">
@@ -357,9 +356,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
                       >
-                        <ChevronLeft className="h-4 w-4 mr-1" />
-                        Previous
-                      </Button>
+                        <ChevronLeft className="h-4 w-4 mr-1" />Trước</Button>
                       
                       {/* Page numbers */}
                       <div className="flex items-center gap-1">
@@ -394,9 +391,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
                         size="sm"
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                      >
-                        Next
-                        <ChevronRight className="h-4 w-4 ml-1" />
+                      >Tiếp Theo<ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                     </div>
                   </div>

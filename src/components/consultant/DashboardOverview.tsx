@@ -96,7 +96,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
         <div className="p-6 pb-8 space-y-6">
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-3 text-muted-foreground">Loading dashboard data...</span>
+            <span className="ml-3 text-muted-foreground">Đang tải dữ liệu dashboard...</span>
           </div>
         </div>
       </ScrollArea>
@@ -264,7 +264,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Recent Questions</CardTitle>
+                <CardTitle>Câu Hỏi Gần Đây</CardTitle>
                 <CardDescription>
                   The 5 most recent questions asked in the system
                 </CardDescription>

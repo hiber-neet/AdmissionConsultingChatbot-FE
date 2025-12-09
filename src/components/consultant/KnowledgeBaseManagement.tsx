@@ -88,7 +88,7 @@ const qaPairs: QAPair[] = [
 ];
 
 const categories = [
-  'All Categories',
+  'Tất Cả Danh Mục',
   'Admission Requirements',
   'Financial Aid',
   'Tuition Fees',
@@ -98,7 +98,7 @@ const categories = [
 
 export function KnowledgeBaseManagement() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [selectedCategory, setSelectedCategory] = useState('Tất Cả Danh Mục');
   const [selectedQA, setSelectedQA] = useState<QAPair | null>(qaPairs[0]);
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -109,7 +109,7 @@ export function KnowledgeBaseManagement() {
   const filteredQAPairs = qaPairs.filter(qa => {
     const matchesSearch = qa.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          qa.answer.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All Categories' || qa.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'Tất Cả Danh Mục' || qa.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -139,7 +139,7 @@ export function KnowledgeBaseManagement() {
         {/* Header */}
         <div className="p-4 border-b border-gray-200 space-y-4">
           <div className="flex items-center justify-between">
-            <h2>Knowledge Base</h2>
+            <h2>Cơ Sở Tri Thức</h2>
             <Button size="sm" className="bg-[#3B82F6] hover:bg-[#2563EB]">
               <Plus className="h-4 w-4 mr-1" />
               Add New
@@ -248,9 +248,7 @@ export function KnowledgeBaseManagement() {
                       variant="outline"
                       size="sm"
                       onClick={handleCancel}
-                    >
-                      Cancel
-                    </Button>
+                    >Hủy</Button>
                     <Button
                       size="sm"
                       onClick={handleSave}
@@ -268,7 +266,7 @@ export function KnowledgeBaseManagement() {
                 {/* Question */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Question</CardTitle>
+                    <CardTitle className="text-base">Câu Hỏi</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {isEditing ? (
@@ -287,7 +285,7 @@ export function KnowledgeBaseManagement() {
                 {/* Answer */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Answer</CardTitle>
+                    <CardTitle className="text-base">Câu Trả Lời</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {isEditing ? (
@@ -320,7 +318,7 @@ export function KnowledgeBaseManagement() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {categories.filter(c => c !== 'All Categories').map(cat => (
+                            {categories.filter(c => c !== 'Tất Cả Danh Mục').map(cat => (
                               <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                             ))}
                           </SelectContent>
@@ -406,18 +404,14 @@ export function KnowledgeBaseManagement() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Hủy</Button>
             <Button 
               variant="destructive"
               onClick={() => {
                 // Delete logic would go here
                 setShowDeleteDialog(false);
               }}
-            >
-              Delete
-            </Button>
+            >Xóa</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

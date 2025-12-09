@@ -62,9 +62,9 @@ export default function ContentManagerLayOut() {
     { id: "articles" as ContentPage, label: "Article List", icon: FileText, path: "/content/articles", permission: "Content Manager" },
     { id: "editor" as ContentPage, label: "Article Details", icon: PenSquare, path: "/content/editor", permission: "Content Manager" },
     ...(isContentManagerLeader() ? [
-      { id: "review" as ContentPage, label: "Review Queue", icon: ListChecks, path: "/content/review", permission: "Content Manager" }
+      { id: "review" as ContentPage, label: "Hàng Đợi Duyệt Bài", icon: ListChecks, path: "/content/review", permission: "Content Manager" }
     ] : []),
-    { id: "profile" as ContentPage, label: "Profile", icon: User, path: "/content/profile", permission: "Student" },
+    { id: "profile" as ContentPage, label: "Hồ Sơ", icon: User, path: "/content/profile", permission: "Student" },
   ];
 
   // Define navigation for all roles
@@ -73,7 +73,7 @@ export default function ContentManagerLayOut() {
       { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
       { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
       { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
-      { id: 'profile', label: 'Profile', icon: User, path: '/admin/profile' },
+      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/admin/profile' },
     ],
     'Content Manager': navigation,
     'Admission Official': [
@@ -82,17 +82,17 @@ export default function ContentManagerLayOut() {
       { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admission/consultation' },
       { id: 'knowledge-base', label: 'Cơ Sở Tri Thức', icon: BookOpen, path: '/admission/knowledge-base' },
       { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
-      { id: 'profile', label: 'Profile', icon: User, path: '/admission/profile' },
+      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/admission/profile' },
     ],
     Consultant: [
-      { id: 'overview', label: 'Dashboard Home', icon: LayoutDashboard, path: '/consultant/overview' },
-      { id: 'analytics', label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
-      { id: 'templates', label: 'Training Questions', icon: MessageSquareText, path: '/consultant/templates' },
-      { id: 'optimization', label: 'Content Optimization', icon: Lightbulb, path: '/consultant/optimization' },
+      { id: 'overview', label: 'Trang Chủ Dashboard', icon: LayoutDashboard, path: '/consultant/overview' },
+      { id: 'analytics', label: 'Phân Tích & Thống Kê', icon: TrendingUp, path: '/consultant/analytics' },
+      { id: 'templates', label: 'Câu Hỏi Huấn Luyện', icon: MessageSquareText, path: '/consultant/templates' },
+      { id: 'optimization', label: 'Tối Ưu Hóa Nội Dung', icon: Lightbulb, path: '/consultant/optimization' },
       ...(user?.isLeader ? [
-        { id: 'leader', label: 'Leader Review', icon: Database, path: '/consultant/leader' }
+        { id: 'leader', label: 'Đánh Giá Lãnh Đạo', icon: Database, path: '/consultant/leader' }
       ] : []),
-      { id: 'profile', label: 'Profile', icon: User, path: '/consultant/profile' }
+      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/consultant/profile' }
     ]
   };
 
@@ -127,12 +127,12 @@ export default function ContentManagerLayOut() {
     ...(user?.permissions?.includes('Consultant') ? [{
       title: 'Consultant',
       items: [
-        { label: 'Consultant Dashboard', icon: LayoutDashboard, path: '/consultant/overview' },
-        { label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
-        { label: 'Training Questions', icon: MessageSquare, path: '/consultant/templates' },
-        { label: 'Content Optimization', icon: Lightbulb, path: '/consultant/optimization' },
+        { label: 'Bảng Điều Khiển Tư Vấn', icon: LayoutDashboard, path: '/consultant/overview' },
+        { label: 'Phân Tích & Thống Kê', icon: TrendingUp, path: '/consultant/analytics' },
+        { label: 'Câu Hỏi Huấn Luyện', icon: MessageSquare, path: '/consultant/templates' },
+        { label: 'Tối Ưu Hóa Nội Dung', icon: Lightbulb, path: '/consultant/optimization' },
         ...(user?.isLeader ? [
-          { label: 'Leader Review', icon: Database, path: '/consultant/leader' }
+          { label: 'Đánh Giá Lãnh Đạo', icon: Database, path: '/consultant/leader' }
         ] : []),
       ]
     }] : []),
@@ -141,7 +141,7 @@ export default function ContentManagerLayOut() {
     ...(user?.permissions?.includes('Admission Official') ? [{
       title: 'Admission Officer',
       items: [
-        { label: 'Admission Dashboard', icon: LayoutDashboard, path: '/admission/dashboard' },
+        { label: 'Tổng Quan Tuyển Sinh', icon: LayoutDashboard, path: '/admission/dashboard' },
         { label: 'Request Queue', icon: Calendar, path: '/admission/request-queue' },
         { label: 'Students', icon: GraduationCap, path: '/admission/students' },
         { label: 'Knowledge Base', icon: BookOpen, path: '/admission/knowledge-base' },
@@ -280,7 +280,7 @@ export default function ContentManagerLayOut() {
             </Avatar>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <div className="text-sm truncate">{user?.name || 'Loading...'}</div>
+                <div className="text-sm truncate">{user?.name || 'Đang tải...'}</div>
                 <div className="text-xs text-gray-500 truncate">
                   {!user ? 'Connecting...' : user?.isLeader ? 'Content Manager Leader' : 'Content Manager'}
                 </div>
@@ -297,7 +297,7 @@ export default function ContentManagerLayOut() {
               variant="ghost"
               size="sm"
               onClick={() => {
-                if (confirm('Are you sure you want to logout?')) {
+                if (confirm('Bạn có chắc muốn đăng xuất?')) {
                   logout();
                 }
               }}

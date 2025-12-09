@@ -6,12 +6,7 @@ import Header from "@/components/header/Header";
 import banner from "@/assets/images/login-private.jpg";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/Auth";
-import {
-  joinQueue,
-  getQueueStatus,
-  endSession,
-  getSessionMessages,
-} from "@/services/liveChat";
+// Removed: liveChat.ts imports - now using dedicated /live-chat page
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
