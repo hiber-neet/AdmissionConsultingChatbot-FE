@@ -137,6 +137,7 @@ export const authAPI = {
 // Profile API
 export const profileAPI = {
   getProfile: () => fastAPIClient.get('/profile'),
+  getUserById: (userId: number) => fastAPIClient.get(`/profile/${userId}`),
   updateProfile: (data: any) => fastAPIClient.put('/profile', data),
 };
 
@@ -195,12 +196,42 @@ export const knowledgeAPI = {
   uploadTrainingQuestion: (data: { question: string; answer: string }) =>
     fastAPIClient.post<TrainingQuestion>('/knowledge/upload/training_question', data),
 
-  getDocuments: () => fastAPIClient.get<KnowledgeDocument[]>('/knowledge/documents'),
+  // Get documents with optional status filter
+  getDocuments: (status?: string) => {
+    const params = status ? `?status=${status}` : '';
+    return fastAPIClient.get<KnowledgeDocument[]>(`/knowledge/documents${params}`);
+  },
   getDocumentById: (id: number) => fastAPIClient.get<KnowledgeDocument>(`/knowledge/documents/${id}`),
-  getTrainingQuestions: () => fastAPIClient.get<TrainingQuestion[]>('/knowledge/training_questions'),
+  
+  // Get training questions with optional status filter
+  getTrainingQuestions: (status?: string) => {
+    const params = status ? `?status=${status}` : '';
+    return fastAPIClient.get<TrainingQuestion[]>(`/knowledge/training_questions${params}`);
+  },
 
+  // Soft delete (sets status to 'deleted')
   deleteDocument: (id: number) => fastAPIClient.delete(`/knowledge/documents/${id}`),
   deleteTrainingQuestion: (id: number) => fastAPIClient.delete(`/knowledge/training_questions/${id}`),
+
+  // Review workflow for documents
+  getPendingDocuments: () => fastAPIClient.get<KnowledgeDocument[]>('/knowledge/documents/pending-review'),
+  submitDocumentForReview: (id: number) => fastAPIClient.post(`/knowledge/documents/${id}/submit-review`, {}),
+  approveDocument: (id: number) => fastAPIClient.post(`/knowledge/documents/${id}/approve`, {}),
+  rejectDocument: (id: number, reason: string) => {
+    const formData = new FormData();
+    formData.append('reason', reason);
+    return fastAPIClient.post(`/knowledge/documents/${id}/reject`, formData);
+  },
+
+  // Review workflow for training questions
+  getPendingTrainingQuestions: () => fastAPIClient.get<TrainingQuestion[]>('/knowledge/training_questions/pending-review'),
+  submitTrainingQuestionForReview: (id: number) => fastAPIClient.post(`/knowledge/training_questions/${id}/submit-review`, {}),
+  approveTrainingQuestion: (id: number) => fastAPIClient.post(`/knowledge/training_questions/${id}/approve`, {}),
+  rejectTrainingQuestion: (id: number, reason: string) => {
+    const formData = new FormData();
+    formData.append('reason', reason);
+    return fastAPIClient.post(`/knowledge/training_questions/${id}/reject`, formData);
+  },
   
   downloadDocument: async (id: number) => {
     const token = localStorage.getItem("access_token");
@@ -425,6 +456,20 @@ export interface ActiveChatSession {
 
 // Live Chat API functions
 export const liveChatAPI = {
+  // Customer joins queue
+  joinQueue: (customerId: number, officialId?: number) => {
+    const params: any = { customer_id: customerId };
+    if (officialId !== undefined && officialId !== null) {
+      params.official_id = officialId;
+    }
+    const queryString = new URLSearchParams(params).toString();
+    return fastAPIClient.post(`/live_chat/livechat/live-chat/join_queue?${queryString}`, {});
+  },
+
+  // Customer cancels queue request
+  cancelQueueRequest: (customerId: number) =>
+    fastAPIClient.post(`/live_chat/livechat/customer/cancel_queue?customer_id=${customerId}`, {}),
+
   // Get queue list for admission official
   getQueueList: (officialId: number) =>
     fastAPIClient.get<LiveChatQueueItem[]>(`/live_chat/livechat/admission_official/queue/list/${officialId}`),

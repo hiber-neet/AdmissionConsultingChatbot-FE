@@ -56,7 +56,18 @@ class FastAPIClient {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error(`API request failed: ${url}`, error);
+      // Don't log error if it's an auth issue and user isn't logged in
+      const isAuthError = error instanceof Error && 
+        (error.message.includes('permission required') || 
+         error.message.includes('Unauthorized') ||
+         error.message.includes('401'));
+      const hasToken = typeof window !== 'undefined' && localStorage.getItem('access_token');
+      
+      // Only log if it's not an auth issue, or if user should be authenticated
+      if (!isAuthError || hasToken) {
+        console.error(`API request failed: ${url}`, error);
+      }
+      
       throw error;
     }
   }
@@ -196,13 +207,21 @@ export interface KnowledgeDocument {
   created_at: string;
   updated_at?: string;
   created_by?: number;
+  status?: string; // draft, approved, rejected, deleted
+  reviewed_by?: number;
+  reviewed_at?: string;
 }
 
 export interface TrainingQuestion {
   question_id: number;
   question: string;
   answer: string;
-  created_at: string;
+  intent_id?: number;
+  created_at?: string;
+  approved_at?: string;
+  created_by?: number;
+  approved_by?: number;
+  status?: string; // draft, approved, rejected, deleted
 }
 
 // Intent types

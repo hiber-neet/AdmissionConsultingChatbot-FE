@@ -49,6 +49,7 @@ import { AllArticlesPage } from "../components/content/AllArticlesPage.tsx";
 import ReviewQueue from "../components/content/ReviewQueue.tsx";
 import { ArticleEditorPage } from "../components/content/ArticleEditorPage.tsx";
 import ArticlePage from "../pages/article/ArticlePage.jsx";
+import CustomerLiveChatPage from "../pages/livechat/CustomerLiveChatPage.jsx";
 function NotFound() {
   return <h1 style={{ padding: 24 }}>404</h1>;
 }
@@ -69,6 +70,11 @@ export default function Router() {
       <Route path="/profile" element={
  
           <UserProfile />
+ 
+      } />
+      <Route path="/live-chat" element={
+ 
+          <CustomerLiveChatPage />
  
       } />
       

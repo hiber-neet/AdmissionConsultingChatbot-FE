@@ -19,14 +19,12 @@ export function LoadingView({ isLoading, error, onRetry, onGoToQueue }) {
       <div className="max-w-md mx-auto mt-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-red-600">Error</CardTitle>
+            <CardTitle className="text-red-600">Lỗi</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 mb-4">{error}</p>
             <div className="space-x-2">
-              <Button onClick={onGoToQueue}>
-                Go to Request Queue
-              </Button>
+              <Button onClick={onGoToQueue}>Đến Hàng Đợi Yêu Cầu</Button>
               <Button variant="outline" onClick={onRetry}>
                 Retry
               </Button>

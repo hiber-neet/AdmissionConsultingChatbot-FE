@@ -95,7 +95,7 @@ export function UserFormDialog({
         setPermissionsLoaded(true);
       } catch (error) {
         console.error('Failed to load permissions:', error);
-        toast.error('Failed to load permissions data');
+        toast.error('Không thể tải dữ liệu quyền hạn');
       } finally {
         setLoadingPermissions(false);
       }
@@ -645,7 +645,7 @@ export function UserFormDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {editingUser ? 'Edit User' : 'Add New User'}
+            {editingUser ? 'Chỉnh Sửa Người Dùng' : 'Thêm Người Dùng Mới'}
           </DialogTitle>
           <DialogDescription>
             {editingUser 
@@ -667,7 +667,7 @@ export function UserFormDialog({
           {/* Basic User Information */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
+              <Label htmlFor="name">Họ và Tên<span className="text-red-500">*</span></Label>
               <Input
                 id="name"
                 value={formData.name || ''}
@@ -700,7 +700,7 @@ export function UserFormDialog({
             
             <div className="space-y-2">
               <Label htmlFor="password">
-                {editingUser ? 'New Password (optional)' : 'Password'} 
+                {editingUser ? 'New Password (optional)' : 'Mật Khẩu'} 
                 {!editingUser && <span className="text-red-500">*</span>}
               </Label>
               <Input
@@ -719,7 +719,7 @@ export function UserFormDialog({
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">Số Điện Thoại</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -758,14 +758,16 @@ export function UserFormDialog({
             </div>
           </div>
 
-          {/* Role Selection */}
-          <div className="space-y-2">
-            <Label>Role</Label>
+          {/* Role Selection - Only shown during creation */}
+          {!editingUser && (
+            <div className="space-y-2">
+            <Label>Vai Trò</Label>
             <RoleSelector
               selectedRole={formData.role || ''}
               onRoleChange={handleRoleChange}
             />
           </div>
+          )}
 
           {/* Permission Management - Only for editing existing users */}
           {editingUser && (
@@ -870,9 +872,7 @@ export function UserFormDialog({
         </form>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
+          <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
           <Button type="submit" onClick={handleSubmit}>
             {editingUser ? 'Update User' : 'Create User'}
           </Button>

@@ -35,7 +35,7 @@ export default function ReviewQueue() {
     try {
       await articlesAPI.updateStatus(article.article_id, {
         status: "published",
-        note: "Approved"
+        note: "Đã Phê Duyệt"
       });
       toast.success(`Article "${article.title}" has been approved and published!`);
       await fetchReviewQueue(); // Refresh the list
@@ -90,8 +90,8 @@ export default function ReviewQueue() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="text-xl font-semibold">Review Queue</div>
-        <div className="text-sm text-gray-500 mb-6">Loading...</div>
+        <div className="text-xl font-semibold">Hàng Đợi Duyệt Bài</div>
+        <div className="text-sm text-gray-500 mb-6">Đang tải...</div>
         <div className="bg-white border rounded-2xl p-12 text-center text-gray-500">
           <div className="text-lg">Loading articles for review...</div>
         </div>
@@ -102,7 +102,7 @@ export default function ReviewQueue() {
   if (articles.length === 0) {
     return (
       <div className="p-6">
-        <div className="text-xl font-semibold">Review Queue</div>
+        <div className="text-xl font-semibold">Hàng Đợi Duyệt Bài</div>
         <div className="text-sm text-gray-500 mb-6">0 articles awaiting review</div>
         <div className="bg-white border rounded-2xl p-12 text-center text-gray-500">
           <div className="text-5xl mb-4">✓</div>
@@ -115,7 +115,7 @@ export default function ReviewQueue() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-2 text-xl font-semibold">Review Queue</div>
+      <div className="mb-2 text-xl font-semibold">Hàng Đợi Duyệt Bài</div>
       <div className="text-sm text-gray-500 mb-6">
         {articles.length} articles awaiting <span className="ml-1">review</span>
       </div>
@@ -193,7 +193,7 @@ export default function ReviewQueue() {
                 <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-white/15">
                   <Check className="h-3.5 w-3.5" />
                 </span>
-                {actionLoading ? 'Processing...' : 'Approve & Publish'}
+                {actionLoading ? 'Đang xử lý...' : 'Approve & Publish'}
               </button>
 
               <button 
@@ -201,9 +201,7 @@ export default function ReviewQueue() {
                 disabled={actionLoading}
                 className="inline-flex items-center gap-2 rounded-md bg-red-600 text-white text-sm px-3 py-2 hover:opacity-90 disabled:opacity-50"
               >
-                <X className="h-4 w-4" />
-                Reject
-              </button>
+                <X className="h-4 w-4" />Từ Chối</button>
             </div>
           </div>
         ))}
@@ -236,7 +234,7 @@ export default function ReviewQueue() {
                 <button
                   onClick={() => setOpenFor(null)}
                   className="p-1.5 rounded-md hover:bg-gray-100"
-                  aria-label="Close"
+                  aria-label="Đóng"
                 >
                   <X size={18} />
                 </button>
@@ -266,9 +264,7 @@ export default function ReviewQueue() {
                   onClick={() => setOpenFor(null)}
                   disabled={actionLoading}
                   className="px-4 py-2 rounded-xl border hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
+                >Hủy</button>
                 <button
                   onClick={submitFeedback}
                   disabled={actionLoading || !feedback.trim()}

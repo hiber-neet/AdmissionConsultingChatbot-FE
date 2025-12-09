@@ -46,7 +46,7 @@ export function AdmissionOfficerLayout() {
     { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, path: '/admission/consultation' },
     { id: 'knowledge-base', label: 'Cơ Sở Tri Thức', icon: BookOpen, path: '/admission/knowledge-base' },
     { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
-    { id: 'profile', label: 'Profile', icon: User, path: '/admission/profile' },
+    { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/admission/profile' },
   ];
 
   // Define navigation for all roles
@@ -55,25 +55,25 @@ export function AdmissionOfficerLayout() {
       { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
       { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
       { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
-      { id: 'profile', label: 'Profile', icon: User, path: '/admin/profile' },
+      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/admin/profile' },
     ],
     'Content Manager': [
       { id: "dashboard", label: "Tổng quan content", icon: LayoutDashboard, path: '/content/dashboard' },
-      { id: "articles", label: "All Articles", icon: FileText, path: '/content/articles' },
-      { id: "review", label: "Review Queue", icon: ListChecks, path: '/content/review' },
-      { id: "editor", label: "New Article", icon: PenSquare, path: '/content/editor' },
-      { id: "profile", label: "Profile", icon: User, path: '/content/profile' },
+      { id: "articles", label: "Tất Cả Bài Viết", icon: FileText, path: '/content/articles' },
+      { id: "review", label: "Hàng Đợi Duyệt Bài", icon: ListChecks, path: '/content/review' },
+      { id: "editor", label: "Bài Viết Mới", icon: PenSquare, path: '/content/editor' },
+      { id: "profile", label: "Hồ Sơ", icon: User, path: '/content/profile' },
     ],
     'Admission Official': navigation,
     Consultant: [
-      { id: 'overview', label: 'Dashboard Home', icon: LayoutDashboard, path: '/consultant/overview' },
-      { id: 'analytics', label: 'Analytics & Statistics', icon: TrendingUp, path: '/consultant/analytics' },
-      { id: 'templates', label: 'Training Questions', icon: MessageSquareText, path: '/consultant/templates' },
-      { id: 'optimization', label: 'Content Optimization', icon: Lightbulb, path: '/consultant/optimization' },
+      { id: 'overview', label: 'Trang Chủ Dashboard', icon: LayoutDashboard, path: '/consultant/overview' },
+      { id: 'analytics', label: 'Phân Tích & Thống Kê', icon: TrendingUp, path: '/consultant/analytics' },
+      { id: 'templates', label: 'Câu Hỏi Huấn Luyện', icon: MessageSquareText, path: '/consultant/templates' },
+      { id: 'optimization', label: 'Tối Ưu Hóa Nội Dung', icon: Lightbulb, path: '/consultant/optimization' },
       ...(user?.isLeader ? [
-        { id: 'leader', label: 'Leader Review', icon: Database, path: '/consultant/leader' }
+        { id: 'leader', label: 'Đánh Giá Lãnh Đạo', icon: Database, path: '/consultant/leader' }
       ] : []),
-      { id: 'profile', label: 'Profile', icon: User, path: '/consultant/profile' }
+      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/consultant/profile' }
     ]
   };
 

@@ -314,7 +314,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
         {/* Header */}
         <div className="p-4 border-b border-gray-200 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Training Questions</h2>
+            <h2 className="text-lg font-semibold">Câu Hỏi Huấn Luyện</h2>
             <Button variant="outline" size="sm" className="gap-2" onClick={() => {
               setEditedQuestion('');
               setEditedAnswer('');
@@ -348,7 +348,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
           </Select>
 
           <div className="text-sm text-muted-foreground">
-            {loading ? 'Loading...' : `${filteredTrainingQuestions.length} training questions found`}
+            {loading ? 'Đang tải...' : `${filteredTrainingQuestions.length} training questions found`}
           </div>
         </div>
 
@@ -376,7 +376,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                     <div className={`text-sm break-words ${
                       selectedQuestion?.question_id === tq.question_id ? 'text-blue-100' : 'text-muted-foreground'
                     }`}>
-                      Intent: {tq.intent_name || 'Loading...'}
+                      Intent: {tq.intent_name || 'Đang tải...'}
                     </div>
                   </div>
                 </button>
@@ -398,18 +398,14 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                 {!isEditing && (
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="gap-2" onClick={handleEdit}>
-                      <Edit className="h-4 w-4" />
-                      Edit
-                    </Button>
+                      <Edit className="h-4 w-4" />Chỉnh Sửa</Button>
                     <Button 
                       variant="destructive" 
                       size="sm"
                       className="gap-2"
                       onClick={() => setShowDeleteDialog(true)}
                     >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </Button>
+                      <Trash2 className="h-4 w-4" />Xóa</Button>
                   </div>
                 )}
               </div>
@@ -425,7 +421,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Answer</label>
+                    <label className="text-sm font-medium">Câu Trả Lời</label>
                     <Textarea
                       value={editedAnswer}
                       onChange={(e) => setEditedAnswer(e.target.value)}
@@ -434,7 +430,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Intent</label>
+                    <label className="text-sm font-medium">Ý Định</label>
                     <Select value={editedIntentId?.toString() || ''} onValueChange={(value) => setEditedIntentId(Number(value))}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select intent" />
@@ -454,9 +450,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                   </div>
 
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={handleCancel}>
-                      Cancel
-                    </Button>
+                    <Button variant="outline" onClick={handleCancel}>Hủy</Button>
                     <Button onClick={handleSave}>
                       Save Changes
                     </Button>
@@ -466,8 +460,8 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <div className="text-sm text-muted-foreground">Intent</div>
-                      <div>{selectedQuestion.intent_name || 'Loading...'}</div>
+                      <div className="text-sm text-muted-foreground">Ý Định</div>
+                      <div>{selectedQuestion.intent_name || 'Đang tải...'}</div>
                     </div>
                     <div className="space-y-1">
                       <div className="text-sm text-muted-foreground">Question ID</div>
@@ -482,7 +476,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-medium mb-2">Answer</h3>
+                      <h3 className="text-lg font-medium mb-2">Câu Trả Lời</h3>
                       <p className="text-gray-700 whitespace-pre-wrap">{selectedQuestion.answer}</p>
                     </div>
                   </div>
@@ -513,12 +507,8 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
-            </Button>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Hủy</Button>
+            <Button variant="destructive" onClick={handleDelete}>Xóa</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -544,7 +534,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Answer</label>
+              <label className="text-sm font-medium">Câu Trả Lời</label>
               <Textarea
                 value={editedAnswer}
                 onChange={(e) => setEditedAnswer(e.target.value)}
@@ -554,7 +544,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Intent</label>
+              <label className="text-sm font-medium">Ý Định</label>
               <Select value={editedIntentId?.toString() || ''} onValueChange={(value) => setEditedIntentId(Number(value))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select intent" />
@@ -580,9 +570,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
               setEditedAnswer('');
               setEditedIntentId(null);
               setShowAddDialog(false);
-            }}>
-              Cancel
-            </Button>
+            }}>Hủy</Button>
             <Button 
               onClick={handleCreateTrainingQuestion}
               disabled={creating || !editedQuestion.trim() || !editedAnswer.trim() || !editedIntentId}

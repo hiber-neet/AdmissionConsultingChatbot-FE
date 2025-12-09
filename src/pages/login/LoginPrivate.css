@@ -167,6 +167,36 @@ header>div>.logo-mandb {
     font-family: 'Poppins';
     border: 0.5px solid;
     cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.button-login:hover {
+    background-color: #d15d1a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(234, 109, 34, 0.3);
+}
+
+.button-login:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(234, 109, 34, 0.3);
+}
+
+.button-admin {
+    background-color: white !important;
+    color: black !important;
+    border: 1px solid #ddd !important;
+}
+
+.button-admin:hover {
+    background-color: #f5f5f5 !important;
+    border-color: #bbb !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.button-admin:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .form-login>p {

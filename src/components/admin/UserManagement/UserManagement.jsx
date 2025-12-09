@@ -131,7 +131,7 @@ export function UserManagement() {
         PERMISSION_ID_TO_NAME = idToName;
       } catch (error) {
         console.error('Failed to load permissions:', error);
-        toast.error('Failed to load permissions data');
+        toast.error('Không thể tải dữ liệu quyền hạn');
       }
     };
 
@@ -176,7 +176,7 @@ export function UserManagement() {
         ROLE_NAME_TO_FRONTEND = nameToFrontend;
       } catch (error) {
         console.error('Failed to load roles:', error);
-        toast.error('Failed to load roles data');
+        toast.error('Không thể tải dữ liệu vai trò');
       }
     };
 
@@ -197,7 +197,7 @@ export function UserManagement() {
     // Check if we have a valid token first
     const token = localStorage.getItem('access_token');
     if (!token) {
-      toast.error('No authentication token found. Please login again.');
+      toast.error('Không tìm thấy token xác thực. Vui lòng đăng nhập lại.');
       setUsers([]);
       setLoading(false);
       return;
@@ -208,13 +208,13 @@ export function UserManagement() {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const currentTime = Date.now() / 1000;
       if (payload.exp < currentTime) {
-        toast.error('Authentication token expired. Please login again.');
+        toast.error('Token xác thực đã hết hạn. Vui lòng đăng nhập lại.');
         setUsers([]);
         setLoading(false);
         return;
       }
     } catch (e) {
-      toast.error('Invalid authentication token. Please login again.');
+      toast.error('Token xác thực không hợp lệ. Vui lòng đăng nhập lại.');
       setUsers([]);
       setLoading(false);
       return;
@@ -284,7 +284,7 @@ export function UserManagement() {
       setUsers(allUsers);
 
     } catch (err) {
-      toast.error(`Failed to fetch users: ${err.message}`);
+      toast.error(`Không thể tải người dùng: ${err.message}`);
       setUsers([]);
     } finally {
       setLoading(false);
@@ -462,41 +462,76 @@ export function UserManagement() {
 
   const handleCreateOrUpdate = async () => {
     if (!formData.name || !formData.email || !formData.role) {
-      toast.error('Please fill in all required fields (Name, Email, Role)');
+      toast.error('Vui lòng điền tất cả các trường bắt buộc (Tên, Email, Vai trò)');
       return;
     }
     if (!editingUser && !formData.password) {
-      toast.error('Password is required for new users');
+      toast.error('Mật khẩu là bắt buộc cho người dùng mới');
       return;
     }
     if (!editingUser && !formData.phone_number) {
-      toast.error('Phone number is required for new users');
+      toast.error('Số điện thoại là bắt buộc cho người dùng mới');
       return;
     }
 
     try {
       setLoading(true);
 
+      const token = localStorage.getItem('access_token');
+      const baseUrl = 'http://localhost:8000';
+
       if (editingUser) {
         // Update existing user - basic information only
         // The UserFormDialog handles permission updates internally
         
-        // For now, just update local state
-        // In a real app, you'd call a user update API here
+        const updatePayload = {
+          full_name: formData.name,
+          email: formData.email,
+          phone_number: formData.phone_number || null,
+        };
+
+        // Only include password if it's provided
+        if (formData.password && formData.password.trim() !== '') {
+          updatePayload.password = formData.password;
+        }
+
+        const response = await fetch(`${baseUrl}/users/${editingUser.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(updatePayload)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          let errorMessage;
+          try {
+            const parsedError = JSON.parse(errorData);
+            errorMessage = parsedError.detail || `HTTP ${response.status}`;
+          } catch (parseError) {
+            errorMessage = `HTTP ${response.status}: ${errorData}`;
+          }
+          throw new Error(errorMessage);
+        }
+
+        const updatedUserData = await response.json();
+        
+        // Update local state with the response from server
         setUsers(users.map(u => 
           u.id === editingUser.id 
             ? {
                 ...u,
-                name: formData.name,
-                email: formData.email,
-                phone_number: formData.phone_number,
-                interest_desired_major: formData.interest_desired_major,
-                interest_region: formData.interest_region
+                name: updatedUserData.full_name,
+                email: updatedUserData.email,
+                phone_number: updatedUserData.phone_number,
+                status: updatedUserData.status ? 'active' : 'inactive',
               }
             : u
         ));
         
-        toast.success('User information updated successfully!');
+        toast.success('Cập nhật thông tin người dùng thành công!');
       } else {
         // Create new user via API
         
@@ -565,7 +600,7 @@ export function UserManagement() {
           interest_region: newUser.interest_region || ''
         }]);
         
-        toast.success('User created successfully! You can now add permissions.');
+        toast.success('Tạo người dùng thành công! Bạn có thể thêm quyền hạn ngay bây giờ.');
       }
 
       // Close dialog and refresh
@@ -574,7 +609,7 @@ export function UserManagement() {
 
     } catch (error) {
       console.error('Failed to create/update user:', error);
-      toast.error(`Failed to ${editingUser ? 'update' : 'create'} user: ${error.message}`);
+      toast.error(`Không thể ${editingUser ? 'cập nhật' : 'tạo'} người dùng: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -605,23 +640,23 @@ export function UserManagement() {
       
       // Check if user is admin - admins cannot be banned
       if (user.role === 'SYSTEM_ADMIN' || (user.permissions && user.permissions.includes('admin'))) {
-        toast.error('Cannot ban admin users. Admin users have special privileges.');
+        toast.error('Không thể cấm người dùng quản trị. Người dùng quản trị có đặc quyền đặc biệt.');
         return;
       }
       
       if (user.status === 'active') {
         // User is active, so we're deactivating (banning) them
         await banUser(userId);
-        toast.success('User deactivated and banned successfully');
+        toast.success('Vô hiệu hóa và cấm người dùng thành công');
       } else {
         // User is inactive, so we're activating (unbanning) them
         await unbanUser(userId);
-        toast.success('User activated and unbanned successfully');
+        toast.success('Kích hoạt và bỏ cấm người dùng thành công');
       }
       
     } catch (error) {
-      const action = users.find(u => u.id === userId)?.status === 'active' ? 'deactivate' : 'activate';
-      toast.error(`Failed to ${action} user: ${error.message}`);
+      const action = users.find(u => u.id === userId)?.status === 'active' ? 'vô hiệu hóa' : 'kích hoạt';
+      toast.error(`Không thể ${action} người dùng: ${error.message}`);
     } finally {
       setLoading(false);
     }

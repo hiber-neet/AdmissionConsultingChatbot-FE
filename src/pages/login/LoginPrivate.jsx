@@ -70,7 +70,16 @@ const handleLogin = async (event) => {
     }
   } catch (error) {
     console.error("Login failed:", error);
-    toast.error("Đăng nhập thất bại. Vui lòng thử lại.");
+    
+    // Check if account is banned/deactivated
+    if (error.response?.status === 403 || 
+        (error.response?.data?.detail && error.response.data.detail.includes('deactivated'))) {
+      toast.error("⚠️ Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.", { autoClose: 8000 });
+    } else if (error.response?.data?.detail) {
+      toast.error(error.response.data.detail);
+    } else {
+      toast.error("Đăng nhập thất bại. Vui lòng thử lại.");
+    }
   } finally {
     setSubmitting(false);
   }
@@ -139,6 +148,13 @@ const handleLogin = async (event) => {
                 type="submit"
                 value={submitting ? "Processing..." : "Login"}
                 disabled={submitting}
+              />
+              
+              <input
+                className="button-login button-admin"
+                type="button"
+                value="Quản Trị Viên"
+                onClick={() => navigate('/loginforad')}
               />
             </form>
           </div>

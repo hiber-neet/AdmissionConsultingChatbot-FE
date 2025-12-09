@@ -16,20 +16,20 @@ export function UserFilters({
         <Input
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search users..."
+          placeholder="Tìm kiếm người dùng..."
           className="pl-10"
         />
       </div>
       <Select value={filterRole} onValueChange={onFilterRoleChange}>
         <SelectTrigger className="w-48">
-          <SelectValue placeholder="All Roles" />
+          <SelectValue placeholder="Tất Cả Vai Trò" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Roles</SelectItem>
-          <SelectItem value="SYSTEM_ADMIN">System Admin</SelectItem>
-          <SelectItem value="CONTENT_MANAGER">Content Manager</SelectItem>
-          <SelectItem value="ADMISSION_OFFICER">Admission Officer</SelectItem>
-          <SelectItem value="CONSULTANT">Consultant</SelectItem>
+          <SelectItem value="all">Tất Cả Vai Trò</SelectItem>
+          <SelectItem value="SYSTEM_ADMIN">Quản Trị Viên</SelectItem>
+          <SelectItem value="CONTENT_MANAGER">Quản Lý Nội Dung</SelectItem>
+          <SelectItem value="ADMISSION_OFFICER">Nhân Viên Tuyển Sinh</SelectItem>
+          <SelectItem value="CONSULTANT">Tư Vấn Viên</SelectItem>
         </SelectContent>
       </Select>
     </div>

@@ -50,7 +50,7 @@ export function UserFormDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] max-w-lg">
         <DialogHeader>
-          <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
+          <DialogTitle>{editingUser ? 'Chỉnh Sửa Người Dùng' : 'Thêm Người Dùng Mới'}</DialogTitle>
           <DialogDescription>
             {editingUser ? 'Update user information and role' : 'Create a new user account'}
           </DialogDescription>
@@ -58,7 +58,7 @@ export function UserFormDialog({
         
         <div className="space-y-4 py-4 overflow-y-auto max-h-[60vh]">
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="name">Họ và Tên</Label>
             <Input
               id="name"
               value={formData.name}
@@ -80,7 +80,7 @@ export function UserFormDialog({
 
           {!editingUser && (
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Mật Khẩu</Label>
               <Input
                 id="password"
                 type="password"
@@ -105,7 +105,7 @@ export function UserFormDialog({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
+            <Label htmlFor="phone">Số Điện Thoại</Label>
             <Input
               id="phone"
               type="tel"
@@ -160,11 +160,9 @@ export function UserFormDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
+          <Button variant="outline" onClick={onClose}>Hủy</Button>
           <Button onClick={onSubmit}>
-            {editingUser ? 'Update' : 'Create'} User
+            {editingUser ? 'Update' : 'Tạo Mới'} User
           </Button>
         </DialogFooter>
       </DialogContent>

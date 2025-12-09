@@ -1,7 +1,7 @@
 // src/components/header/Header.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, Menu, X, User as UserIcon, LogOut } from "lucide-react";
+import { GraduationCap, Menu, X, User as UserIcon, LogOut, MessageSquare } from "lucide-react";
 import { useAuth } from "@/contexts/Auth";
 
 export default function Header() {
@@ -223,6 +223,13 @@ const scrollToSection = (id) => {
                         <span>Profile</span>
                       </button>
                       <button
+                        onClick={() => navigate('/live-chat')}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        <span>Live Chat</span>
+                      </button>
+                      <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
                       >
@@ -333,6 +340,12 @@ const scrollToSection = (id) => {
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition-colors"
                   >
                     Profile
+                  </button>
+                  <button
+                    onClick={() => navigate('/live-chat')}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition-colors"
+                  >
+                    Live Chat
                   </button>
                   <button
                     onClick={handleLogout}

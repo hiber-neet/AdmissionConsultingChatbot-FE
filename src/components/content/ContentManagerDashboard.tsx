@@ -293,9 +293,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
               variant="outline"
               className="border-gray-300 hover:bg-gray-100"
             >
-              <Plus className="mr-2 h-4 w-4" />
-              New Article
-            </Button>
+              <Plus className="mr-2 h-4 w-4" />Bài Viết Mới</Button>
             <Button
               onClick={handleViewArticles}
               variant="outline"

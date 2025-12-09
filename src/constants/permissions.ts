@@ -1,5 +1,5 @@
 // Define Role type to match backend roles (with spaces as they appear in backend)
-export type Role = "Admin" | "Consultant" | "Content Manager" | "Admission Official" | "Student" | "Parent";
+export type Role = "Admin" | "Consultant" | "ConsultantLeader" | "Content Manager" | "Admission Official" | "Student" | "Parent";
 
 /** All possible permissions in the system - will be dynamically loaded from backend */
 export type Permission = string;
@@ -28,15 +28,24 @@ export async function loadPermissions(): Promise<PermissionData[]> {
     permissionsCacheLoaded = true;
     return permissions;
   } catch (error) {
-    console.error('Failed to load permissions from API:', error);
+    // Check if user is logged in (has token)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    
+    // Only log error if user is logged in (API should work)
+    if (token) {
+      console.error('Failed to load permissions from API:', error);
+    }
+    // Silent fail if not logged in - this is expected
+    
     // Fallback to hardcoded permissions if API fails
     const fallbackPermissions: PermissionData[] = [
       { permission_id: 1, permission_name: "Admin", description: "System administrator" },
       { permission_id: 2, permission_name: "Consultant", description: "Educational consultant" },
-      { permission_id: 3, permission_name: "Content Manager", description: "Content management" },
-      { permission_id: 4, permission_name: "Admission Official", description: "Admission processing" },
-      { permission_id: 5, permission_name: "Student", description: "Student access" },
-      { permission_id: 6, permission_name: "Parent", description: "Parent access" }
+      { permission_id: 3, permission_name: "ConsultantLeader", description: "Consultant team leader" },
+      { permission_id: 4, permission_name: "Content Manager", description: "Content management" },
+      { permission_id: 5, permission_name: "Admission Official", description: "Admission processing" },
+      { permission_id: 6, permission_name: "Student", description: "Student access" },
+      { permission_id: 7, permission_name: "Parent", description: "Parent access" }
     ];
     permissionsCache = fallbackPermissions;
     permissionsCacheLoaded = true;
@@ -156,7 +165,8 @@ let PAGE_PERMISSIONS: Record<PagePermission, Permission> = {
 
 /** Base permissions for each role - can be updated dynamically */
 let ROLE_PERMISSIONS: Record<Role, Permission[]> = {
-  Admin: ["Admin", "Content Manager", "Admission Official", "Consultant"],
+  Admin: ["Admin", "Content Manager", "Admission Official", "Consultant", "ConsultantLeader"],
+  ConsultantLeader: ["ConsultantLeader", "Consultant"], // Can review content + consultant permissions
   "Content Manager": ["Content Manager"],
   "Admission Official": ["Admission Official"], 
   Consultant: ["Consultant"],
@@ -166,7 +176,8 @@ let ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 
 /** Permission hierarchy - higher levels include lower levels - can be updated dynamically */
 let PERMISSION_HIERARCHY: Record<Permission, Permission[]> = {
-  "Admin": ["Admin", "Content Manager", "Admission Official", "Consultant"],
+  "Admin": ["Admin", "Content Manager", "Admission Official", "Consultant", "ConsultantLeader"],
+  "ConsultantLeader": ["ConsultantLeader", "Consultant"],
   "Content Manager": ["Content Manager"],
   "Admission Official": ["Admission Official"],
   "Consultant": ["Consultant"],

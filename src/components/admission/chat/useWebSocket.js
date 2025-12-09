@@ -6,24 +6,25 @@ export function useWebSocket(selectedSessionId, onMessageReceived) {
 
   const connectWebSocket = () => {
     if (!selectedSessionId) {
-      console.error('No session ID available for WebSocket connection');
+      console.error('[OFFICER WS] ❌ No session ID available for WebSocket connection');
       setIsConnected(false);
       return;
     }
 
     try {
       const wsUrl = `ws://localhost:8000/live_chat/livechat/chat/${selectedSessionId}`;
-      console.log('Connecting to WebSocket:', wsUrl);
+      console.log('[OFFICER WS] 🔌 Connecting to WebSocket:', wsUrl);
+      console.log('[OFFICER WS] 🔌 Session ID:', selectedSessionId);
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
-        console.log('WebSocket connected');
+        console.log('[OFFICER WS] ✅ WebSocket connected for session', selectedSessionId);
         setIsConnected(true);
       };
 
       wsRef.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        console.log('Received message:', data);
+        console.log('[OFFICER WS] 📨 Received message:', data);
         
         if (data.event === 'message') {
           const newMessage = {

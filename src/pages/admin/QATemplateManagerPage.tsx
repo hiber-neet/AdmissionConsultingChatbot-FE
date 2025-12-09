@@ -1,5 +1,5 @@
-import QATemplateManager from '../../components/admin/QATemplateManager';
+import QATemplateManagerNew from '../../components/admin/QATemplateManagerNew.jsx';
 
 export function QATemplateManagerPage() {
-  return <QATemplateManager />;
+  return <QATemplateManagerNew />;
 }

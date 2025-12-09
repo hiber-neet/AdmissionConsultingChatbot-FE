@@ -64,11 +64,11 @@ export function ContentOptimization({
       <ScrollArea className="min-h-screen h-full">
         <div className="p-6 pb-8 space-y-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Content Optimization Suggestions</h1>
-            <p className="text-muted-foreground">Loading analytics data...</p>
+            <h1 className="text-3xl font-bold tracking-tight">Đề Xuất Tối Ưu Hóa Nội Dung</h1>
+            <p className="text-muted-foreground">Đang tải dữ liệu phân tích...</p>
           </div>
           <div className="flex items-center justify-center h-64">
-            <div className="text-muted-foreground">Loading...</div>
+            <div className="text-muted-foreground">Đang tải...</div>
           </div>
         </div>
       </ScrollArea>
@@ -80,7 +80,7 @@ export function ContentOptimization({
       <ScrollArea className="min-h-screen h-full">
         <div className="p-6 pb-8 space-y-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Content Optimization Suggestions</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Đề Xuất Tối Ưu Hóa Nội Dung</h1>
             <p className="text-muted-foreground">Suggestions to improve chatbot coverage and quality</p>
           </div>
           <Card className="border-l-4 border-l-[#EF4444]">
@@ -100,7 +100,7 @@ export function ContentOptimization({
       <div className="p-6 pb-8 space-y-6">
         {/* Page Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Content Optimization Suggestions</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Đề Xuất Tối Ưu Hóa Nội Dung</h1>
           <p className="text-muted-foreground">
             Suggestions to improve chatbot coverage and quality
           </p>
@@ -113,7 +113,7 @@ export function ContentOptimization({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl">{knowledgeGaps?.length || 0}</div>
-                  <p className="text-sm text-muted-foreground mt-1">Knowledge Gaps</p>
+                  <p className="text-sm text-muted-foreground mt-1">Khoảng Trống Tri Thức</p>
                 </div>
                 <HelpCircle className="h-8 w-8 text-[#EF4444] opacity-50" />
               </div>
@@ -137,7 +137,7 @@ export function ContentOptimization({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl">{trendingTopics?.length || 0}</div>
-                  <p className="text-sm text-muted-foreground mt-1">Trending Topics</p>
+                  <p className="text-sm text-muted-foreground mt-1">Chủ Đề Thịnh Hành</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-[#10B981] opacity-50" />
               </div>
@@ -241,9 +241,7 @@ export function ContentOptimization({
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-[#F59E0B]" />
-                  Low Satisfaction Answers
-                </CardTitle>
+                  <AlertTriangle className="h-5 w-5 text-[#F59E0B]" />Câu Trả Lời Đánh Giá Thấp</CardTitle>
                 <CardDescription className="mt-2">
                   Q&A pairs that users frequently rate poorly - review and improve
                 </CardDescription>

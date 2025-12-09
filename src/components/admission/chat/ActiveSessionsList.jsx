@@ -17,14 +17,14 @@ export function ActiveSessionsList({
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
-        return 'Today';
+        return 'Hôm Nay';
       }
       const day = date.getDate().toString().padStart(2, '0');
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const year = date.getFullYear();
       return `${day}/${month}/${year}`;
     } catch {
-      return 'Today';
+      return 'Hôm Nay';
     }
   };
 
@@ -58,15 +58,13 @@ export function ActiveSessionsList({
           {activeSessions.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No active sessions</p>
+              <p className="text-sm">Không có phiên hoạt động</p>
               <Button
                 variant="outline"
                 size="sm"
                 className="mt-2"
                 onClick={onGoToQueue}
-              >
-                Go to Queue
-              </Button>
+              >Đến Hàng Đợi</Button>
             </div>
           ) : (
             activeSessions.map((session) => (
@@ -96,7 +94,7 @@ export function ActiveSessionsList({
                     </Badge>
                     <div className="flex items-center gap-1">
                       <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                      <span className="text-xs text-green-600">Active</span>
+                      <span className="text-xs text-green-600">Đang Hoạt Động</span>
                     </div>
                   </div>
                 </div>

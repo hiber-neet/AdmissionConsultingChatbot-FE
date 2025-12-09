@@ -128,17 +128,13 @@ export function LeaderKnowledgeBase() {
             className="gap-2"
             onClick={() => handleReject(request.id, request.type)}
           >
-            <X className="h-4 w-4" />
-            Reject
-          </Button>
+            <X className="h-4 w-4" />Từ Chối</Button>
           <Button 
             size="sm"
             className="gap-2"
             onClick={() => handleApprove(request.id, request.type)}
           >
-            <Check className="h-4 w-4" />
-            Approve
-          </Button>
+            <Check className="h-4 w-4" />Phê Duyệt</Button>
         </div>
       </div>
     );
@@ -156,9 +152,7 @@ export function LeaderKnowledgeBase() {
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="qa" className="gap-2">
-            <MessageCircle className="h-4 w-4" />
-            Q&A Templates
-            <span className="ml-2 bg-blue-100 text-blue-600 px-2 py-0.5 rounded text-xs">
+            <MessageCircle className="h-4 w-4" />Mẫu Q&A<span className="ml-2 bg-blue-100 text-blue-600 px-2 py-0.5 rounded text-xs">
               {draftRequests.qaTemplates.length}
             </span>
           </TabsTrigger>

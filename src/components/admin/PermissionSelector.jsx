@@ -86,9 +86,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
             onClick={selectAllPermissions}
             className="text-xs"
           >
-            <Plus className="h-3 w-3 mr-1" />
-            All
-          </Button>
+            <Plus className="h-3 w-3 mr-1" />Tất Cả</Button>
           <Button
             type="button"
             variant="outline"
@@ -96,9 +94,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
             onClick={clearAllPermissions}
             className="text-xs"
           >
-            <Minus className="h-3 w-3 mr-1" />
-            Clear
-          </Button>
+            <Minus className="h-3 w-3 mr-1" />Xóa</Button>
         </div>
       </div>
 
