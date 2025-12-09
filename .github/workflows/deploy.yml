@@ -30,5 +30,4 @@ jobs:
           echo "Build va restart container Frontend..."
           docker compose up -d --build frontend
 
-          # 4. Dọn dẹp image rác (để tiết kiệm ổ cứng)
-          docker image prune -f
+         
