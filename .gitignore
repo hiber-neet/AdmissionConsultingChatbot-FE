@@ -20,7 +20,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files - keep .example files, ignore actual env files
 .env
+.env.local
+.env.*.local
+# Allow .env.development and .env.production to be committed (no secrets)
+# Uncomment below if you want to ignore them:
+# .env.development
+# .env.production
 
 # Issues and development notes (don't commit to repo)
 CURRENT_ISSUES.md
