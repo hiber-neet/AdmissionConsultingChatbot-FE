@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, MessageCircle, Trash2, Edit, CheckCircle } from 'lucide-react';
+import { Search, Plus, MessageCircle, Trash2, Edit, CheckCircle, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 import { ScrollArea } from '../ui/system_users/scroll-area';
 import { Input } from '../ui/system_users/input';
 import { Button } from '../ui/system_users/button';
@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '../ui/system_users/textarea';
 import { useAuth } from '../../contexts/Auth';
 import { fastAPIClient } from '../../utils/fastapi-client';
+import { templateAPI } from '../../services/fastapi';
+import { Template } from '../../types/template.types';
 import { toast } from 'react-toastify';
 
 interface TrainingQuestionPair {
@@ -60,73 +62,78 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
   const [editedQuestion, setEditedQuestion] = useState('');
   const [editedAnswer, setEditedAnswer] = useState('');
   const [editedIntentId, setEditedIntentId] = useState<number | null>(null);
+  
+  // Template-related state
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [selectedQAPairIndex, setSelectedQAPairIndex] = useState<string>('');
 
-  // Fetch training questions from API
+  // Fetch training questions and intents on mount
   useEffect(() => {
-    const fetchTrainingQuestions = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await fastAPIClient.get<TrainingQuestionPair[]>('/knowledge/training_questions');
+        setIntentLoading(true);
         
-        // Sort by question_id in ascending order
-        const sortedData = data.sort((a, b) => a.question_id - b.question_id);
-        setTrainingQuestions(sortedData);
+        // Fetch both training questions and intents in parallel
+        const [questionsData, intentsData] = await Promise.all([
+          fastAPIClient.get<TrainingQuestionPair[]>('/knowledge/training_questions'),
+          fastAPIClient.get<Intent[]>('/intent')
+        ]);
+        
+        // Set intents
+        setIntents(intentsData);
+        
+        // Sort questions by question_id in ascending order
+        const sortedData = questionsData.sort((a, b) => a.question_id - b.question_id);
+        
+        // Map intent names to questions immediately
+        const questionsWithIntentNames = sortedData.map(question => {
+          const intent = intentsData.find(i => i.intent_id === question.intent_id);
+          return {
+            ...question,
+            intent_name: intent?.intent_name || 'Unknown Intent'
+          };
+        });
+        
+        setTrainingQuestions(questionsWithIntentNames);
         
         // Set the first question as selected by default
-        if (sortedData.length > 0) {
-          setSelectedQuestion(sortedData[0]);
+        if (questionsWithIntentNames.length > 0) {
+          setSelectedQuestion(questionsWithIntentNames[0]);
         }
       } catch (error) {
-        console.error('Error fetching training questions:', error);
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load training questions or intents');
       } finally {
         setLoading(false);
-      }
-    };
-
-    fetchTrainingQuestions();
-  }, []);
-
-  // Fetch all intents for the dropdown
-  useEffect(() => {
-    const fetchIntents = async () => {
-      try {
-        setIntentLoading(true);
-        const data = await fastAPIClient.get<Intent[]>('/intent');
-        setIntents(data);
-      } catch (error) {
-        console.error('Error fetching intents:', error);
-      } finally {
         setIntentLoading(false);
       }
     };
 
-    fetchIntents();
+    fetchData();
   }, []);
 
-  // Fetch intent names for training questions
+  // Fetch templates when add dialog opens
   useEffect(() => {
-    const fetchIntentNames = async () => {
-      if (trainingQuestions.length === 0) return;
+    const fetchTemplates = async () => {
+      if (!showAddDialog) return;
       
-      const updatedQuestions = await Promise.all(
-        trainingQuestions.map(async (question) => {
-          if (!question.intent_name) {
-            try {
-              const intentData = await fastAPIClient.get<Intent>(`/intent/${question.intent_id}`);
-              return { ...question, intent_name: intentData.intent_name };
-            } catch (error) {
-              console.error(`Error fetching intent ${question.intent_id}:`, error);
-            }
-          }
-          return question;
-        })
-      );
-      
-      setTrainingQuestions(updatedQuestions);
+      try {
+        setTemplatesLoading(true);
+        const data = await templateAPI.getTemplates();
+        setTemplates(data);
+      } catch (error) {
+        console.error('Error fetching templates:', error);
+        toast.error('Failed to load templates');
+      } finally {
+        setTemplatesLoading(false);
+      }
     };
 
-    fetchIntentNames();
-  }, [trainingQuestions.length]);
+    fetchTemplates();
+  }, [showAddDialog]);
 
   // Create intent categories for filtering
   const intentCategories = ['All Intents', ...intents.map(intent => intent.intent_name)];
@@ -253,6 +260,27 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
     setIsEditing(false);
   };
 
+  const handleUseTemplate = () => {
+    if (!selectedTemplateId || !selectedQAPairIndex) return;
+    
+    const template = templates.find(t => t.template_id?.toString() === selectedTemplateId);
+    if (!template) return;
+    
+    const qaPairIndex = parseInt(selectedQAPairIndex);
+    const qaPair = template.qa_pairs[qaPairIndex];
+    
+    if (qaPair) {
+      setEditedQuestion(qaPair.question);
+      setEditedAnswer(qaPair.answer);
+      toast.success('Template loaded! You can now edit and submit.');
+    }
+  };
+
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    setSelectedQAPairIndex(''); // Reset QA pair selection when template changes
+  };
+
   const handleCreateTrainingQuestion = async () => {
     if (!editedQuestion.trim() || !editedAnswer.trim() || !editedIntentId || !user?.id) {
       return;
@@ -294,6 +322,8 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
       setEditedQuestion('');
       setEditedAnswer('');
       setEditedIntentId(null);
+      setSelectedTemplateId('');
+      setSelectedQAPairIndex('');
       setShowAddDialog(false);
 
       // Show success message
@@ -515,65 +545,170 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
 
       {/* Add New Training Question Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-6xl w-[1200px] max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Add New Training Question</DialogTitle>
             <DialogDescription>
-              Create a new training question pair that will be used to train the chatbot. The question and answer will be added to the knowledge base for better responses.
+              Create a new training question pair. You can use templates or create from scratch.
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Question</label>
-              <Input
-                value={editedQuestion}
-                onChange={(e) => setEditedQuestion(e.target.value)}
-                placeholder="Enter the question..."
-              />
+
+          <ScrollArea className="flex-1 overflow-y-auto -mx-6 px-6">
+            <div className="grid grid-cols-1 gap-6 py-4">
+            {/* Templates Section */}
+            <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-blue-600" />
+                <h3 className="font-semibold text-sm">Use Template (Optional)</h3>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {templates.length} template(s) available
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Template Dropdown */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Select Template</label>
+                  <Select 
+                    value={selectedTemplateId} 
+                    onValueChange={handleTemplateChange}
+                    disabled={templatesLoading || templates.length === 0}
+                  >
+                    <SelectTrigger className="h-11 bg-white">
+                      <SelectValue placeholder={templatesLoading ? "Loading..." : "Choose a template"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map((template) => (
+                        <SelectItem key={template.template_id} value={template.template_id!.toString()}>
+                          {template.template_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* QA Pair Dropdown */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Select Q&A Pair</label>
+                  <Select 
+                    value={selectedQAPairIndex} 
+                    onValueChange={setSelectedQAPairIndex}
+                    disabled={!selectedTemplateId}
+                  >
+                    <SelectTrigger className="h-11 bg-white">
+                      <SelectValue placeholder="Choose Q&A pair" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedTemplateId && templates
+                        .find(t => t.template_id?.toString() === selectedTemplateId)
+                        ?.qa_pairs
+                        .sort((a, b) => a.order_position - b.order_position)
+                        .map((qa, index) => (
+                          <SelectItem key={index} value={index.toString()}>
+                            {qa.question.substring(0, 50)}{qa.question.length > 50 ? '...' : ''}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Use Template Button */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium opacity-0">Action</label>
+                  <Button
+                    onClick={handleUseTemplate}
+                    disabled={!selectedTemplateId || !selectedQAPairIndex}
+                    className="w-full h-11 bg-blue-600 hover:bg-blue-700"
+                  >
+                    Load Template
+                  </Button>
+                </div>
+              </div>
+
+              {/* Preview Selected QA Pair */}
+              {selectedTemplateId && selectedQAPairIndex && (
+                <div className="p-3 bg-white rounded-md border border-blue-200 text-sm">
+                  <div className="font-medium text-gray-700 mb-1">Preview:</div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div><span className="font-semibold">Q:</span> {templates.find(t => t.template_id?.toString() === selectedTemplateId)?.qa_pairs[parseInt(selectedQAPairIndex)]?.question}</div>
+                    <div className="line-clamp-2"><span className="font-semibold">A:</span> {templates.find(t => t.template_id?.toString() === selectedTemplateId)?.qa_pairs[parseInt(selectedQAPairIndex)]?.answer}</div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Câu Trả Lời</label>
-              <Textarea
-                value={editedAnswer}
-                onChange={(e) => setEditedAnswer(e.target.value)}
-                placeholder="Enter the answer..."
-                className="min-h-[200px]"
-              />
-            </div>
+            {/* Form Fields */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1">
+                  Question
+                  <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  value={editedQuestion}
+                  onChange={(e) => setEditedQuestion(e.target.value)}
+                  placeholder="Enter the training question..."
+                  className="h-11"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Ý Định</label>
-              <Select value={editedIntentId?.toString() || ''} onValueChange={(value) => setEditedIntentId(Number(value))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select intent" />
-                </SelectTrigger>
-                <SelectContent>
-                  {intentLoading ? (
-                    <SelectItem value="loading" disabled>Loading intents...</SelectItem>
-                  ) : (
-                    intents.map((intent) => (
-                      <SelectItem key={intent.intent_id} value={intent.intent_id.toString()}>
-                        {intent.intent_name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1">
+                  Câu Trả Lời
+                  <span className="text-red-500">*</span>
+                </label>
+                <Textarea
+                  value={editedAnswer}
+                  onChange={(e) => setEditedAnswer(e.target.value)}
+                  placeholder="Enter the answer..."
+                  className="min-h-[180px] resize-none"
+                />
+              </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setEditedQuestion('');
-              setEditedAnswer('');
-              setEditedIntentId(null);
-              setShowAddDialog(false);
-            }}>Hủy</Button>
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1">
+                  Ý Định (Intent)
+                  <span className="text-red-500">*</span>
+                </label>
+                <Select value={editedIntentId?.toString() || ''} onValueChange={(value) => setEditedIntentId(Number(value))}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Select an intent for this question" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {intentLoading ? (
+                      <SelectItem value="loading" disabled>Loading intents...</SelectItem>
+                    ) : (
+                      intents.map((intent) => (
+                        <SelectItem key={intent.intent_id} value={intent.intent_id.toString()}>
+                          {intent.intent_name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            </div>
+          </ScrollArea>
+
+          <DialogFooter className="flex-shrink-0">
             <Button 
+              variant="outline" 
+              onClick={() => {
+                setEditedQuestion('');
+                setEditedAnswer('');
+                setEditedIntentId(null);
+                setSelectedTemplateId('');
+                setSelectedQAPairIndex('');
+                setShowAddDialog(false);
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
               onClick={handleCreateTrainingQuestion}
               disabled={creating || !editedQuestion.trim() || !editedAnswer.trim() || !editedIntentId}
+              className="bg-blue-600 hover:bg-blue-700"
             >
               {creating ? "Creating..." : "Create Training Question"}
             </Button>
