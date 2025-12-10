@@ -11,6 +11,7 @@ import { liveChatAPI } from "@/services/fastapi";
 import { toast } from "react-toastify";
 import { useWebSocket } from "@/components/admission/chat/useWebSocket";
 import ReactMarkdown from "react-markdown";
+import { Navigate } from "react-router-dom";
 
 
 const API_BASE_URL =
@@ -87,6 +88,13 @@ const UserProfile = () => {
   const [editing, setEditing] = useState(false);
   const [prefillSent, setPrefillSent] = useState(false);
 const [sessionRatings, setSessionRatings] = useState(() => loadRatings());
+
+ //LẤY ROLE TỪ PROFILE THAY VÌ TỪ TOKEN
+  const roleName = (user?.role_name || user?.role || "").toLowerCase();
+  const isStudent =
+    roleName === "student" ||
+    roleName === "parent" ||
+    roleName === "customer";
 
 // đọc query param ?tab=...
 useEffect(() => {
@@ -991,17 +999,36 @@ const renderScoreInput = (subject) => (
   />
 );
 
-  if (!isAuthenticated) {
-    return (
-      <>
-        <Header />
-        <div className="text-center py-10">
-          Bạn cần đăng nhập để xem trang này.
-        </div>
-        <Footer />
-      </>
-    );
-  }
+  // Chưa đăng nhập -> bắt login
+if (!isAuthenticated) {
+  return (
+    <>
+      <Header />
+      <div className="text-center py-10">
+        Bạn cần đăng nhập để xem trang này.
+      </div>
+      <Footer />
+    </>
+  );
+}
+
+// 🟢 Đã đăng nhập nhưng profile chưa load xong -> chờ
+if (isAuthenticated && !user) {
+  return (
+    <>
+      <Header />
+      <div className="text-center py-10">
+        Đang tải thông tin tài khoản...
+      </div>
+      <Footer />
+    </>
+  );
+}
+
+// ❌ Đã đăng nhập, đã có user nhưng KO phải student/parent/customer -> đá ra
+if (isAuthenticated && user && !isStudent) {
+  return <Navigate to="/loginprivate" replace />;
+}
 
   return (
     <>

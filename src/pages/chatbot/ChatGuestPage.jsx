@@ -5,6 +5,31 @@ const CHATBOT_PREFILL_KEY = "chatbot_prefill_message";
 const GUEST_ID_KEY = "guest_user_id_v1";
 const GUEST_SESSION_KEY = "guest_session_id_v1";
 
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
+function generateId() {
+  // Trong file .jsx chỉ check thuần JS, không dùng "as any"
+  if (
+    typeof window !== "undefined" &&
+    window.crypto &&
+    typeof window.crypto.randomUUID === "function"
+  ) {
+    return window.crypto.randomUUID();
+  }
+
+  // Fallback tự sinh UUID nếu randomUUID không có
+  const template = "xxxxxxxx-xxxx-4xxx-4xxx-yxxx-xxxxxxxxxxxx";
+  return template.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+
+
 export default function ChatGuestPage() {
   const [messages, setMessages] = useState([]); // {sender: "user"|"bot", text: string}[]
   const [input, setInput] = useState("");
@@ -19,23 +44,23 @@ export default function ChatGuestPage() {
 
     const prefillSentRef = useRef(false);   
   // Tạo guestId + sessionId cố định cho guest (lưu vào localStorage)
-  const [guestId] = useState(() => {
-    let id = localStorage.getItem(GUEST_ID_KEY);
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem(GUEST_ID_KEY, id);
-    }
-    return id;
-  });
+const [guestId] = useState(() => {
+  let id = localStorage.getItem(GUEST_ID_KEY);
+  if (!id) {
+    id = generateId();
+    localStorage.setItem(GUEST_ID_KEY, id);
+  }
+  return id;
+});
 
-  const [sessionId] = useState(() => {
-    let id = localStorage.getItem(GUEST_SESSION_KEY);
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem(GUEST_SESSION_KEY, id);
-    }
-    return id;
-  });
+const [sessionId] = useState(() => {
+  let id = localStorage.getItem(GUEST_SESSION_KEY);
+  if (!id) {
+    id = generateId();
+    localStorage.setItem(GUEST_SESSION_KEY, id);
+  }
+  return id;
+});
 
   // Auto-scroll xuống cuối mỗi khi có tin nhắn mới
   useEffect(() => {
@@ -47,22 +72,24 @@ export default function ChatGuestPage() {
   }, [messages, partial]);
 
   // Kết nối WS khi mount
-  useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8000/chat/ws/chat");
-    wsRef.current = ws;
+useEffect(() => {
+  // Tự đổi http -> ws, https -> wss
+  const wsUrl = API_BASE_URL.replace(/^http/, "ws") + "/chat/ws/chat";
+  console.log("Guest WS URL:", wsUrl);
 
-    ws.onopen = () => {
-      console.log("Guest WS connected");
-      setWsReady(true);
+  const ws = new WebSocket(wsUrl);
+  wsRef.current = ws;
 
-      // Gửi user_id + session_id giống code Chatbot demo
-      ws.send(
-        JSON.stringify({
-          user_id: guestId,
-          session_id: sessionId,
-        })
-      );
-    };
+  ws.onopen = () => {
+    console.log("Guest WS connected");
+    setWsReady(true);
+    ws.send(
+      JSON.stringify({
+        user_id: guestId,
+        session_id: sessionId,
+      })
+    );
+  };
 
     ws.onmessage = (e) => {
       console.log("📩 WS message:", e.data);

@@ -21,16 +21,20 @@ export type User = {
 type AuthCtx = {
   user: User | null;
   isAuthenticated: boolean;
-  isLoading: boolean; // Track if session restoration is in progress
-  activeRole: Role | null; // Current active role for navigation
-  login: (email: string, password: string) => Promise<{ ok: boolean; message?: string; token?: string }>;
+  isLoading: boolean;
+  activeRole: Role | null;
+  //THÊM `role?: Role` vào kiểu trả về
+  login: (
+    email: string,
+    password: string
+  ) => Promise<{ ok: boolean; message?: string; token?: string; role?: Role }>;
   logout: () => void;
   hasPermission: (permission: Permission) => boolean;
-  isContentManagerLeader: () => boolean; // Check if user is Content Manager Leader
-  isConsultantLeader: () => boolean; // Check if user is Consultant Leader
-  getDefaultRoute: (role: Role) => string; // Add this new function
-  switchToRole: (role: Role) => void; // Switch active role for navigation
-  getAccessibleRoles: () => Role[]; // Get all roles user can switch to
+  isContentManagerLeader: () => boolean;
+  isConsultantLeader: () => boolean;
+  getDefaultRoute: (role: Role) => string;
+  switchToRole: (role: Role) => void;
+  getAccessibleRoles: () => Role[];
 };
 
 const AuthContext = createContext<AuthCtx | undefined>(undefined);
@@ -334,7 +338,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 permissions: userData.permissions
               });
 
-              return { ok: true, token: access_token };
+              return { ok: true, token: access_token, role: userData.role };
               
             } else {
               console.log('Profile API failed, using email-based role mapping');
@@ -376,7 +380,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setActiveRole(userData.role); // Set active role to primary role
 
             console.log("⚠️ LOGIN SUCCESS with fallback permissions!");
-            return { ok: true, token: access_token };
+            return { ok: true, token: access_token, role: userData.role };
           }
         }
       } catch (tokenError) {
@@ -397,7 +401,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setActiveRole(userData.role); // Set active role to primary role
 
       console.log("⚠️ LOGIN SUCCESS (with fallback role)");
-      return { ok: true, token: access_token };
+return { ok: true, token: access_token, role: userData.role };
 
     } catch (error: any) {
       console.error('Login error:', error);

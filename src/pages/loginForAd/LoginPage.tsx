@@ -2,65 +2,39 @@
 import { useState } from "react";
 import { useAuth, type Role } from "@/contexts/Auth";
 import { Shield } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate ,useLocation } from "react-router-dom";
 import bgImage from "@/assets/images/toiyeufpt.jpg";
 
 export default function LoginPage() {
-  const { login, getDefaultRoute, user } = useAuth();
-  const navigate = useNavigate();
+
   const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const { login, getDefaultRoute } = useAuth();   // 👈 LẤY TỪ AUTH
+  const navigate = useNavigate(); 
+ const onSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setErr(null);
+  setLoading(true);
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErr(null);
-    setLoading(true);
-    const res = await login(email.trim(), password);
-    setLoading(false);
-    if (!res.ok) {
-      setErr(res.message || "Đăng nhập thất bại");
-      return;
-    }
-    
-    // After successful login, get the user from Auth context and navigate to their default route
-    // Use a small delay to ensure the Auth context has been updated
-    setTimeout(() => {
-      // Get user from Auth context instead of sessionStorage
-      const authToken = localStorage.getItem("access_token");
-      if (authToken) {
-        try {
-          // Decode JWT token to get user role
-          const payload = JSON.parse(atob(authToken.split(".")[1]));
-          const userEmail = payload.sub;
-          
-          // Map email to role (same logic as Auth context)
-          let userRole: Role = "Student"; // default fallback
-          if (userEmail.includes('admin')) {
-            userRole = "Admin";
-          } else if (userEmail.includes('consultant')) {
-            userRole = "Consultant";
-          } else if (userEmail.includes('content')) {
-            userRole = "Content Manager";
-          } else if (userEmail.includes('officer')) {
-            userRole = "Admission Official";
-          }
-          
-          const defaultRoute = getDefaultRoute(userRole);
-          console.log(`Redirecting ${userRole} to ${defaultRoute}`);
-          navigate(defaultRoute, { replace: true });
-        } catch (error) {
-          console.error('Error parsing token:', error);
-          navigate("/", { replace: true });
-        }
-      } else {
-        // Fallback to home if no token
-        navigate("/", { replace: true });
-      }
-    }, 100);
-  };
+  const res = await login(email.trim(), password);
+  setLoading(false);
+
+  if (!res.ok) {
+    setErr(res.message || "Đăng nhập thất bại");
+    return;
+  }
+
+  // 👉 Lấy role đã map trả về từ Auth; mặc định Student nếu undefined
+  const role: Role = (res.role as Role) ?? "Student";
+
+  const defaultRoute = getDefaultRoute(role);
+  console.log(`Redirecting ${role} to ${defaultRoute}`);
+  navigate(defaultRoute, { replace: true });
+};
+
 
   return (
     <div className="min-h-screen grid place-items-center bg-cover bg-center p-4"

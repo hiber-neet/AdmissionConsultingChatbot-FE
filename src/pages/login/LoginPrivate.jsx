@@ -51,11 +51,11 @@ const handleLogin = async (event) => {
         targetRoute = getDefaultRoute(appRole);
       }
 
-      toast.success(
-        `Đăng nhập thành công! Chuyển đến ${
-          appRole === "STUDENT" ? "Profile" : "Dashboard"
-        }.` 
-      );
+      // toast.success(
+      //   `Đăng nhập thành công! Chuyển đến ${
+      //     appRole === "STUDENT" ? "Profile" : "Dashboard"
+      //   }.` 
+      // );
 
       navigate(targetRoute);
     } else {
