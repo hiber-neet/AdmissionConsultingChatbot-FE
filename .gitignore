@@ -21,6 +21,9 @@ dist-ssr
 *.sln
 *.sw?
 .env
+.env.example
+.env.development
+.env.production
 
 # Issues and development notes (don't commit to repo)
 CURRENT_ISSUES.md

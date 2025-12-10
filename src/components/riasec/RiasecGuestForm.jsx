@@ -469,7 +469,7 @@ export default function RiasecGuestForm() {
                   onClick={handleSave}
                   disabled={isSaving}
                 >
-                  {isSaving ? "Đang lưu..." : "Save kết quả"}
+                  {isSaving ? "Đang lưu..." : "Lưu kết quả"}
                 </button>
 
                 <button

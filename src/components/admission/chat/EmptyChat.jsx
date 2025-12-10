@@ -7,7 +7,7 @@ export function EmptyChat({ onGoToQueue }) {
     <div className="flex-1 flex items-center justify-center text-muted-foreground">
       <div className="text-center">
         <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-        <p>Select a session to start chatting</p>
+        <p>Chọn một phiên để bắt đầu trò chuyện</p>
         <Button
           variant="outline"
           className="mt-4"

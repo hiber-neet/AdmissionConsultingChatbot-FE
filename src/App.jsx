@@ -15,11 +15,8 @@ export default function App() {
 
     // 2. Nếu chưa có (nghĩa là khách mới tinh) -> Tạo vé mới
     if (!currentSessionId) {
-      currentSessionId = uuidv4(); // Tạo chuỗi ví dụ: '550e8400-e29b...'
+      currentSessionId = uuidv4();
       localStorage.setItem('guest_session_id', currentSessionId);
-      console.log("Đã tạo session mới cho Guest:", currentSessionId);
-    } else {
-      console.log("Chào mừng Guest quay lại, ID của bạn là:", currentSessionId);
     }
     
   }, []);
