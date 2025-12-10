@@ -836,7 +836,6 @@ useEffect(() => {
     );
   }
 
-  // chỉ gửi 1 lần rồi xoá
   setPrefillSent(true);
   localStorage.removeItem(CHATBOT_PREFILL_KEY);
 }, [tab, user, wsReady, chatSessionId, prefillSent]);
