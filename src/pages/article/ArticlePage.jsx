@@ -137,6 +137,8 @@ export default function ArticlePage() {
         {/* Chi tiết bài viết */}
         {!loading && !error && selected && (
           <article className="bg-white rounded-xl shadow-sm p-6">
+            <div className="mb-10">
+            </div>
             <button
               onClick={() => setSelected(null)}
               className="mb-4 text-sm text-[#EB5A0D] hover:underline"
@@ -165,6 +167,19 @@ export default function ArticlePage() {
             <p className="text-gray-700 leading-relaxed whitespace-pre-line">
               {selected.description}
             </p>
+{selected.url && (
+  <div className="mt-6 text-sm">
+    <span className="font-smal">Link: </span>
+    <a
+      href={selected.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-[#EB5A0D] underline break-all"
+    >
+      {selected.url}
+    </a>
+  </div>
+)}
           </article>
         )}
       </div>
