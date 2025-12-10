@@ -28,6 +28,6 @@ jobs:
 
           # 3. Chỉ build và khởi động lại container frontend (Giữ nguyên backend, db...)
           echo "Build va restart container Frontend..."
-          docker compose up -d --build frontend
-
+          docker compose up -d --build --no-deps frontend
+    
          
