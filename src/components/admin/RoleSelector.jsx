@@ -6,29 +6,29 @@ export function RoleSelector({ selectedRole, onRoleChange, isEditing = false }) 
   const roles = [
     {
       id: 'SYSTEM_ADMIN',
-      label: 'System Admin',
-      description: 'Full system control and management',
+      label: 'Quản Trị Hệ Thống',
+      description: 'Toàn quyền kiểm soát và quản lý hệ thống',
       icon: Shield,
       color: 'text-red-500'
     },
     {
       id: 'CONTENT_MANAGER',
-      label: 'Content Manager',
-      description: 'Manages articles, knowledge base, and content',
+      label: 'Quản Lý Nội Dung',
+      description: 'Quản lý bài viết, cơ sở tri thức và nội dung',
       icon: Edit,
       color: 'text-blue-500'
     },
     {
       id: 'CONSULTANT',
-      label: 'Consultant',
-      description: 'Provides consultation services and analytics',
+      label: 'Tư Vấn Viên',
+      description: 'Cung cấp dịch vụ tư vấn và phân tích',
       icon: User,
       color: 'text-green-500'
     },
     {
       id: 'ADMISSION_OFFICER',
-      label: 'Admission Officer',
-      description: 'Manages student admissions and profiles',
+      label: 'Nhân Viên Tuyển Sinh',
+      description: 'Quản lý tuyển sinh và hồ sơ học sinh',
       icon: GraduationCap,
       color: 'text-purple-500'
     }
@@ -37,11 +37,11 @@ export function RoleSelector({ selectedRole, onRoleChange, isEditing = false }) 
   return (
     <div className="space-y-4">
       <div>
-        <Label className="text-sm font-medium">Account Role</Label>
+        <Label className="text-sm font-medium">Vai Trò Tài Khoản</Label>
         <p className="text-xs text-muted-foreground mt-1">
           {isEditing 
-            ? "Role cannot be changed after creation" 
-            : "Select the primary role for this account (permanent once created)"
+            ? "Vai trò không thể thay đổi sau khi tạo" 
+            : "Chọn vai trò chính cho tài khoản này (vĩnh viễn sau khi tạo)"
           }
         </p>
       </div>

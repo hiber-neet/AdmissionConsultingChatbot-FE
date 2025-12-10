@@ -38,7 +38,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
         
       } catch (error) {
         console.error('Error fetching majors:', error);
-        setMessage({ type: 'error', text: 'Failed to load majors data. Using fallback data.' });
+        setMessage({ type: 'error', text: 'Không thể tải dữ liệu ngành. Sử dụng dữ liệu dự phòng.' });
         
         // Fallback to mock data if API fails
         const mockMajors: Major[] = [
@@ -82,7 +82,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
         
       } catch (error) {
         console.error('Error fetching specializations:', error);
-        setMessage({ type: 'error', text: `Failed to load specializations for selected major.` });
+        setMessage({ type: 'error', text: `Không thể tải chuyên ngành cho ngành đã chọn.` });
         
         // Fallback to mock data filtered by major
         const mockSpecializations: Specialization[] = [
@@ -114,23 +114,23 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
 
   const handleAddArticle = async () => {
     if (!title.trim()) {
-      setMessage({ type: 'error', text: 'Title is required' });
+      setMessage({ type: 'error', text: 'Tiêu đề là bắt buộc' });
       return;
     }
     if (!description.trim()) {
-      setMessage({ type: 'error', text: 'Description is required' });
+      setMessage({ type: 'error', text: 'Mô tả là bắt buộc' });
       return;
     }
     if (!url.trim()) {
-      setMessage({ type: 'error', text: 'URL is required' });
+      setMessage({ type: 'error', text: 'URL là bắt buộc' });
       return;
     }
     if (!majorId) {
-      setMessage({ type: 'error', text: 'Please select a major' });
+      setMessage({ type: 'error', text: 'Vui lòng chọn ngành' });
       return;
     }
     if (!specializationId) {
-      setMessage({ type: 'error', text: 'Please select a specialization' });
+      setMessage({ type: 'error', text: 'Vui lòng chọn chuyên ngành' });
       return;
     }
 
@@ -155,7 +155,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
       
       console.log('Received response:', response);
       
-      setMessage({ type: 'success', text: `Article "${response.title}" added successfully!` });
+      setMessage({ type: 'success', text: `Bài viết "${response.title}" đã được thêm thành công!` });
       setCreatedArticle(response);
       
       // Reset form
@@ -169,7 +169,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
       
     } catch (error: any) {
       console.error('Error adding article:', error);
-      const errorMessage = error.message || 'Failed to add article';
+      const errorMessage = error.message || 'Không thể thêm bài viết';
       setMessage({ type: 'error', text: errorMessage });
       setCreatedArticle(null);
     } finally {
@@ -193,22 +193,22 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
       {/* Created Article Display */}
       {createdArticle && (
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-          <h3 className="text-lg font-semibold text-blue-800 mb-3">Article Created Successfully!</h3>
+          <h3 className="text-lg font-semibold text-blue-800 mb-3">Bài Viết Đã Được Tạo Thành Công!</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-            <div><strong>Article ID:</strong> {createdArticle.article_id}</div>
-            <div><strong>Status:</strong> {createdArticle.status}</div>
-            <div><strong>Title:</strong> {createdArticle.title}</div>
-            <div><strong>Created By:</strong> {createdArticle.created_by}</div>
-            <div><strong>Description:</strong> {createdArticle.description}</div>
-            <div><strong>Created Date:</strong> {createdArticle.create_at}</div>
+            <div><strong>Mã Bài Viết:</strong> {createdArticle.article_id}</div>
+            <div><strong>Trạng Thái:</strong> {createdArticle.status}</div>
+            <div><strong>Tiêu Đề:</strong> {createdArticle.title}</div>
+            <div><strong>Người Tạo:</strong> {createdArticle.created_by}</div>
+            <div><strong>Mô Tả:</strong> {createdArticle.description}</div>
+            <div><strong>Ngày Tạo:</strong> {createdArticle.create_at}</div>
             <div><strong>URL:</strong> <a href={createdArticle.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{createdArticle.url}</a></div>
-            <div><strong>Link Image:</strong> {createdArticle.link_image || 'N/A'}</div>
-            <div><strong>Author:</strong> {createdArticle.author_name || 'N/A'}</div>
-            <div><strong>Note:</strong> {createdArticle.note || 'N/A'}</div>
-            <div><strong>Major ID:</strong> {createdArticle.major_id || 'N/A'}</div>
-            <div><strong>Major Name:</strong> {createdArticle.major_name || 'N/A'}</div>
-            <div><strong>Specialization ID:</strong> {createdArticle.specialization_id}</div>
-            <div><strong>Specialization Name:</strong> {createdArticle.specialization_name || 'N/A'}</div>
+            <div><strong>Ảnh:</strong> {createdArticle.link_image || 'Không có'}</div>
+            <div><strong>Tác Giả:</strong> {createdArticle.author_name || 'Không có'}</div>
+            <div><strong>Ghi Chú:</strong> {createdArticle.note || 'Không có'}</div>
+            <div><strong>Mã Ngành:</strong> {createdArticle.major_id || 'Không có'}</div>
+            <div><strong>Tên Ngành:</strong> {createdArticle.major_name || 'Không có'}</div>
+            <div><strong>Mã Chuyên Ngành:</strong> {createdArticle.specialization_id}</div>
+            <div><strong>Tên Chuyên Ngành:</strong> {createdArticle.specialization_name || 'Không có'}</div>
           </div>
         </div>
       )}
@@ -218,7 +218,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Article Title"
+          placeholder="Tiêu Đề Bài Viết"
           className="flex-1 text-lg font-semibold outline-none"
         />
         <button 
@@ -226,7 +226,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
           disabled={saving || loading}
           className="px-4 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {saving ? 'Adding...' : 'Add Article'}
+          {saving ? 'Đang Thêm...' : 'Thêm Bài Viết'}
         </button>
       </div>
 
@@ -236,7 +236,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Start writing your article description here..."
+            placeholder="Bắt đầu viết mô tả bài viết tại đây..."
             className="w-full min-h-[50vh] outline-none resize-none"
           />
         </div>
@@ -254,7 +254,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
           </div>
 
           <div>
-            <div className="text-sm text-gray-500 mb-1">Image URL</div>
+            <div className="text-sm text-gray-500 mb-1">URL Ảnh</div>
             <input 
               value={linkImage}
               onChange={(e) => setLinkImage(e.target.value)}
@@ -264,18 +264,18 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
           </div>
 
           <div>
-            <div className="text-sm text-gray-500 mb-1">Note</div>
+            <div className="text-sm text-gray-500 mb-1">Ghi Chú</div>
             <textarea 
               value={note}
               onChange={(e) => setNote(e.target.value)}
               className="w-full border rounded-md px-2 py-2 text-sm resize-none" 
-              placeholder="Optional note about this article..."
+              placeholder="Ghi chú tùy chọn về bài viết này..."
               rows={3}
             />
           </div>
 
           <div>
-            <div className="text-sm text-gray-500 mb-1">Major</div>
+            <div className="text-sm text-gray-500 mb-1">Ngành</div>
             <select 
               value={majorId} 
               onChange={(e) => {
@@ -285,7 +285,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
               className="w-full border rounded-md px-2 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               disabled={loading}
             >
-              <option value={0}>Select major</option>
+              <option value={0}>Chọn ngành</option>
               {majors.map((major) => (
                 <option key={major.major_id} value={major.major_id}>
                   {major.major_name}
@@ -293,15 +293,15 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
               ))}
             </select>
             {loading && (
-              <div className="text-xs text-blue-500 mt-1">Loading majors from API...</div>
+              <div className="text-xs text-blue-500 mt-1">Đang tải ngành từ API...</div>
             )}
             {majors.length === 0 && !loading && (
-              <div className="text-xs text-red-500 mt-1">No majors available</div>
+              <div className="text-xs text-red-500 mt-1">Không có ngành khả dụng</div>
             )}
           </div>
 
           <div>
-            <div className="text-sm text-gray-500 mb-1">Specialization</div>
+            <div className="text-sm text-gray-500 mb-1">Chuyên Ngành</div>
             <select 
               value={specializationId} 
               onChange={(e) => {
@@ -312,7 +312,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
               disabled={loading || !majorId || loadingSpecializations}
             >
               <option value={0}>
-                {loadingSpecializations ? 'Loading specializations...' : !majorId ? 'Select a major first' : 'Select specialization'}
+                {loadingSpecializations ? 'Đang tải chuyên ngành...' : !majorId ? 'Chọn ngành trước' : 'Chọn chuyên ngành'}
               </option>
               {filteredSpecializations.map((spec) => (
                 <option key={spec.specialization_id} value={spec.specialization_id}>
@@ -321,32 +321,32 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
               ))}
             </select>
             {loadingSpecializations && (
-              <div className="text-xs text-blue-500 mt-1">Loading specializations from API...</div>
+              <div className="text-xs text-blue-500 mt-1">Đang tải chuyên ngành từ API...</div>
             )}
             {majorId && filteredSpecializations.length === 0 && !loadingSpecializations && (
-              <div className="text-xs text-gray-400 mt-1">No specializations available for this major</div>
+              <div className="text-xs text-gray-400 mt-1">Không có chuyên ngành cho ngành này</div>
             )}
             {!majorId && (
-              <div className="text-xs text-gray-400 mt-1">Please select a major first</div>
+              <div className="text-xs text-gray-400 mt-1">Vui lòng chọn ngành trước</div>
             )}
           </div>
 
           {/* Status indicator */}
           <div className="border-t pt-4">
             <div className="text-xs text-gray-400">
-              {saving ? 'Saving...' : 
-               loading ? 'Loading majors from API...' : 
-               loadingSpecializations ? 'Loading specializations...' :
-               `Ready (${majors.length} majors, ${filteredSpecializations.length} specializations)`}
+              {saving ? 'Đang lưu...' : 
+               loading ? 'Đang tải ngành từ API...' : 
+               loadingSpecializations ? 'Đang tải chuyên ngành...' :
+               `Sẵn sàng (${majors.length} ngành, ${filteredSpecializations.length} chuyên ngành)`}
             </div>
             {majorId > 0 && (
               <div className="text-xs text-green-600 mt-1">
-                Major selected: {majors.find(m => m.major_id === majorId)?.major_name}
+                Đã chọn ngành: {majors.find(m => m.major_id === majorId)?.major_name}
               </div>
             )}
             {specializationId > 0 && (
               <div className="text-xs text-green-600">
-                Specialization: {filteredSpecializations.find(s => s.specialization_id === specializationId)?.specialization_name}
+                Chuyên ngành: {filteredSpecializations.find(s => s.specialization_id === specializationId)?.specialization_name}
               </div>
             )}
           </div>

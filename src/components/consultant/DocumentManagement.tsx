@@ -80,7 +80,7 @@ export function DocumentManagement() {
       }
     } catch (error) {
       console.error('Failed to fetch documents:', error);
-      toast.error('Failed to load documents. Please try again.');
+      toast.error('Không thể tải tài liệu. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export function DocumentManagement() {
       setSelectedDoc(details);
     } catch (error) {
       console.error('Failed to fetch document details:', error);
-      toast.error('Failed to load document details. Please try again.');
+      toast.error('Không thể tải chi tiết tài liệu. Vui lòng thử lại.');
     }
   };
 
@@ -102,13 +102,13 @@ export function DocumentManagement() {
       setIntents(data);
     } catch (error) {
       console.error('Failed to fetch intents:', error);
-      toast.error('Failed to load intents. Please try again.');
+      toast.error('Không thể tải ý định. Vui lòng thử lại.');
     }
   };
 
   const handleUpload = async () => {
     if (!uploadedFile || !user || !selectedIntent) {
-      toast.error('Please fill all required fields (file and intent)');
+      toast.error('Vui lòng điền tất cả các trường bắt buộc (tệp và ý định)');
       return;
     }
 
@@ -142,10 +142,10 @@ export function DocumentManagement() {
       // Refresh documents list
       await fetchDocuments();
       
-      toast.success('Document uploaded successfully!');
+      toast.success('Tải lên tài liệu thành công!');
     } catch (error) {
       console.error('Failed to upload document:', error);
-      toast.error(`Failed to upload document: ${error.message}`);
+      toast.error(`Không thể tải lên tài liệu: ${error.message}`);
     } finally {
       setUploading(false);
     }
@@ -165,10 +165,10 @@ export function DocumentManagement() {
       setSelectedDoc(null);
       setShowDeleteDialog(false);
       
-      toast.success('Document deleted successfully!');
+      toast.success('Xóa tài liệu thành công!');
     } catch (error) {
       console.error('Failed to delete document:', error);
-      toast.error('Failed to delete document. Please try again.');
+      toast.error('Không thể xóa tài liệu. Vui lòng thử lại.');
     } finally {
       setDeleting(false);
     }
@@ -191,7 +191,7 @@ export function DocumentManagement() {
       toast.success('Tải tài liệu thành công!');
     } catch (error: any) {
       console.error('Failed to download document:', error);
-      const errorMessage = error?.message || 'Failed to download document. Please try again.';
+      const errorMessage = error?.message || 'Không thể tải xuống tài liệu. Vui lòng thử lại.';
       toast.error(errorMessage);
     }
   };
@@ -303,7 +303,7 @@ export function DocumentManagement() {
                   }}
                 >
                   <Plus className="h-4 w-4" />
-                  Upload First Document
+                  Tải Lên Tài Liệu Đầu Tiên
                 </Button>
               )}
             </div>
@@ -314,9 +314,9 @@ export function DocumentManagement() {
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p className="text-sm">Không tìm thấy tài liệu</p>
                   {searchQuery ? (
-                    <p className="text-xs mt-1">Try adjusting your search terms</p>
+                    <p className="text-xs mt-1">Thử điều chỉnh cụm từ tìm kiếm của bạn</p>
                   ) : (
-                    <p className="text-xs mt-1">Upload your first document to get started</p>
+                    <p className="text-xs mt-1">Tải lên tài liệu đầu tiên để bắt đầu</p>
                   )}
                 </div>
               ) : (
@@ -343,7 +343,7 @@ export function DocumentManagement() {
                       <div className={`text-sm truncate ${
                         selectedDoc?.document_id === doc.document_id ? 'text-blue-100' : 'text-muted-foreground'
                       }`}>
-                        Created {formatDate(doc.created_at)}
+                        Tạo {formatDate(doc.created_at)}
                       </div>
                     </div>
                   </button>
@@ -406,7 +406,7 @@ export function DocumentManagement() {
                 </div>
                 <div className="space-y-1">
                   <div className="text-sm text-muted-foreground">{t('common.category')}</div>
-                  <div className="capitalize">{selectedDoc.category || 'General'}</div>
+                  <div className="capitalize">{selectedDoc.category || 'Chung'}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-sm text-muted-foreground">{t('documents.document_id')}</div>
@@ -421,7 +421,7 @@ export function DocumentManagement() {
                 {selectedDoc.reviewed_by && (
                   <div className="space-y-1">
                     <div className="text-sm text-muted-foreground">{t('documents.reviewed_by')}</div>
-                    <div>User ID: {selectedDoc.reviewed_by}</div>
+                    <div>ID Người Dùng: {selectedDoc.reviewed_by}</div>
                   </div>
                 )}
                 {selectedDoc.reviewed_at && (
@@ -453,9 +453,9 @@ export function DocumentManagement() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Document</DialogTitle>
+            <DialogTitle>Xóa Tài Liệu</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this document? This action cannot be undone.
+              Bạn có chắc chắn muốn xóa tài liệu này? Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -468,7 +468,7 @@ export function DocumentManagement() {
               {deleting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Deleting...
+                  Đang xóa...
                 </>
               ) : (
                 'Xóa'
@@ -550,7 +550,7 @@ export function DocumentManagement() {
                       // Check file size (max 50MB)
                       const maxSize = 50 * 1024 * 1024;
                       if (file.size > maxSize) {
-                        toast.error(t('documents.file_size_limit'));
+                        toast.error('Kích thước tệp vượt quá giới hạn 50MB');
                         e.target.value = '';
                         return;
                       }

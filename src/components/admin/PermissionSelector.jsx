@@ -11,36 +11,36 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
   const availableRolePermissions = [
     {
       id: 'SYSTEM_ADMIN',
-      name: 'System Admin',
-      description: 'Full system administration access - user management, system settings, all modules',
+      name: 'Quản Trị Hệ Thống',
+      description: 'Toàn quyền quản trị hệ thống - quản lý người dùng, cài đặt hệ thống, tất cả các mô-đun',
       icon: Crown,
       color: 'bg-purple-100 text-purple-800 border-purple-200'
     },
     {
       id: 'CONTENT_MANAGER',
-      name: 'Content Manager',
-      description: 'Content creation and management - articles, reviews, publishing',
+      name: 'Quản Lý Nội Dung',
+      description: 'Tạo và quản lý nội dung - bài viết, đánh giá, xuất bản',
       icon: FileText,
       color: 'bg-blue-100 text-blue-800 border-blue-200'
     },
     {
       id: 'CONSULTANT',
-      name: 'Consultant',
-      description: 'Consultation services - analytics, knowledge base, Q&A templates',
+      name: 'Tư Vấn Viên',
+      description: 'Dịch vụ tư vấn - phân tích, cơ sở tri thức, mẫu Q&A',
       icon: MessageCircle,
       color: 'bg-green-100 text-green-800 border-green-200'
     },
     {
       id: 'ADMISSION_OFFICER',
-      name: 'Admission Officer',
-      description: 'Customer admission management - consultations, queue management, insights',
+      name: 'Nhân Viên Tuyển Sinh',
+      description: 'Quản lý tuyển sinh khách hàng - tư vấn, quản lý hàng đợi, thông tin chi tiết',
       icon: GraduationCap,
       color: 'bg-green-100 text-green-800 border-green-200'
     },
     {
       id: 'CUSTOMER',
-      name: 'Customer Access',
-      description: 'Basic customer privileges - profile access, limited features',
+      name: 'Truy Cập Khách Hàng',
+      description: 'Quyền khách hàng cơ bản - truy cập hồ sơ, tính năng giới hạn',
       icon: User,
       color: 'bg-gray-100 text-gray-800 border-gray-200'
     }
@@ -76,7 +76,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
       <div className="flex items-center justify-between">
         <Label className="text-base font-medium flex items-center gap-2">
           <Settings className="h-4 w-4" />
-          Role Permissions
+          Quyền Vai Trò
         </Label>
         <div className="flex gap-2">
           <Button
@@ -99,8 +99,8 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
       </div>
 
       <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
-        <div className="font-medium mb-1">Role-Based Permissions</div>
-        <div>Each permission grants full access to that role's capabilities. Users can have multiple role permissions to access different areas of the system.</div>
+        <div className="font-medium mb-1">Quyền Dựa Trên Vai Trò</div>
+        <div>Mỗi quyền cấp toàn quyền truy cập vào khả năng của vai trò đó. Người dùng có thể có nhiều quyền vai trò để truy cập các khu vực khác nhau của hệ thống.</div>
       </div>
 
       <Separator />
@@ -108,10 +108,10 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
       {/* Current user's primary role */}
       {role && (
         <div className="bg-gray-50 p-3 rounded-lg">
-          <div className="text-sm font-medium text-gray-700 mb-2">Primary Role</div>
+          <div className="text-sm font-medium text-gray-700 mb-2">Vai Trò Chính</div>
           <div className="text-xs text-gray-600">
-            This user's primary role is <span className="font-medium">{role}</span>.
-            Additional permissions below grant access to other role capabilities.
+            Vai trò chính của người dùng này là <span className="font-medium">{role}</span>.
+            Các quyền bổ sung bên dưới cấp quyền truy cập vào khả năng của vai trò khác.
           </div>
         </div>
       )}
@@ -145,7 +145,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
                     <span className="font-medium">{permission.name}</span>
                     {isPrimaryRole && (
                       <Badge variant="outline" className="text-xs">
-                        Primary Role
+                        Vai Trò Chính
                       </Badge>
                     )}
                     {isSelected && (
@@ -166,7 +166,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
       {selectedPermissions && selectedPermissions.length > 0 && (
         <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
           <div className="text-sm font-medium text-green-800 mb-2">
-            Selected Permissions ({selectedPermissions.length})
+            Quyền Đã Chọn ({selectedPermissions.length})
           </div>
           <div className="flex flex-wrap gap-1">
             {selectedPermissions.map((permId) => {
@@ -186,7 +186,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
         <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
           <div className="text-sm text-amber-800">
             <X className="h-4 w-4 inline mr-1" />
-            No additional permissions selected. User will only have access to their primary role capabilities.
+            Không có quyền bổ sung nào được chọn. Người dùng sẽ chỉ có quyền truy cập vào khả năng vai trò chính của họ.
           </div>
         </div>
       )}

@@ -23,7 +23,7 @@ export default function ReviewQueue() {
       setArticles(data);
     } catch (error) {
       console.error('Failed to fetch review queue:', error);
-      toast.error('Failed to load articles for review. Please try again.');
+      toast.error('Không thể tải bài viết cần duyệt. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -37,11 +37,11 @@ export default function ReviewQueue() {
         status: "published",
         note: "Đã Phê Duyệt"
       });
-      toast.success(`Article "${article.title}" has been approved and published!`);
+      toast.success(`Bài viết "${article.title}" đã được phê duyệt và xuất bản!`);
       await fetchReviewQueue(); // Refresh the list
     } catch (error) {
       console.error('Failed to approve article:', error);
-      toast.error('Failed to approve article. Please try again.');
+      toast.error('Không thể phê duyệt bài viết. Vui lòng thử lại.');
     } finally {
       setActionLoading(false);
     }
@@ -56,7 +56,7 @@ export default function ReviewQueue() {
   // Submit rejection with reason
   const submitFeedback = async () => {
     if (!feedback.trim()) {
-      toast.error("Please provide a reason for rejection.");
+      toast.error("Vui lòng cung cấp lý do từ chối.");
       return;
     }
     
@@ -68,13 +68,13 @@ export default function ReviewQueue() {
         status: "rejected",
         note: feedback
       });
-      toast.success(`Article "${openFor.title}" has been rejected.`);
+      toast.success(`Bài viết "${openFor.title}" đã bị từ chối.`);
       setFeedback("");
       setOpenFor(null);
       await fetchReviewQueue(); // Refresh the list
     } catch (error) {
       console.error('Failed to reject article:', error);
-      toast.error('Failed to reject article. Please try again.');
+      toast.error('Không thể từ chối bài viết. Vui lòng thử lại.');
     } finally {
       setActionLoading(false);
     }
@@ -93,7 +93,7 @@ export default function ReviewQueue() {
         <div className="text-xl font-semibold">Hàng Đợi Duyệt Bài</div>
         <div className="text-sm text-gray-500 mb-6">Đang tải...</div>
         <div className="bg-white border rounded-2xl p-12 text-center text-gray-500">
-          <div className="text-lg">Loading articles for review...</div>
+          <div className="text-lg">Đang tải bài viết cần duyệt...</div>
         </div>
       </div>
     );
@@ -103,10 +103,10 @@ export default function ReviewQueue() {
     return (
       <div className="p-6">
         <div className="text-xl font-semibold">Hàng Đợi Duyệt Bài</div>
-        <div className="text-sm text-gray-500 mb-6">0 articles awaiting review</div>
+        <div className="text-sm text-gray-500 mb-6">0 bài viết đang chờ duyệt</div>
         <div className="bg-white border rounded-2xl p-12 text-center text-gray-500">
           <div className="text-5xl mb-4">✓</div>
-          No Articles In Review — Great work!
+          Không Có Bài Viết Cần Duyệt — Làm Tốt Lắm!
         </div>
       </div>
     );
@@ -117,7 +117,7 @@ export default function ReviewQueue() {
       {/* Header */}
       <div className="mb-2 text-xl font-semibold">Hàng Đợi Duyệt Bài</div>
       <div className="text-sm text-gray-500 mb-6">
-        {articles.length} articles awaiting <span className="ml-1">review</span>
+        {articles.length} bài viết đang chờ <span className="ml-1">duyệt</span>
       </div>
 
       <div className="space-y-6">
@@ -128,21 +128,21 @@ export default function ReviewQueue() {
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold leading-6">{article.title}</h3>
                 <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-700 text-xs px-2 py-0.5">
-                  In Review
+                  Đang Duyệt
                 </span>
               </div>
             </div>
 
             {/* Meta line */}
             <div className="mt-2 text-xs text-gray-600 flex flex-wrap items-center gap-2">
-              <span>By {article.author_name || 'Unknown Author'}</span>
+              <span>Bởi {article.author_name || 'Không Rõ Tác Giả'}</span>
               <span className="mx-1">•</span>
               <span>
-                <span className="text-gray-500">Category:</span> {article.major_name || 'General'}
+                <span className="text-gray-500">Danh Mục:</span> {article.major_name || 'Chung'}
               </span>
               <span className="mx-1">•</span>
               <span>
-                <span className="text-gray-500">Submitted:</span> {new Date(article.create_at).toLocaleDateString()}
+                <span className="text-gray-500">Gửi Lúc:</span> {new Date(article.create_at).toLocaleDateString()}
               </span>
             </div>
 
@@ -193,7 +193,7 @@ export default function ReviewQueue() {
                 <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-white/15">
                   <Check className="h-3.5 w-3.5" />
                 </span>
-                {actionLoading ? 'Đang xử lý...' : 'Approve & Publish'}
+                {actionLoading ? 'Đang xử lý...' : 'Phê Duyệt & Xuất Bản'}
               </button>
 
               <button 
@@ -223,12 +223,12 @@ export default function ReviewQueue() {
             className="relative w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6">
+              <div className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold">Reject Article</h2>
+                  <h2 className="text-xl font-semibold">Từ Chối Bài Viết</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    Please provide a reason for rejecting this article
+                    Vui lòng cung cấp lý do từ chối bài viết này
                   </p>
                 </div>
                 <button
@@ -242,19 +242,19 @@ export default function ReviewQueue() {
 
               <div className="mt-5 text-sm">
                 <div className="text-gray-700">
-                  <span className="font-medium text-gray-900">Article: </span>
+                  <span className="font-medium text-gray-900">Bài Viết: </span>
                   {openFor.title}
                 </div>
                 <div className="text-gray-700 mt-1">
-                  <span className="font-medium text-gray-900">Author: </span>
-                  {openFor.author_name || 'Unknown Author'}
+                  <span className="font-medium text-gray-900">Tác Giả: </span>
+                  {openFor.author_name || 'Không Rõ Tác Giả'}
                 </div>
 
                 <textarea
                   rows={5}
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Please explain why this article is being rejected..."
+                  placeholder="Vui lòng giải thích lý do từ chối bài viết này..."
                   className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
@@ -270,7 +270,7 @@ export default function ReviewQueue() {
                   disabled={actionLoading || !feedback.trim()}
                   className="px-5 py-2 rounded-xl bg-red-600 text-white hover:opacity-90 disabled:opacity-50"
                 >
-                  {actionLoading ? 'Rejecting...' : 'Reject Article'}
+                  {actionLoading ? 'Đang Từ Chối...' : 'Từ Chối Bài Viết'}
                 </button>
               </div>
             </div>

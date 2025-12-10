@@ -58,9 +58,9 @@ export default function ContentManagerLayOut() {
   };
 
   const navigation = [
-    { id: "dashboard" as ContentPage, label: "Dashboard", icon: LayoutDashboard, path: "/content/dashboard", permission: "Content Manager" },
-    { id: "articles" as ContentPage, label: "Article List", icon: FileText, path: "/content/articles", permission: "Content Manager" },
-    { id: "editor" as ContentPage, label: "Article Details", icon: PenSquare, path: "/content/editor", permission: "Content Manager" },
+    { id: "dashboard" as ContentPage, label: "Bảng Điều Khiển", icon: LayoutDashboard, path: "/content/dashboard", permission: "Content Manager" },
+    { id: "articles" as ContentPage, label: "Danh Sách Bài Viết", icon: FileText, path: "/content/articles", permission: "Content Manager" },
+    { id: "editor" as ContentPage, label: "Chi Tiết Bài Viết", icon: PenSquare, path: "/content/editor", permission: "Content Manager" },
     ...(isContentManagerLeader() ? [
       { id: "review" as ContentPage, label: "Hàng Đợi Duyệt Bài", icon: ListChecks, path: "/content/review", permission: "Content Manager" }
     ] : []),
@@ -104,11 +104,11 @@ export default function ContentManagerLayOut() {
   
   // Role labels and icons for switching buttons
   const roleLabels = {
-    Admin: { label: 'Admin', icon: Shield, color: 'bg-red-100 text-red-700 border-red-200' },
-    'Content Manager': { label: 'Content', icon: FileEdit, color: 'bg-blue-100 text-blue-700 border-blue-200' },
-    'Admission Official': { label: 'Admission', icon: GraduationCap, color: 'bg-green-100 text-green-700 border-green-200' },
-    Consultant: { label: 'Consultant', icon: TrendingUp, color: 'bg-purple-100 text-purple-700 border-purple-200' },
-    Parent: { label: 'Parent', icon: User, color: 'bg-gray-100 text-gray-700 border-gray-200' }
+    Admin: { label: 'Quản Trị Viên', icon: Shield, color: 'bg-red-100 text-red-700 border-red-200' },
+    'Content Manager': { label: 'Quản Lý Nội Dung', icon: FileEdit, color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    'Admission Official': { label: 'Cán Bộ Tuyển Sinh', icon: GraduationCap, color: 'bg-green-100 text-green-700 border-green-200' },
+    Consultant: { label: 'Tư Vấn Viên', icon: TrendingUp, color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    Parent: { label: 'Phụ Huynh', icon: User, color: 'bg-gray-100 text-gray-700 border-gray-200' }
   };
 
   // Handle role switching
@@ -139,22 +139,22 @@ export default function ContentManagerLayOut() {
     
     // Admission Officer section  
     ...(user?.permissions?.includes('Admission Official') ? [{
-      title: 'Admission Officer',
+      title: 'Cán Bộ Tuyển Sinh',
       items: [
         { label: 'Tổng Quan Tuyển Sinh', icon: LayoutDashboard, path: '/admission/dashboard' },
-        { label: 'Request Queue', icon: Calendar, path: '/admission/request-queue' },
-        { label: 'Students', icon: GraduationCap, path: '/admission/students' },
-        { label: 'Knowledge Base', icon: BookOpen, path: '/admission/knowledge-base' },
+        { label: 'Hàng Đợi Yêu Cầu', icon: Calendar, path: '/admission/request-queue' },
+        { label: 'Học Sinh', icon: GraduationCap, path: '/admission/students' },
+        { label: 'Cơ Sở Tri Thức', icon: BookOpen, path: '/admission/knowledge-base' },
       ]
     }] : []),
     
     // Admin section
     ...(user?.permissions?.includes('Admin') ? [{
-      title: 'Administration',
+      title: 'Quản Trị',
       items: [
-        { label: 'Admin Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
-        { label: 'User Management', icon: Users, path: '/admin/users' },
-        { label: 'System Analytics', icon: TrendingUp, path: '/admin/analytics' },
+        { label: 'Bảng Điều Khiển Quản Trị', icon: LayoutDashboard, path: '/admin/dashboard' },
+        { label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
+        { label: 'Phân Tích Hệ Thống', icon: TrendingUp, path: '/admin/analytics' },
       ]
     }] : [])
   ];
@@ -230,7 +230,7 @@ export default function ContentManagerLayOut() {
           {accessibleRoles.length > 1 && !sidebarCollapsed && (
             <div className="space-y-2 border-t pt-4">
               <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Switch Role
+                Chuyển Vai Trò
               </div>
               {accessibleRoles.map((role) => {
                 const roleInfo = roleLabels[role];
@@ -256,9 +256,6 @@ export default function ContentManagerLayOut() {
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
                     <span className="text-sm">{roleInfo.label}</span>
-                    {isCurrentRole && (
-                      <span className="ml-auto text-xs opacity-70">Current</span>
-                    )}
                   </button>
                 );
               }).filter(Boolean)}
@@ -282,10 +279,10 @@ export default function ContentManagerLayOut() {
               <div className="flex-1 min-w-0">
                 <div className="text-sm truncate">{user?.name || 'Đang tải...'}</div>
                 <div className="text-xs text-gray-500 truncate">
-                  {!user ? 'Connecting...' : user?.isLeader ? 'Content Manager Leader' : 'Content Manager'}
+                  {!user ? 'Đang kết nối...' : user?.isLeader ? 'Trưởng Nhóm Quản Lý Nội Dung' : 'Quản Lý Nội Dung'}
                 </div>
                 <div className="text-xs text-blue-600 truncate">
-                  Perms: {user?.permissions?.length || 0}
+                  Quyền: {user?.permissions?.length || 0}
                 </div>
               </div>
             )}

@@ -81,7 +81,7 @@ export function ContentOptimization({
         <div className="p-6 pb-8 space-y-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Đề Xuất Tối Ưu Hóa Nội Dung</h1>
-            <p className="text-muted-foreground">Suggestions to improve chatbot coverage and quality</p>
+            <p className="text-muted-foreground">Đề xuất để cải thiện phạm vi bao phủ và chất lượng chatbot</p>
           </div>
           <Card className="border-l-4 border-l-[#EF4444]">
             <CardContent className="pt-6">
@@ -125,7 +125,7 @@ export function ContentOptimization({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl">{confusingAnswers?.length || 0}</div>
-                  <p className="text-sm text-muted-foreground mt-1">Low-Rated Answers</p>
+                  <p className="text-sm text-muted-foreground mt-1">Câu Trả Lời Đánh Giá Thấp</p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-[#F59E0B] opacity-50" />
               </div>
@@ -152,15 +152,15 @@ export function ContentOptimization({
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <HelpCircle className="h-5 w-5 text-[#EF4444]" />
-                  Gaps in Knowledge Base
+                  Khoảng Trống Trong Cơ Sở Tri Thức
                 </CardTitle>
                 <CardDescription className="mt-2">
-                  Frequently asked questions without answers - prioritize adding these
+                  Các câu hỏi thường xuyên được hỏi nhưng không có câu trả lời - ưu tiên thêm những câu này
                 </CardDescription>
               </div>
               <Badge variant="destructive" className="gap-1">
                 <AlertTriangle className="h-3 w-3" />
-                Action Required
+                Cần Hành Động
               </Badge>
             </div>
           </CardHeader>
@@ -168,8 +168,8 @@ export function ContentOptimization({
             {!knowledgeGaps || knowledgeGaps.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <HelpCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No knowledge gaps identified at this time</p>
-                <p className="text-sm">Your knowledge base appears to be comprehensive!</p>
+                <p>Không có khoảng trống tri thức nào được xác định tại thời điểm này</p>
+                <p className="text-sm">Cơ sở tri thức của bạn có vẻ đã toàn diện!</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -187,7 +187,7 @@ export function ContentOptimization({
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Asked <span className="font-semibold">{gap.frequency} times</span> in the last 30 days
+                          Đã hỏi <span className="font-semibold">{gap.frequency} lần</span> trong 30 ngày qua
                         </p>
                       </div>
                     </div>
@@ -198,7 +198,7 @@ export function ContentOptimization({
                         onClick={() => onNavigateToKnowledgeBase?.(gap.question)}
                       >
                         <Plus className="h-4 w-4 mr-1" />
-                        Add to Knowledge Base
+                        Thêm vào Cơ Sở Tri Thức
                       </Button>
                     </div>
                   </div>
@@ -212,7 +212,7 @@ export function ContentOptimization({
                       onClick={() => setGapsVisibleCount(prev => Math.min(prev + 3, knowledgeGaps.length))}
                       className="flex items-center gap-2"
                     >
-                      Show More ({Math.min(3, knowledgeGaps.length - gapsVisibleCount)} more items)
+                      Hiển Thị Thêm ({Math.min(3, knowledgeGaps.length - gapsVisibleCount)} mục khác)
                     </Button>
                   </div>
                 )}
@@ -226,7 +226,7 @@ export function ContentOptimization({
                       onClick={() => setGapsVisibleCount(3)}
                       className="text-muted-foreground"
                     >
-                      Show Less
+                      Ẩn Bớt
                     </Button>
                   </div>
                 )}
@@ -243,12 +243,12 @@ export function ContentOptimization({
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5 text-[#F59E0B]" />Câu Trả Lời Đánh Giá Thấp</CardTitle>
                 <CardDescription className="mt-2">
-                  Q&A pairs that users frequently rate poorly - review and improve
+                  Các cặp hỏi-đáp mà người dùng thường xuyên đánh giá kém - xem xét và cải thiện
                 </CardDescription>
               </div>
               <Badge className="bg-[#F59E0B] hover:bg-[#D97706] gap-1">
                 <AlertTriangle className="h-3 w-3" />
-                Needs Review
+                Cần Xem Xét
               </Badge>
             </div>
           </CardHeader>
@@ -256,8 +256,8 @@ export function ContentOptimization({
             {!confusingAnswers || confusingAnswers.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <CheckCircle className="h-12 w-12 mx-auto mb-2 opacity-50 text-green-500" />
-                <p>No low satisfaction answers found!</p>
-                <p className="text-sm">All your Q&A pairs are performing well.</p>
+                <p>Không tìm thấy câu trả lời đánh giá thấp!</p>
+                <p className="text-sm">Tất cả các cặp hỏi-đáp của bạn đang hoạt động tốt.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -271,7 +271,7 @@ export function ContentOptimization({
                       <div className="flex items-center gap-4">
                         <div className="flex-1">
                           <div className="flex items-center justify-between text-sm mb-1">
-                            <span className="text-muted-foreground">Current Satisfaction</span>
+                            <span className="text-muted-foreground">Mức Hài Lòng Hiện Tại</span>
                             <span className="font-semibold text-[#F59E0B]">
                               {answer.currentSatisfaction}/5.0
                             </span>
@@ -283,7 +283,7 @@ export function ContentOptimization({
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between text-sm mb-1">
-                            <span className="text-muted-foreground">Target</span>
+                            <span className="text-muted-foreground">Mục Tiêu</span>
                             <span className="font-semibold text-[#10B981]">
                               {answer.targetSatisfaction}/5.0
                             </span>
@@ -297,7 +297,7 @@ export function ContentOptimization({
                     </div>
                     <div className="space-y-2 mb-3">
                       <p className="text-sm">
-                        <strong>User Feedback:</strong> {answer.feedback}
+                        <strong>Phản Hồi Người Dùng:</strong> {answer.feedback}
                       </p>
                       <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-md">
                         <div className="h-5 w-5 rounded-full bg-[#3B82F6] flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -305,18 +305,18 @@ export function ContentOptimization({
                         </div>
                         <div className="flex-1">
                           <p className="text-sm text-foreground">
-                            <strong>Improvement Suggestion:</strong> {answer.suggestion}
+                            <strong>Đề Xuất Cải Thiện:</strong> {answer.suggestion}
                           </p>
                         </div>
                       </div>
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" className="bg-[#3B82F6] hover:bg-[#2563EB]">
-                        Edit Answer
+                        Chỉnh Sửa Câu Trả Lời
                       </Button>
                       <Button size="sm" variant="outline">
                         <ExternalLink className="h-4 w-4 mr-1" />
-                        View User Feedback
+                        Xem Phản Hồi Người Dùng
                       </Button>
                     </div>
                   </div>
@@ -330,7 +330,7 @@ export function ContentOptimization({
                       onClick={() => setAnswersVisibleCount(prev => Math.min(prev + 3, confusingAnswers.length))}
                       className="flex items-center gap-2"
                     >
-                      Show More ({Math.min(3, confusingAnswers.length - answersVisibleCount)} more items)
+                      Hiển Thị Thêm ({Math.min(3, confusingAnswers.length - answersVisibleCount)} mục khác)
                     </Button>
                   </div>
                 )}
@@ -344,7 +344,7 @@ export function ContentOptimization({
                       onClick={() => setAnswersVisibleCount(3)}
                       className="text-muted-foreground"
                     >
-                      Show Less
+                      Ẩn Bớt
                     </Button>
                   </div>
                 )}
@@ -360,15 +360,15 @@ export function ContentOptimization({
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-[#10B981]" />
-                  New Trending Topics
+                  Chủ Đề Mới Đang Thịnh Hành
                 </CardTitle>
                 <CardDescription className="mt-2">
-                  Emerging question topics that might need new Q&A entries
+                  Các chủ đề câu hỏi mới nổi có thể cần các mục hỏi-đáp mới
                 </CardDescription>
               </div>
               <Badge className="bg-[#10B981] hover:bg-[#059669] gap-1">
                 <TrendingUp className="h-3 w-3" />
-                Opportunity
+                Cơ Hội
               </Badge>
             </div>
           </CardHeader>
@@ -376,8 +376,8 @@ export function ContentOptimization({
             {!trendingTopics || trendingTopics.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <TrendingUp className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No trending topics detected</p>
-                <p className="text-sm">Check back later for emerging question patterns.</p>
+                <p>Không phát hiện chủ đề thịnh hành</p>
+                <p className="text-sm">Hãy quay lại sau để xem các mẫu câu hỏi mới nổi.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -399,14 +399,14 @@ export function ContentOptimization({
                           {topic.description}
                         </p>
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="text-sm text-muted-foreground">Growth Rate:</div>
+                          <div className="text-sm text-muted-foreground">Tỷ Lệ Tăng Trưởng:</div>
                           <Progress value={Math.min(topic.growthRate, 100)} className="flex-1 h-2" />
                           <div className="text-sm font-semibold text-[#10B981]">
                             {topic.growthRate}%
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          <span className="font-semibold">{topic.questionsCount} questions</span> asked in the {topic.timeframe || "last 14 days"}
+                          <span className="font-semibold">{topic.questionsCount} câu hỏi</span> được hỏi trong {topic.timeframe || "14 ngày qua"}
                         </p>
                       </div>
                     </div>
@@ -416,7 +416,7 @@ export function ContentOptimization({
                         variant="outline"
                         onClick={() => onNavigateToAnalytics?.()}
                       >
-                        View Questions
+                        Xem Câu Hỏi
                       </Button>
                     </div>
                   </div>
@@ -430,7 +430,7 @@ export function ContentOptimization({
                       onClick={() => setTopicsVisibleCount(prev => Math.min(prev + 3, trendingTopics.length))}
                       className="flex items-center gap-2"
                     >
-                      Show More ({Math.min(3, trendingTopics.length - topicsVisibleCount)} more items)
+                      Hiển Thị Thêm ({Math.min(3, trendingTopics.length - topicsVisibleCount)} mục khác)
                     </Button>
                   </div>
                 )}
@@ -444,7 +444,7 @@ export function ContentOptimization({
                       onClick={() => setTopicsVisibleCount(3)}
                       className="text-muted-foreground"
                     >
-                      Show Less
+                      Ẩn Bớt
                     </Button>
                   </div>
                 )}
