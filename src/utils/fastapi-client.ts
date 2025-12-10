@@ -53,7 +53,21 @@ class FastAPIClient {
         throw new Error(errorMessage);
       }
 
-      const data = await response.json();
+      // Check if response has content before parsing JSON
+      const contentType = response.headers.get('content-type');
+      const contentLength = response.headers.get('content-length');
+      
+      // If no content or empty response, return empty object
+      if (contentLength === '0' || !contentType?.includes('application/json')) {
+        return {} as T;
+      }
+
+      const text = await response.text();
+      if (!text) {
+        return {} as T;
+      }
+
+      const data = JSON.parse(text);
       return data;
     } catch (error) {
       // Don't log error if it's an auth issue and user isn't logged in

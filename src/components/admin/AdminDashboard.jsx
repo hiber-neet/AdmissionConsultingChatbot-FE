@@ -186,7 +186,7 @@ export function AdminDashboard() {
         {/* Charts */}
         <Card>
           <CardHeader>
-            <CardTitle>Yêu Cầu Chatbot (30 Ngày Qua)</CardTitle>
+            <CardTitle>Yêu Cầu Chatbot (7 Ngày Qua)</CardTitle>
             <CardDescription>Tin nhắn khách hàng so với phản hồi chatbot</CardDescription>
           </CardHeader>
           <CardContent>

@@ -178,7 +178,7 @@ export const knowledgeAPI = {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    // Add intend_id as query parameter
+    // Add intend_id as query parameter (backend expects intend_id, not intent_id)
     const url = `${API_CONFIG.FASTAPI_BASE_URL}/knowledge/upload/document?intend_id=${intendId}`;
 
     return fetch(url, {
@@ -193,7 +193,7 @@ export const knowledgeAPI = {
     });
   },
 
-  uploadTrainingQuestion: (data: { question: string; answer: string }) =>
+  uploadTrainingQuestion: (data: { question: string; answer: string; intent_id: number }) =>
     fastAPIClient.post<TrainingQuestion>('/knowledge/upload/training_question', data),
 
   // Get documents with optional status filter
@@ -220,7 +220,25 @@ export const knowledgeAPI = {
   rejectDocument: (id: number, reason: string) => {
     const formData = new FormData();
     formData.append('reason', reason);
-    return fastAPIClient.post(`/knowledge/documents/${id}/reject`, formData);
+    
+    const token = localStorage.getItem("access_token");
+    const headers: HeadersInit = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    
+    return fetch(`${API_CONFIG.FASTAPI_BASE_URL}/knowledge/documents/${id}/reject`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    }).then(response => {
+      if (!response.ok) {
+        return response.json().then(err => {
+          throw new Error(err.detail || `HTTP error! status: ${response.status}`);
+        });
+      }
+      return response.json();
+    });
   },
 
   // Review workflow for training questions
@@ -230,7 +248,25 @@ export const knowledgeAPI = {
   rejectTrainingQuestion: (id: number, reason: string) => {
     const formData = new FormData();
     formData.append('reason', reason);
-    return fastAPIClient.post(`/knowledge/training_questions/${id}/reject`, formData);
+    
+    const token = localStorage.getItem("access_token");
+    const headers: HeadersInit = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    
+    return fetch(`${API_CONFIG.FASTAPI_BASE_URL}/knowledge/training_questions/${id}/reject`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    }).then(response => {
+      if (!response.ok) {
+        return response.json().then(err => {
+          throw new Error(err.detail || `HTTP error! status: ${response.status}`);
+        });
+      }
+      return response.json();
+    });
   },
   
   downloadDocument: async (id: number) => {
@@ -521,7 +557,7 @@ export const templateAPI = {
 
   // Delete templates (soft delete)
   deleteTemplates: (templateIds: number[]) => 
-    fastAPIClient.delete('/template', { data: { template_ids: templateIds } })
+    fastAPIClient.delete('/template', { template_ids: templateIds })
 };
 
 

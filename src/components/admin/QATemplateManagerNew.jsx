@@ -198,7 +198,7 @@ const QATemplateManagerNew = () => {
 
       {/* Templates List */}
       {loading ? (
-        <div className="text-center py-8">Loading templates...</div>
+        <div className="text-center py-8">Đang tải mẫu...</div>
       ) : (
         <div className="grid gap-4">
           {filteredTemplates.map((template) => (
@@ -210,7 +210,7 @@ const QATemplateManagerNew = () => {
                     <p className="text-sm text-gray-600 mt-1">{template.description}</p>
                   )}
                   <p className="text-gray-500 text-sm mt-2">
-                    {template.qa_pairs?.length || 0} Q&A pair(s)
+                    {template.qa_pairs?.length || 0} cặp Q&A
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -218,13 +218,13 @@ const QATemplateManagerNew = () => {
                     onClick={() => handleEdit(template)}
                     className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
                   >
-                    Edit
+                    Chỉnh Sửa
                   </button>
                   <button
                     onClick={() => handleDelete(template.template_id)}
                     className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                   >
-                    Delete
+                    Xóa
                   </button>
                 </div>
               </div>
@@ -239,7 +239,7 @@ const QATemplateManagerNew = () => {
                     </div>
                   ))}
                   {template.qa_pairs.length > 2 && (
-                    <p className="text-xs text-gray-500 italic">...and {template.qa_pairs.length - 2} more</p>
+                    <p className="text-xs text-gray-500 italic">...và {template.qa_pairs.length - 2} mục khác</p>
                   )}
                 </div>
               )}
@@ -248,7 +248,7 @@ const QATemplateManagerNew = () => {
           
           {filteredTemplates.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              No templates found
+              Không tìm thấy mẫu nào
             </div>
           )}
         </div>
@@ -261,7 +261,7 @@ const QATemplateManagerNew = () => {
             {/* Dialog Header */}
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold">
-                {editingTemplate ? 'Edit Template' : 'Create Template'}
+                {editingTemplate ? 'Chỉnh Sửa Mẫu' : 'Tạo Mẫu'}
               </h3>
               <button
                 onClick={() => setIsDialogOpen(false)}
@@ -274,27 +274,27 @@ const QATemplateManagerNew = () => {
             {/* Template Name */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Template Name *
+                Tên Mẫu *
               </label>
               <input
                 type="text"
                 value={formData.template_name}
                 onChange={(e) => setFormData({ ...formData, template_name: e.target.value })}
                 className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., Admission Requirements"
+                placeholder="vd: Yêu cầu tuyển sinh"
               />
             </div>
 
             {/* Description */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description (Optional)
+                Mô Tả (Không bắt buộc)
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                placeholder="Brief description of this template"
+                placeholder="Mô tả ngắn gọn về mẫu này"
                 rows="2"
               />
             </div>
@@ -303,13 +303,13 @@ const QATemplateManagerNew = () => {
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Q&A Pairs
+                  Cặp Q&A
                 </label>
                 <button
                   onClick={addQAPair}
                   className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
                 >
-                  + Add Q&A
+                  + Thêm Q&A
                 </button>
               </div>
 
@@ -318,7 +318,7 @@ const QATemplateManagerNew = () => {
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium text-gray-600">Q&A #{index + 1}</span>
                     <div className="flex items-center gap-2">
-                      <label className="text-xs text-gray-600">Order:</label>
+                      <label className="text-xs text-gray-600">Thứ tự:</label>
                       <input
                         type="number"
                         value={qa.order_position}
@@ -329,7 +329,7 @@ const QATemplateManagerNew = () => {
                       <button
                         onClick={() => removeQAPair(index)}
                         className="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600"
-                        title="Remove Q&A pair"
+                        title="Xóa cặp Q&A"
                       >
                         ×
                       </button>
@@ -339,13 +339,13 @@ const QATemplateManagerNew = () => {
                   {/* Question */}
                   <div className="mb-3">
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Question *
+                      Câu Hỏi *
                     </label>
                     <textarea
                       value={qa.question}
                       onChange={(e) => updateQAPair(index, 'question', e.target.value)}
                       className="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter the question..."
+                      placeholder="Nhập câu hỏi..."
                       rows="2"
                     />
                   </div>
@@ -353,13 +353,13 @@ const QATemplateManagerNew = () => {
                   {/* Answer */}
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Answer *
+                      Câu Trả Lời *
                     </label>
                     <textarea
                       value={qa.answer}
                       onChange={(e) => updateQAPair(index, 'answer', e.target.value)}
                       className="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter the answer..."
+                      placeholder="Nhập câu trả lời..."
                       rows="3"
                     />
                   </div>
@@ -373,14 +373,14 @@ const QATemplateManagerNew = () => {
                 onClick={() => setIsDialogOpen(false)}
                 className="px-4 py-2 border rounded hover:bg-gray-50"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 onClick={handleCreateOrUpdate}
                 disabled={loading}
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
               >
-                {loading ? 'Saving...' : (editingTemplate ? 'Update' : 'Create')}
+                {loading ? 'Đang lưu...' : (editingTemplate ? 'Cập Nhật' : 'Tạo')}
               </button>
             </div>
           </div>

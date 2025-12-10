@@ -127,30 +127,30 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
   // Generate stats array from API data
   const stats: Stat[] = contentData ? [
     { 
-      label: "Total Published", 
+      label: "Tổng Đã Xuất Bản", 
       value: contentData.overview.published_articles, 
-      sublabel: "Live on portal", 
+      sublabel: "Đang hoạt động trên cổng thông tin", 
       icon: <Eye className="h-4 w-4 text-emerald-500" />,
       isLoading: loading 
     },
     { 
-      label: "Needs Review", 
+      label: "Cần Xem Xét", 
       value: contentData.overview.review_articles, 
-      sublabel: "Awaiting approval", 
+      sublabel: "Đang chờ phê duyệt", 
       icon: <Clock3 className="h-4 w-4 text-amber-500" />,
       isLoading: loading 
     },
     { 
-      label: "My Articles", 
+      label: "Bài Viết Của Tôi", 
       value: contentData.overview.my_articles, 
-      sublabel: "Created by you", 
+      sublabel: "Do bạn tạo", 
       icon: <PencilLine className="h-4 w-4 text-sky-500" />,
       isLoading: loading 
     },
     { 
-      label: "Total Articles", 
+      label: "Tổng Bài Viết", 
       value: contentData.overview.total_articles, 
-      sublabel: "All content", 
+      sublabel: "Tất cả nội dung", 
       icon: <FileText className="h-4 w-4 text-purple-500" />,
       isLoading: loading 
     },
@@ -187,7 +187,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-              <p className="text-gray-600">Loading content statistics...</p>
+              <p className="text-gray-600">Đang tải thống kê nội dung...</p>
             </div>
           </div>
         </div>
@@ -203,10 +203,10 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-red-600" />
               <span className="text-red-800 text-sm">
-                Error loading content statistics: {error}
+                Lỗi tải thống kê nội dung: {error}
               </span>
               <Button onClick={handleRefresh} variant="outline" size="sm" className="ml-auto">
-                Retry
+                Thử Lại
               </Button>
             </div>
           </div>
@@ -215,12 +215,12 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold">Content Overview</h1>
+            <h1 className="text-xl font-semibold">Tổng Quan Nội Dung</h1>
             <p className="text-sm text-gray-500">
-              Manage your editorial workflow
+              Quản lý quy trình biên tập của bạn
               {contentData && (
                 <span className="ml-2">
-                  • Last updated: {lastRefresh.toLocaleTimeString()}
+                  • Cập nhật lần cuối: {lastRefresh.toLocaleTimeString()}
                 </span>
               )}
             </p>
@@ -229,11 +229,11 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
           <div className="flex gap-2">
             <Button onClick={handleRefresh} variant="outline" disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Refresh
+              Làm Mới
             </Button>
             <Button onClick={handleCreate} className="bg-black text-white hover:opacity-90">
               <Plus className="mr-2 h-4 w-4" />
-              Create New Article
+              Tạo Bài Viết Mới
             </Button>
           </div>
         </div>
@@ -270,7 +270,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
         {contentData?.articles_by_major && contentData.articles_by_major.length > 0 && (
           <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
             <div className="mb-3 text-sm font-medium text-gray-800">
-              Articles by Major
+              Bài Viết Theo Ngành
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {contentData.articles_by_major.slice(0, 6).map((major, idx) => (
@@ -286,7 +286,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
         {/* Quick Actions */}
         <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
           <div className="mb-3 text-sm font-medium text-gray-800">
-            Quick Actions
+            Hành Động Nhanh
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Button  onClick={handleCreate}
@@ -300,7 +300,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
               className="border-gray-300 hover:bg-gray-100"
             >
               <FileText className="mr-2 h-4 w-4" />
-              View All Articles
+              Xem Tất Cả Bài Viết
             </Button>
             <Button
               onClick={handleRefresh}
@@ -309,7 +309,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
               disabled={loading}
             >
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TrendingUp className="mr-2 h-4 w-4" />}
-              Refresh Data
+              Làm Mới Dữ Liệu
             </Button>
           </div>
         </div>
@@ -317,10 +317,10 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
         {/* Recent Activity */}
         <div className="rounded-xl border border-gray-200 bg-white">
           <div className="border-b border-gray-200 p-4 text-sm font-medium text-gray-800">
-            Recent Activity
+            Hoạt Động Gần Đây
             {contentData?.recent_articles && (
               <span className="ml-2 text-xs text-gray-500">
-                ({contentData.recent_articles.length} articles)
+                ({contentData.recent_articles.length} bài viết)
               </span>
             )}
           </div>
@@ -352,10 +352,10 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
           ) : (
             <div className="p-8 text-center text-gray-500">
               <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">No recent articles found</p>
+              <p className="text-sm">Không tìm thấy bài viết gần đây</p>
               <Button onClick={handleCreate} variant="outline" className="mt-3">
                 <Plus className="mr-2 h-4 w-4" />
-                Create Your First Article
+                Tạo Bài Viết Đầu Tiên Của Bạn
               </Button>
             </div>
           )}
@@ -365,11 +365,11 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
         <div className="mt-6 flex items-center justify-between text-xs text-gray-400">
           <div className="flex items-center gap-2">
             <CalendarDays className="h-3.5 w-3.5" />
-            Auto-refresh every 5 min
+            Tự động làm mới mỗi 5 phút
           </div>
           {contentData && (
             <div>
-              Data generated: {new Date(contentData.generated_at).toLocaleString()}
+              Dữ liệu được tạo: {new Date(contentData.generated_at).toLocaleString()}
             </div>
           )}
         </div>

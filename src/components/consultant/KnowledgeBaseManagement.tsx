@@ -142,7 +142,7 @@ export function KnowledgeBaseManagement() {
             <h2>Cơ Sở Tri Thức</h2>
             <Button size="sm" className="bg-[#3B82F6] hover:bg-[#2563EB]">
               <Plus className="h-4 w-4 mr-1" />
-              Add New
+              Thêm Mới
             </Button>
           </div>
           
@@ -150,7 +150,7 @@ export function KnowledgeBaseManagement() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search Q&A pairs..."
+              placeholder="Tìm kiếm cặp hỏi-đáp..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -170,7 +170,7 @@ export function KnowledgeBaseManagement() {
           </Select>
 
           <div className="text-sm text-muted-foreground">
-            {filteredQAPairs.length} Q&A pairs
+            {filteredQAPairs.length} cặp hỏi-đáp
           </div>
         </div>
 
@@ -216,7 +216,7 @@ export function KnowledgeBaseManagement() {
             <div className="p-6 pb-8 max-w-4xl">
               {/* Action Buttons */}
               <div className="flex items-center justify-between mb-6">
-                <h1>Q&A Details</h1>
+                <h1>Chi Tiết Hỏi-Đáp</h1>
                 {!isEditing ? (
                   <div className="flex gap-2">
                     <Button
@@ -225,14 +225,14 @@ export function KnowledgeBaseManagement() {
                       className="gap-2"
                     >
                       <History className="h-4 w-4" />
-                      Version History
+                      Lịch Sử Phiên Bản
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleEdit}
                     >
-                      Edit Q&A
+                      Chỉnh Sửa Hỏi-Đáp
                     </Button>
                     <Button
                       variant="destructive"
@@ -255,7 +255,7 @@ export function KnowledgeBaseManagement() {
                       className="bg-[#3B82F6] hover:bg-[#2563EB]"
                     >
                       <Save className="h-4 w-4 mr-1" />
-                      Save Changes
+                      Lưu Thay Đổi
                     </Button>
                   </div>
                 )}
@@ -304,13 +304,13 @@ export function KnowledgeBaseManagement() {
                 {/* Metadata */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Metadata</CardTitle>
+                    <CardTitle className="text-base">Siêu Dữ Liệu</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
                       <Label className="flex items-center gap-2 mb-2">
                         <Tag className="h-4 w-4" />
-                        Category
+                        Danh Mục
                       </Label>
                       {isEditing ? (
                         <Select value={editedCategory} onValueChange={setEditedCategory}>
@@ -331,7 +331,7 @@ export function KnowledgeBaseManagement() {
                     <div>
                       <Label className="flex items-center gap-2 mb-2">
                         <Calendar className="h-4 w-4" />
-                        Last Updated
+                        Cập Nhật Lần Cuối
                       </Label>
                       <p className="text-sm text-muted-foreground">
                         {new Date(selectedQA.lastUpdated).toLocaleDateString('en-US', {
@@ -344,7 +344,7 @@ export function KnowledgeBaseManagement() {
 
                     {selectedQA.source && (
                       <div>
-                        <Label className="mb-2 block">Source</Label>
+                        <Label className="mb-2 block">Nguồn</Label>
                         <p className="text-sm text-muted-foreground">{selectedQA.source}</p>
                       </div>
                     )}
@@ -355,9 +355,9 @@ export function KnowledgeBaseManagement() {
                 {selectedQA.relatedQuestions && selectedQA.relatedQuestions.length > 0 && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-base">Related Questions</CardTitle>
+                      <CardTitle className="text-base">Câu Hỏi Liên Quan</CardTitle>
                       <CardDescription>
-                        Other Q&A pairs that are commonly asked together
+                        Các cặp hỏi-đáp khác thường được hỏi cùng nhau
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -388,7 +388,7 @@ export function KnowledgeBaseManagement() {
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Select a Q&A pair from the list to view details</p>
+              <p>Chọn một cặp hỏi-đáp từ danh sách để xem chi tiết</p>
             </div>
           </div>
         )}
@@ -398,9 +398,9 @@ export function KnowledgeBaseManagement() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Q&A Pair</DialogTitle>
+            <DialogTitle>Xóa Cặp Hỏi-Đáp</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this Q&A pair? This action cannot be undone.
+              Bạn có chắc chắn muốn xóa cặp hỏi-đáp này? Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -53,7 +53,7 @@ export function ConsultantLayout() {
     { id: 'overview', label: 'Trang Chủ Dashboard', icon: LayoutDashboard, path: '/consultant/overview' },
     { id: 'analytics', label: 'Phân Tích & Thống Kê', icon: TrendingUp, path: '/consultant/analytics' },
     { id: 'templates', label: 'Câu Hỏi Huấn Luyện', icon: MessageSquare, path: '/consultant/templates' },
-    { id: 'documents', label: 'Documents', icon: FileText, path: '/consultant/documents' },
+    { id: 'documents', label: 'Tài Liệu', icon: FileText, path: '/consultant/documents' },
     { id: 'optimization', label: 'Tối Ưu Hóa Nội Dung', icon: Lightbulb, path: '/consultant/optimization' },
     ...(user?.isLeader ? [
       { id: 'leader', label: 'Duyệt Cơ Sở Tri Thức', icon: Database, path: '/consultant/leader' }
@@ -95,10 +95,10 @@ export function ConsultantLayout() {
   
   // Role labels and icons for switching buttons
   const roleLabels = {
-    Admin: { label: 'Admin', icon: Shield, color: 'bg-red-100 text-red-700 border-red-200' },
-    'Content Manager': { label: 'Content', icon: FileEdit, color: 'bg-blue-100 text-blue-700 border-blue-200' },
-    'Admission Official': { label: 'Admission', icon: GraduationCap, color: 'bg-green-100 text-green-700 border-green-200' },
-    Consultant: { label: 'Consultant', icon: TrendingUp, color: 'bg-purple-100 text-purple-700 border-purple-200' }
+    Admin: { label: 'Quản Trị Viên', icon: Shield, color: 'bg-red-100 text-red-700 border-red-200' },
+    'Content Manager': { label: 'Quản Lý Nội Dung', icon: FileEdit, color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    'Admission Official': { label: 'Cán Bộ Tuyển Sinh', icon: GraduationCap, color: 'bg-green-100 text-green-700 border-green-200' },
+    Consultant: { label: 'Tư Vấn Viên', icon: TrendingUp, color: 'bg-purple-100 text-purple-700 border-purple-200' }
   };
 
   // Handle role switching
@@ -180,7 +180,7 @@ export function ConsultantLayout() {
           {accessibleRoles.length > 1 && !sidebarCollapsed && (
             <div className="space-y-2 border-t pt-4">
               <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Switch Role
+                Chuyển Vai Trò
               </div>
               {accessibleRoles.map((role) => {
                 const roleInfo = roleLabels[role];
@@ -206,9 +206,6 @@ export function ConsultantLayout() {
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
                     <span className="text-sm">{roleInfo.label}</span>
-                    {isCurrentRole && (
-                      <span className="ml-auto text-xs opacity-70">Current</span>
-                    )}
                   </button>
                 );
               }).filter(Boolean)}

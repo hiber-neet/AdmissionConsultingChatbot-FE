@@ -139,7 +139,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
         <div>
           <h1>Phân Tích & Thống Kê</h1>
           <p className="text-muted-foreground">
-            Deep dive into user questions and interaction patterns
+            Phân tích sâu về câu hỏi của người dùng và các mẫu tương tác
           </p>
         </div>
 
@@ -148,30 +148,30 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
           <CardHeader>
             <CardTitle>Danh Mục Quan Tâm</CardTitle>
             <CardDescription>
-              Overview of question distribution across categories
+              Tổng quan về phân phối câu hỏi theo danh mục
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             {categoryLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                <span>Loading category statistics...</span>
+                <span>Đang tải thống kê danh mục...</span>
               </div>
             ) : categoryError ? (
               <div className="text-center py-8 text-red-600">
-                <p>Error: {categoryError}</p>
+                <p>Lỗi: {categoryError}</p>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   className="mt-2"
                   onClick={() => window.location.reload()}
                 >
-                  Retry
+                  Thử Lại
                 </Button>
               </div>
             ) : sortedCategoryData.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No category data available.</p>
+                <p>Không có dữ liệu danh mục.</p>
               </div>
             ) : (
               <Table>
@@ -182,7 +182,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
                         onClick={() => handleCategorySort('category')}
                         className="flex items-center gap-1 hover:text-foreground font-medium"
                       >
-                        Category
+                        Danh Mục
                         <ArrowUpDown className="h-3.5 w-3.5" />
                       </button>
                     </TableHead>
@@ -191,12 +191,12 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
                         onClick={() => handleCategorySort('total_questions')}
                         className="flex items-center gap-1 hover:text-foreground ml-auto font-medium"
                       >
-                        Total Questions
+                        Tổng Câu Hỏi
                         <ArrowUpDown className="h-3.5 w-3.5" />
                       </button>
                     </TableHead>
                     <TableHead className="text-right py-3">
-                      <span className="font-medium">Total Times Asked</span>
+                      <span className="font-medium">Tổng Lần Hỏi</span>
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -223,9 +223,9 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
         {/* Filters Section - Moved Below Category Interest */}
         <Card>
           <CardHeader>
-            <CardTitle>Filter Questions</CardTitle>
+            <CardTitle>Lọc Câu Hỏi</CardTitle>
             <CardDescription>
-              Filter questions by date range and search query
+              Lọc câu hỏi theo khoảng thời gian và truy vấn tìm kiếm
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -233,7 +233,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search questions..."
+                  placeholder="Tìm kiếm câu hỏi..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -244,9 +244,9 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7">Last 7 Days</SelectItem>
-                  <SelectItem value="14">Last 14 Days</SelectItem>
-                  <SelectItem value="30">Last 30 Days</SelectItem>
+                  <SelectItem value="7">7 Ngày Qua</SelectItem>
+                  <SelectItem value="14">14 Ngày Qua</SelectItem>
+                  <SelectItem value="30">30 Ngày Qua</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -255,8 +255,8 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
 
         {/* Results Count */}
         <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">Hiển thị<span className="font-semibold text-foreground">{questions.length}</span> of{' '}
-            <span className="font-semibold text-foreground">{totalCount}</span> questions
+          <div className="text-sm text-muted-foreground">Hiển thị <span className="font-semibold text-foreground">{questions.length}</span> trong{' '}
+            <span className="font-semibold text-foreground">{totalCount}</span> câu hỏi
           </div>
         </div>
 
@@ -265,30 +265,30 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
           <CardHeader>
             <CardTitle>Chi Tiết Câu Hỏi</CardTitle>
             <CardDescription>
-              Individual questions from chatbot sessions with their metrics
+              Các câu hỏi riêng lẻ từ phiên chatbot với số liệu của chúng
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             {questionsLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                <span>Loading questions...</span>
+                <span>Đang tải câu hỏi...</span>
               </div>
             ) : questionsError ? (
               <div className="text-center py-8 text-red-600">
-                <p>Error: {questionsError}</p>
+                <p>Lỗi: {questionsError}</p>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   className="mt-2"
                   onClick={() => window.location.reload()}
                 >
-                  Retry
+                  Thử Lại
                 </Button>
               </div>
             ) : questions.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No questions found matching your filters.</p>
+                <p>Không tìm thấy câu hỏi nào phù hợp với bộ lọc của bạn.</p>
               </div>
             ) : (
               <>
@@ -296,16 +296,16 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
                   <TableHeader>
                     <TableRow className="h-12">
                       <TableHead className="w-[50%] py-3">
-                        <span className="font-medium">Question Text</span>
+                        <span className="font-medium">Nội Dung Câu Hỏi</span>
                       </TableHead>
                       <TableHead className="py-3">
-                        <span className="font-medium">Category</span>
+                        <span className="font-medium">Danh Mục</span>
                       </TableHead>
                       <TableHead className="text-center py-3">
                         <span className="font-medium">Trạng Thái</span>
                       </TableHead>
                       <TableHead className="text-center py-3">
-                        <span className="font-medium">Action</span>
+                        <span className="font-medium">Hành Động</span>
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -334,7 +334,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
                               className="h-8 px-3 text-xs bg-blue-600 hover:bg-blue-700"
                               onClick={() => onNavigateToTemplates?.(item.question, 'add')}
                             >
-                              Add to KB
+                              Thêm vào KB
                             </Button>
                           )}
                         </TableCell>
@@ -347,7 +347,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between px-6 py-4 border-t">
                     <div className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages}
+                      Trang {currentPage} / {totalPages}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button

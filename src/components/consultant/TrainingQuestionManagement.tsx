@@ -350,7 +350,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
       }
     } catch (error) {
       console.error('Error creating training question:', error);
-      toast.error('Failed to create training question. Please try again.');
+      toast.error('Không thể tạo câu hỏi huấn luyện. Vui lòng thử lại.');
     } finally {
       setCreating(false);
     }
@@ -570,9 +570,9 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Training Question</DialogTitle>
+            <DialogTitle>Xóa Câu Hỏi Huấn Luyện</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this training question? This action cannot be undone.
+              Bạn có chắc chắn muốn xóa câu hỏi huấn luyện này? Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -628,14 +628,14 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
 
                 {/* QA Pair Dropdown */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('training.select_qa_pair')}</label>
+                  <label className="text-sm font-medium">Chọn Cặp Hỏi-Đáp</label>
                   <Select 
                     value={selectedQAPairIndex} 
                     onValueChange={setSelectedQAPairIndex}
                     disabled={!selectedTemplateId}
                   >
                     <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder={t('training.select_qa_pair')} />
+                      <SelectValue placeholder="Chọn cặp hỏi-đáp" />
                     </SelectTrigger>
                     <SelectContent>
                       {selectedTemplateId && templates
@@ -653,13 +653,13 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
 
                 {/* Use Template Button */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium opacity-0">Action</label>
+                  <label className="text-sm font-medium opacity-0">Hành động</label>
                   <Button
                     onClick={handleUseTemplate}
                     disabled={!selectedTemplateId || !selectedQAPairIndex}
                     className="w-full h-11 bg-blue-600 hover:bg-blue-700"
                   >
-                    Load Template
+                    Tải Mẫu
                   </Button>
                 </div>
               </div>
@@ -667,10 +667,10 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
               {/* Preview Selected QA Pair */}
               {selectedTemplateId && selectedQAPairIndex && (
                 <div className="p-3 bg-white rounded-md border border-blue-200 text-sm">
-                  <div className="font-medium text-gray-700 mb-1">Preview:</div>
+                  <div className="font-medium text-gray-700 mb-1">Xem Trước:</div>
                   <div className="text-xs text-gray-600 space-y-1">
-                    <div><span className="font-semibold">Q:</span> {templates.find(t => t.template_id?.toString() === selectedTemplateId)?.qa_pairs[parseInt(selectedQAPairIndex)]?.question}</div>
-                    <div className="line-clamp-2"><span className="font-semibold">A:</span> {templates.find(t => t.template_id?.toString() === selectedTemplateId)?.qa_pairs[parseInt(selectedQAPairIndex)]?.answer}</div>
+                    <div><span className="font-semibold">Câu hỏi:</span> {templates.find(t => t.template_id?.toString() === selectedTemplateId)?.qa_pairs[parseInt(selectedQAPairIndex)]?.question}</div>
+                    <div className="line-clamp-2"><span className="font-semibold">Trả lời:</span> {templates.find(t => t.template_id?.toString() === selectedTemplateId)?.qa_pairs[parseInt(selectedQAPairIndex)]?.answer}</div>
                   </div>
                 </div>
               )}
