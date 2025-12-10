@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ChatGuestHeader from "../../components/chatbotguest/ChatGuestHeader.jsx";
-
+import ReactMarkdown from "react-markdown";
 const CHATBOT_PREFILL_KEY = "chatbot_prefill_message";
 const GUEST_ID_KEY = "guest_user_id_v1";
 const GUEST_SESSION_KEY = "guest_session_id_v1";
@@ -221,24 +221,23 @@ case "done": {
             </div>
           )}
 
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className={`mb-4 flex ${
-                m.sender === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed shadow-sm ${
-                  m.sender === "user"
-                    ? "bg-[#10a37f] text-white"
-                    : "bg-white text-gray-800"
-                }`}
-              >
-                {m.text}
-              </div>
-            </div>
-          ))}
+       {messages.map((m, i) => (
+  <div key={i} className={`mb-4 flex ${m.sender === "user" ? "justify-end" : "justify-start"}`}>
+    <div
+      className={`max-w-[85%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed shadow-sm ${
+        m.sender === "user"
+          ? "bg-[#10a37f] text-white"
+          : "bg-white text-gray-800"
+      }`}
+    >
+      {m.sender === "bot" ? (
+        <ReactMarkdown>{m.text}</ReactMarkdown>
+      ) : (
+        m.text
+      )}
+    </div>
+  </div>
+))}
 
           {isLoading && (
             <div className="mb-4 flex justify-start">

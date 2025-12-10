@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/Auth";
 import { liveChatAPI } from "@/services/fastapi";
 import { toast } from "react-toastify";
 import { useWebSocket } from "@/components/admission/chat/useWebSocket";
-
+import ReactMarkdown from "react-markdown";
 
 
 const API_BASE_URL =
@@ -1018,7 +1018,7 @@ const renderScoreInput = (subject) => (
         </div>
 
         <h1 className="text-2xl md:text-3xl font-semibold mb-6">
-          Welcome, <span className="text-[#EB5A0D]">{form.fullName}</span>
+          Chào mừng, <span className="text-[#EB5A0D]">{form.fullName}</span>
         </h1>
 
         <div className="grid grid-cols-12 gap-6">
@@ -1028,7 +1028,7 @@ const renderScoreInput = (subject) => (
               <SidebarItem
                 active={tab === "profile"}
                 icon="👤"
-                label="Profile"
+                label="Hồ sơ"
                 onClick={() => setTab("profile")}
               />
               <SidebarItem
@@ -1040,13 +1040,13 @@ const renderScoreInput = (subject) => (
               <SidebarItem
                 active={tab === "consultant"}
                 icon="💼"
-                label="Consultant"
+                label="Tư vấn"
                 onClick={() => setTab("consultant")}
               />
               <SidebarItem
                 active={tab === "transcript"}
                 icon="📄"
-                label="School records"
+                label="Học bạ"
                 onClick={() => setTab("transcript")}
               />
               <div className="mt-6 text-xs text-gray-400 px-2">Help</div>
@@ -1084,7 +1084,7 @@ const renderScoreInput = (subject) => (
                   >
                     {/* Họ tên */}
                     <div>
-                      <label className="text-sm text-gray-500">Full Name</label>
+                      <label className="text-sm text-gray-500">Họ và tên</label>
                       <input
                         name="fullName"
                         value={form.fullName}
@@ -1143,7 +1143,7 @@ const renderScoreInput = (subject) => (
                     {/* Phone */}
                     <div>
                       <label className="text-sm text-gray-500">
-                        Phone Number
+                        Số điện thoại
                       </label>
                       <input
                         name="phone"
@@ -1244,7 +1244,7 @@ const renderScoreInput = (subject) => (
                     {/* Ngành mong muốn */}
                     <div>
                       <label className="text-sm text-gray-500">
-                        Preferred major
+                        Ngành mong muốn 
                       </label>
                       <select
                         name="preferredMajor"
@@ -1266,7 +1266,7 @@ const renderScoreInput = (subject) => (
 
                     {/* Khu vực (region) */}
 <div>
-  <label className="text-sm text-gray-500">Region</label>
+  <label className="text-sm text-gray-500">Khu vực</label>
   <input
     name="region"
     value={form.region}
@@ -1303,7 +1303,7 @@ const renderScoreInput = (subject) => (
                           }}
                           className="px-5 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
                         >
-                          Edit
+                          Sửa
                         </button>
                       ) : (
                         <>
@@ -1311,7 +1311,7 @@ const renderScoreInput = (subject) => (
                             type="submit"
                             className="px-5 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600"
                           >
-                            Save
+                            Lưu
                           </button>
                           <button
                             type="button"
@@ -1328,151 +1328,153 @@ const renderScoreInput = (subject) => (
               </div>
             )}
 
-            {/* CHATBOT TAB */}
-            {tab === "chatbot" && (
-              <div className="rounded-2xl border border-gray-200 bg-white grid grid-cols-12 overflow-hidden min-h-[600px]">
-                {/* LEFT: danh sách phiên */}
-                <aside className="col-span-12 md:col-span-4 border-r border-gray-100 flex flex-col">
-                  <div className="flex items-center justify-between px-4 py-3 bg-[#FFF3ED]">
-                    <div className="font-semibold text-[#EB5A0D]">
-                      Đoạn chat
-                    </div>
-                    <button
-                      onClick={createConversation}
-                      className="px-3 py-1 rounded-md bg-[#EB5A0D] text-white text-sm hover:opacity-90"
-                    >
-                      + Phiên mới
-                    </button>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto">
-                    <ul className="divide-y divide-gray-100">
-                      {convs.map((c) => (
-                        <li
-                          key={c.id}
-                          className={`px-4 py-3 cursor-pointer hover:bg-gray-50 ${
-                            c.id === activeId ? "bg-orange-50" : ""
-                          }`}
-                          onClick={() => selectConversation(c.id)}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="truncate font-medium">
-                              {c.title}
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteConversation(c.id);
-                                }}
-                                className="text-xs text-red-600 hover:text-red-700"
-                                title="Xoá"
-                              >
-                                Xoá
-                              </button>
-                            </div>
-                          </div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            {new Date(c.updatedAt).toLocaleString()}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </aside>
-
-                {/* RIGHT: khung chat */}
-               <section className="col-span-12 md:col-span-8 flex flex-col">
-  <div className="bg-[#EB5A0D] text-white px-6 py-3 flex items-center justify-between">
-    <div className="text-lg font-semibold">ChatBotFPT</div>
-
-    {activeConv && (
-      <div className="flex items-center gap-1 text-sm">
-        <span className="hidden sm:inline mr-2">Đánh giá phiên:</span>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            onClick={() => setRatingForActive(star)}
-            className="focus:outline-none"
-          >
-            <span
-              className={
-                star <= (activeConv.rating || 0)
-                  ? "text-yellow-300"
-                  : "text-white/50"
-              }
-            >
-              ★
-            </span>
-          </button>
-        ))}
+{/* CHATBOT TAB */}
+{tab === "chatbot" && (
+  <div className="rounded-2xl border border-gray-200 bg-white grid grid-cols-12 overflow-hidden min-h-[600px]">
+    {/* LEFT: danh sách phiên */}
+    <aside className="col-span-12 md:col-span-4 border-r border-gray-100 flex flex-col">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#FFF3ED]">
+        <div className="font-semibold text-[#EB5A0D]">Đoạn chat</div>
+        <button
+          onClick={createConversation}
+          className="px-3 py-1 rounded-md bg-[#EB5A0D] text-white text-sm hover:opacity-90"
+        >
+          + Phiên mới
+        </button>
       </div>
-    )}
-  </div>
 
-                  <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
-                    {!messages.length ? (
-                      <p className="text-gray-400 text-center mt-10">
-                        Hãy bắt đầu trò chuyện…
-                      </p>
-                    ) : (
-                      messages.map((m, i) => (
-                        <div
-                          key={i}
-                          className={`flex ${
-                            m.sender === "user"
-                              ? "justify-end"
-                              : "justify-start"
-                          }`}
-                        >
-                          <div
-                            className={`px-4 py-2 max-w-[70%] rounded-xl text-sm ${
-                              m.sender === "user"
-                                ? "bg-[#EB5A0D] text-white"
-                                : "bg-gray-200 text-gray-800"
-                            }`}
-                          >
-                            {m.text}
-                          </div>
-                        </div>
-                      ))
-                    )}
-
-                    {isLoading && (
-                      <div className="flex justify-start mt-1">
-                        <div className="px-4 py-2 max-w-[70%] rounded-xl text-sm bg-gray-200 text-gray-800">
-                          {partialResponse}
-                          <span className="animate-pulse">▌</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <form
-                    onSubmit={handleSend}
-                    className="flex items-center gap-3 border-t border-gray-200 p-4"
+      <div className="flex-1 overflow-y-auto">
+        <ul className="divide-y divide-gray-100">
+          {convs.map((c) => (
+            <li
+              key={c.id}
+              className={`px-4 py-3 cursor-pointer hover:bg-gray-50 ${
+                c.id === activeId ? "bg-orange-50" : ""
+              }`}
+              onClick={() => selectConversation(c.id)}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="truncate font-medium">{c.title}</div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteConversation(c.id);
+                    }}
+                    className="text-xs text-red-600 hover:text-red-700"
+                    title="Xoá"
                   >
-                    <input
-                      type="text"
-                      placeholder="Nhập tin nhắn..."
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!wsReady || !input.trim() || !activeId}
-                      className={`px-4 py-2 rounded-md text-white ${
-                        !wsReady || !input.trim() || !activeId
-                          ? "bg-gray-300 cursor-not-allowed"
-                          : "bg-[#EB5A0D] hover:opacity-90"
-                      }`}
-                    >
-                      {wsReady ? "Gửi" : "Đang kết nối..."}
-                    </button>
-                  </form>
-                </section>
+                    Xoá
+                  </button>
+                </div>
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                {new Date(c.updatedAt).toLocaleString()}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </aside>
+
+    {/* RIGHT: khung chat */}
+    <section className="col-span-12 md:col-span-8 flex flex-col">
+      <div className="bg-[#EB5A0D] text-white px-6 py-3 flex items-center justify-between">
+        <div className="text-lg font-semibold">ChatBotFPT</div>
+
+        {activeConv && (
+          <div className="flex items-center gap-1 text-sm">
+            <span className="hidden sm:inline mr-2">Đánh giá phiên:</span>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setRatingForActive(star)}
+                className="focus:outline-none"
+              >
+                <span
+                  className={
+                    star <= (activeConv.rating || 0)
+                      ? "text-yellow-300"
+                      : "text-white/50"
+                  }
+                >
+                  ★
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+        {!messages.length ? (
+          <p className="text-gray-400 text-center mt-10">
+            Hãy bắt đầu trò chuyện…
+          </p>
+        ) : (
+          messages.map((m, i) => (
+            <div
+              key={i}
+              className={`flex ${
+                m.sender === "user" ? "justify-end" : "justify-start"
+              }`}
+            >
+              <div
+                className={`px-4 py-2 max-w-[70%] rounded-xl text-sm ${
+                  m.sender === "user"
+                    ? "bg-[#EB5A0D] text-white"
+                    : "bg-gray-200 text-gray-800"
+                }`}
+              >
+{m.sender === "bot" ? (
+  <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+    <ReactMarkdown>{m.text}</ReactMarkdown>
+  </div>
+) : (
+  m.text
+)}
+              </div>
+            </div>
+          ))
+        )}
+
+      {isLoading && (
+  <div className="flex justify-start mt-1">
+    <div className="px-4 py-2 max-w-[70%] rounded-xl text-sm bg-gray-200 text-gray-800">
+      <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+      <span className="animate-pulse">▌</span>
+      </div>
+
+    </div>
+  </div>
+)}
+      </div>
+
+      <form
+        onSubmit={handleSend}
+        className="flex items-center gap-3 border-t border-gray-200 p-4"
+      >
+        <input
+          type="text"
+          placeholder="Nhập tin nhắn..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
+        />
+        <button
+          type="submit"
+          disabled={!wsReady || !input.trim() || !activeId}
+          className={`px-4 py-2 rounded-md text-white ${
+            !wsReady || !input.trim() || !activeId
+              ? "bg-gray-300 cursor-not-allowed"
+              : "bg-[#EB5A0D] hover:opacity-90"
+          }`}
+        >
+          {wsReady ? "Gửi" : "Đang kết nối..."}
+        </button>
+      </form>
+    </section>
               </div>
             )}
 

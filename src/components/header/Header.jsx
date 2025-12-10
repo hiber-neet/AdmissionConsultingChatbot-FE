@@ -225,15 +225,15 @@ const scrollToSection = (id) => {
                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
                       >
                         <UserIcon className="w-4 h-4" />
-                        <span>Profile</span>
+                        <span>Hồ sơ</span>
                       </button>
-                      <button
+                      {/* <button
                         onClick={() => navigate('/live-chat')}
                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
                       >
                         <MessageSquare className="w-4 h-4" />
                         <span>Live Chat</span>
-                      </button>
+                      </button> */}
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
