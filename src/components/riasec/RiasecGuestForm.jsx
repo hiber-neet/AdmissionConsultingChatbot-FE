@@ -118,7 +118,7 @@ export default function RiasecGuestForm() {
       const items = res.data;
 
       if (Array.isArray(items) && items.length > 0) {
-        // 🚩 API đang trả bản mới nhất ở ĐẦU mảng
+        //  API đang trả bản mới nhất ở ĐẦU mảng
         const latest = items[0];
 
         setServerScores({
