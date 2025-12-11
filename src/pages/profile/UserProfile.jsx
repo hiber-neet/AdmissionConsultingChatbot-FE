@@ -931,7 +931,7 @@ wsRef.current.send(
     }
   };
 
-  const onCancel = () => setEditing(false);Failed to save 'UserFormDialog.jsx': The content of the file is newer. Please compare your version with the file contents or overwrite the content of the file with your changes.
+  const onCancel = () => setEditing(false);
 
   const subjectsLeft = [
     "Toán học(*)",
@@ -941,7 +941,7 @@ wsRef.current.send(
   ];
 
   const subjectsRight = [
-    "Ngữ văn(*)",Failed to save 'UserFormDialog.jsx': The content of the file is newer. Please compare your version with the file contents or overwrite the content of the file with your changes.
+    "Ngữ văn(*)",
     "Vật lý",
     "Sinh học",
     "Địa lý",
