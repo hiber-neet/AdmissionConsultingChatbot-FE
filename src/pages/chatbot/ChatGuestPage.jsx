@@ -10,23 +10,10 @@ const GUEST_SESSION_KEY = "guest_session_id_v1";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-function generateId() {
-  // Trong file .jsx chỉ check thuần JS, không dùng "as any"
-  if (
-    typeof window !== "undefined" &&
-    window.crypto &&
-    typeof window.crypto.randomUUID === "function"
-  ) {
-    return window.crypto.randomUUID();
-  }
-
-  // Fallback tự sinh UUID nếu randomUUID không có
-  const template = "xxxxxxxx-xxxx-4xxx-4xxx-yxxx-xxxxxxxxxxxx";
-  return template.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
+function generateNumericId() {
+  // số ngẫu nhiên < 2 tỷ, an toàn cho INT4 Postgres
+  const max = 2_000_000_000;
+  return Math.floor(Math.random() * max);
 }
 
 
@@ -46,23 +33,31 @@ export default function ChatGuestPage() {
     const prefillSentRef = useRef(false);   
   // Tạo guestId + sessionId cố định cho guest (lưu vào localStorage)
 const [guestId] = useState(() => {
-  let id = localStorage.getItem(GUEST_ID_KEY);
-  if (!id) {
-    id = generateId();
-    localStorage.setItem(GUEST_ID_KEY, id);
+  let stored = localStorage.getItem(GUEST_ID_KEY);
+
+
+  let numeric;
+  if (stored && !Number.isNaN(Number(stored))) {
+    numeric = Number(stored);
+  } else {
+    numeric = generateNumericId();
+    localStorage.setItem(GUEST_ID_KEY, String(numeric));
   }
-  return id;
+  return numeric;
 });
 
 const [sessionId] = useState(() => {
-  let id = localStorage.getItem(GUEST_SESSION_KEY);
-  if (!id) {
-    id = generateId();
-    localStorage.setItem(GUEST_SESSION_KEY, id);
-  }
-  return id;
-});
+  let stored = localStorage.getItem(GUEST_SESSION_KEY);
 
+  let numeric;
+  if (stored && !Number.isNaN(Number(stored))) {
+    numeric = Number(stored);
+  } else {
+    numeric = generateNumericId();
+    localStorage.setItem(GUEST_SESSION_KEY, String(numeric));
+  }
+  return numeric;
+});
   // Auto-scroll xuống cuối mỗi khi có tin nhắn mới
   useEffect(() => {
     if (!listRef.current) return;
@@ -109,7 +104,7 @@ useEffect(() => {
               return next;
             });
             break;
-
+case "go":
 case "done": {
   const finalText = (partialRef.current || "").trim();
   if (finalText) {
