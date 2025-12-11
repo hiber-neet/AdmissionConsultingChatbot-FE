@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 import type { AdmissionInfo, Program, NewsArticle, ContactMessage } from '../types';
 
 // FastAPI Base URL - should be moved to environment variables
-const FASTAPI_BASE_URL = 'http://localhost:8000';
+const FASTAPI_BASE_URL = 'http://34.158.58.188:8000';
 
 // Article type based on the API response
 export interface Article {

@@ -10,12 +10,13 @@ import { useAuth } from "@/contexts/Auth";
 import { liveChatAPI } from "@/services/fastapi";
 import { toast } from "react-toastify";
 import { useWebSocket } from "@/components/admission/chat/useWebSocket";
+import { API_CONFIG } from "../../config/api.js";
 import ReactMarkdown from "react-markdown";
 import { Navigate } from "react-router-dom";
 
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+
+const API_BASE_URL = API_CONFIG.FASTAPI_BASE_URL;
 
 const authHeaders = () => {
   const token = localStorage.getItem("access_token");
@@ -930,7 +931,7 @@ wsRef.current.send(
     }
   };
 
-  const onCancel = () => setEditing(false);
+  const onCancel = () => setEditing(false);Failed to save 'UserFormDialog.jsx': The content of the file is newer. Please compare your version with the file contents or overwrite the content of the file with your changes.
 
   const subjectsLeft = [
     "Toán học(*)",
@@ -940,7 +941,7 @@ wsRef.current.send(
   ];
 
   const subjectsRight = [
-    "Ngữ văn(*)",
+    "Ngữ văn(*)",Failed to save 'UserFormDialog.jsx': The content of the file is newer. Please compare your version with the file contents or overwrite the content of the file with your changes.
     "Vật lý",
     "Sinh học",
     "Địa lý",

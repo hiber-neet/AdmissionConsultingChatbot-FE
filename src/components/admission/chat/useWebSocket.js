@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
+import { API_CONFIG } from '../../../config/api.js';
 
 export function useWebSocket(selectedSessionId, onMessageReceived) {
   const [isConnected, setIsConnected] = useState(false);
@@ -12,7 +13,9 @@ export function useWebSocket(selectedSessionId, onMessageReceived) {
     }
 
     try {
-      const wsUrl = `ws://localhost:8000/live_chat/livechat/chat/${selectedSessionId}`;
+      // Convert http/https URL to ws/wss
+      const wsBaseUrl = API_CONFIG.FASTAPI_BASE_URL.replace(/^http/, 'ws');
+      const wsUrl = `${wsBaseUrl}/live_chat/livechat/chat/${selectedSessionId}`;
       console.log('[OFFICER WS] 🔌 Connecting to WebSocket:', wsUrl);
       console.log('[OFFICER WS] 🔌 Session ID:', selectedSessionId);
       wsRef.current = new WebSocket(wsUrl);

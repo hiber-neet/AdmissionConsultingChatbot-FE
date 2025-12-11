@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ChatGuestHeader from "../../components/chatbotguest/ChatGuestHeader.jsx";
+import { API_CONFIG } from "../../config/api.js";
 import ReactMarkdown from "react-markdown";
 const CHATBOT_PREFILL_KEY = "chatbot_prefill_message";
 const GUEST_ID_KEY = "guest_user_id_v1";
