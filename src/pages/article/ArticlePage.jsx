@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
+import { API_CONFIG } from "../../config/api.js";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = API_CONFIG.FASTAPI_BASE_URL;
 
 function formatDate(dateStr) {
   if (!dateStr) return "";

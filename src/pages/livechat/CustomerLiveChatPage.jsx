@@ -5,6 +5,7 @@ import { liveChatAPI } from '../../services/fastapi';
 import { toast } from 'react-toastify';
 import Header from '../../components/header/Header';
 import Footer from '../../components/footer/Footer';
+import { API_CONFIG } from '../../config/api.js';
 
 // Import the same WebSocket hook as admission officer
 import { useWebSocket } from '../../components/admission/chat/useWebSocket';
@@ -142,7 +143,7 @@ export default function CustomerLiveChatPage() {
     if (!user || queueStatus !== 'in_queue') return;
 
     const token = localStorage.getItem('access_token') || '';
-    const sseUrl = `http://localhost:8000/live_chat/livechat/sse/customer/${user.id}?token=${encodeURIComponent(token)}`;
+    const sseUrl = `${API_CONFIG.FASTAPI_BASE_URL}/live_chat/livechat/sse/customer/${user.id}?token=${encodeURIComponent(token)}`;
 
     console.log('[Customer SSE] 🔌 Connecting to SSE:', sseUrl);
     const eventSource = new EventSource(sseUrl);

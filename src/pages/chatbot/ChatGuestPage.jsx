@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ChatGuestHeader from "../../components/chatbotguest/ChatGuestHeader.jsx";
+import { API_CONFIG } from "../../config/api.js";
 
 const CHATBOT_PREFILL_KEY = "chatbot_prefill_message";
 const GUEST_ID_KEY = "guest_user_id_v1";
@@ -48,7 +49,9 @@ export default function ChatGuestPage() {
 
   // Kết nối WS khi mount
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8000/chat/ws/chat");
+    // Convert http/https URL to ws/wss
+    const wsBaseUrl = API_CONFIG.FASTAPI_BASE_URL.replace(/^http/, 'ws');
+    const ws = new WebSocket(`${wsBaseUrl}/chat/ws/chat`);
     wsRef.current = ws;
 
     ws.onopen = () => {

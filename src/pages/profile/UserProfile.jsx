@@ -10,11 +10,11 @@ import { useAuth } from "@/contexts/Auth";
 import { liveChatAPI } from "@/services/fastapi";
 import { toast } from "react-toastify";
 import { useWebSocket } from "@/components/admission/chat/useWebSocket";
+import { API_CONFIG } from "../../config/api.js";
 
 
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = API_CONFIG.FASTAPI_BASE_URL;
 
 const authHeaders = () => {
   const token = localStorage.getItem("access_token");

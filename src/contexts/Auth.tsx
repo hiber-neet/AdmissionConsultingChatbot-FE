@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useMemo, useState, ReactNode, useEffect } from "react";
 import { Permission, hasPermission as checkPermission, initializePermissions, type Role } from "@/constants/permissions";
 import { authAPI } from '../services/fastapi';
+import { API_CONFIG } from '../config/api.js';
 import { getRoleFromToken } from '../pages/login/jwtHelper';
 
 // Re-export Role type for backward compatibility
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // Fetch user profile to restore full user data
         try {
-          const profileResponse = await fetch(`http://localhost:8000/profile/${userId}`, {
+          const profileResponse = await fetch(`${API_CONFIG.FASTAPI_BASE_URL}/profile/${userId}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -251,7 +252,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Fetch user profile to get dynamic permissions
           try {
             console.log('🔍 Fetching user profile for dynamic permissions...');
-            const profileResponse = await fetch(`http://localhost:8000/profile/${userId}`, {
+            const profileResponse = await fetch(`${API_CONFIG.FASTAPI_BASE_URL}/profile/${userId}`, {
               headers: {
                 'Authorization': `Bearer ${access_token}`,
                 'Content-Type': 'application/json'

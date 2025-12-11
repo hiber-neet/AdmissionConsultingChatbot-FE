@@ -21,6 +21,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { riasecAPI } from '../../services/fastapi';
+import { API_CONFIG } from '../../config/api.js';
 
 export function StudentDetailDialog({ isOpen, onClose, userId }) {
   const [student, setStudent] = useState(null);
@@ -56,7 +57,7 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
       
       console.log('🔢 Converted numeric ID:', numericId);
       
-      const baseUrl = 'http://localhost:8000';
+      const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
       const url = `${baseUrl}/users/${numericId}`;
 
       const response = await fetch(url, {

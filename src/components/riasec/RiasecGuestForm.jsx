@@ -2,9 +2,9 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/Auth";
 import axios from "axios";
+import { API_CONFIG } from "../../config/api.js";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = API_CONFIG.FASTAPI_BASE_URL;
 
 const authHeaders = () => {
   const token = localStorage.getItem("access_token");

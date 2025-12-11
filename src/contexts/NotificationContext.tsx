@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { useAuth } from './Auth';
 import { toast } from 'react-toastify';
+import { API_CONFIG } from '../config/api.js';
 
 interface NotificationContextType {
   isConnected: boolean;
@@ -39,7 +40,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
     try {
       const eventSource = new EventSource(
-        `http://localhost:8000/live_chat/livechat/sse/official/${user.id}`
+        `${API_CONFIG.FASTAPI_BASE_URL}/live_chat/livechat/sse/official/${user.id}`
       );
 
       eventSource.onopen = () => {

@@ -8,6 +8,7 @@ import { UserTable } from './UserTable';
 import { toast } from 'react-toastify';
 import { loadPermissions } from '../../../constants/permissions';
 import { rolesAPI } from '../../../services/fastapi';
+import { API_CONFIG } from '../../../config/api.js';
 
 // Dynamic role mappings - will be loaded from API
 let ROLE_ID_TO_NAME = {};
@@ -223,7 +224,7 @@ export function UserManagement() {
     try {
       const token = localStorage.getItem('access_token');
       const tokenType = localStorage.getItem('token_type') || 'bearer';
-      const baseUrl = 'http://localhost:8000';
+    const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
       
       // Ensure token type is properly capitalized
       const authHeader = `Bearer ${token}`;
@@ -299,7 +300,7 @@ export function UserManagement() {
         throw new Error('No authentication token found');
       }
 
-      const baseUrl = 'http://localhost:8000';
+  const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
 
       const response = await fetch(`${baseUrl}/users/ban`, {
         method: 'POST',
@@ -349,7 +350,7 @@ export function UserManagement() {
         throw new Error('No authentication token found');
       }
 
-      const baseUrl = 'http://localhost:8000';
+  const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
 
       const response = await fetch(`${baseUrl}/users/unban`, {
         method: 'POST',
@@ -399,7 +400,7 @@ export function UserManagement() {
         throw new Error('No authentication token found');
       }
 
-      const baseUrl = 'http://localhost:8000';
+  const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
 
       const response = await fetch(`${baseUrl}/auth/register`, {
         method: 'POST',
@@ -478,7 +479,7 @@ export function UserManagement() {
       setLoading(true);
 
       const token = localStorage.getItem('access_token');
-      const baseUrl = 'http://localhost:8000';
+  const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
 
       if (editingUser) {
         // Update existing user - basic information only

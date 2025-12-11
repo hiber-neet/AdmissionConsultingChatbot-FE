@@ -23,6 +23,7 @@ import {
 } from '../ui/system_users/select';
 import { toast } from 'react-toastify';
 import { StudentDetailDialog } from './StudentDetailDialog';
+import { API_CONFIG } from '../../config/api.js';
 
 // Props: { onSelectStudent: (studentId: string) => void }
 export function StudentList({ onSelectStudent }) {
@@ -70,7 +71,7 @@ export function StudentList({ onSelectStudent }) {
         return;
       }
 
-      const baseUrl = 'http://localhost:8000';
+      const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
       const response = await fetch(`${baseUrl}/users/students`, {
         method: 'GET',
         headers: {
