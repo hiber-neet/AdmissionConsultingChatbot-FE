@@ -11,7 +11,6 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 function generateNumericId() {
-  // số ngẫu nhiên < 2 tỷ, an toàn cho INT4 Postgres
   const max = 2_000_000_000;
   return Math.floor(Math.random() * max);
 }
@@ -19,12 +18,12 @@ function generateNumericId() {
 
 
 export default function ChatGuestPage() {
-  const [messages, setMessages] = useState([]); // {sender: "user"|"bot", text: string}[]
+  const [messages, setMessages] = useState([]);  
   const [input, setInput] = useState("");
   const [wsReady, setWsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [partial, setPartial] = useState("");
-  const [prefillMessage, setPrefillMessage] = useState(null); // prompt / JSON từ localStorage
+  const [prefillMessage, setPrefillMessage] = useState(null);  
 
   const partialRef = useRef("");
   const wsRef = useRef(null);
@@ -81,7 +80,7 @@ useEffect(() => {
     setWsReady(true);
     ws.send(
       JSON.stringify({
-        user_id: guestId,
+
         session_id: sessionId,
       })
     );
@@ -195,7 +194,6 @@ case "done": {
   wsRef.current.send(
     JSON.stringify({
       message: prefillMessage,
-      user_id: guestId,
       session_id: sessionId,
     })
   );
@@ -218,7 +216,6 @@ case "done": {
       wsRef.current.send(
         JSON.stringify({
           message: text,
-          user_id: guestId,
           session_id: sessionId,
         })
       );
