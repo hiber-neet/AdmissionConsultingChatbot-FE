@@ -97,7 +97,7 @@ export function ManagerProfile() {
     if (!profileData) return user?.role || 'Người dùng';
     
     // Check permissions to determine role
-    if (profileData.permission?.includes('Admin')) return 'Quản trị viên hệ thống';
+    if (profileData.permission?.includes('Admin')) return 'Quản trị viên';
     if (profileData.permission?.includes('Consultant')) return 'Tư vấn viên';
     if (profileData.permission?.includes('Content Manager')) return 'Quản lý nội dung';
     if (profileData.permission?.includes('Admission Official')) return 'Nhân viên tuyển sinh';
@@ -140,29 +140,14 @@ export function ManagerProfile() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Hồ Sơ Người Dùng</h1>
-          <p className="text-muted-foreground">Xem thông tin tài khoản của bạn</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Card */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Thông Tin Cá Nhân
-            </CardTitle>
-            <CardDescription>
-              Thông tin tài khoản cơ bản và chi tiết liên hệ của bạn
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
+        <Card className="lg:col-span-3">
+          <CardContent className="space-y-6 pt-6">
             <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                  {profileData.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
               <div>
                 <h3 className="text-xl font-semibold">{profileData.full_name}</h3>
                 <p className="text-muted-foreground">{profileData.email}</p>
@@ -200,60 +185,6 @@ export function ManagerProfile() {
                   </div>
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Permissions & Role Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserCheck className="h-5 w-5" />
-              Vai Trò & Quyền Hạn
-            </CardTitle>
-            <CardDescription>
-              Cấp độ truy cập và quyền hạn của bạn
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Vai Trò</Label>
-              <Badge variant={getRoleBadgeVariant(getDisplayRole())} className="text-sm px-3 py-1">
-                <Shield className="h-3 w-3 mr-1" />
-                {getDisplayRole()}
-              </Badge>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Trạng Thái Lãnh Đạo</Label>
-              <div className="flex items-center gap-2">
-                {isLeader() ? (
-                  <Badge variant="default" className="text-xs">
-                    👑 Trưởng nhóm
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-xs">
-                    👤 Thành viên
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-3">
-              <Label>Quyền Hạn ({profileData.permission?.length || 0})</Label>
-              <div className="max-h-64 overflow-y-auto space-y-1">
-                {profileData.permission && profileData.permission.length > 0 ? (
-                  profileData.permission.map((permission, index) => (
-                    <Badge key={index} variant="outline" className="text-xs mr-1 mb-1">
-                      {permission}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">Chưa có quyền hạn nào được gán</p>
-                )}
-              </div>
             </div>
           </CardContent>
         </Card>

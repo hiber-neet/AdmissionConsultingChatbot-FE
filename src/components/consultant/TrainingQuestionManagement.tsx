@@ -657,7 +657,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                   <Button
                     onClick={handleUseTemplate}
                     disabled={!selectedTemplateId || !selectedQAPairIndex}
-                    className="w-full h-11 bg-blue-600 hover:bg-blue-700"
+                    className="w-full h-11 bg-[#EB5A0D] hover:bg-[#d14f0a]"
                   >
                     Tải Mẫu
                   </Button>
@@ -747,7 +747,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
             <Button
               onClick={handleCreateTrainingQuestion}
               disabled={creating || !editedQuestion.trim() || !editedAnswer.trim() || !editedIntentId}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-[#EB5A0D] hover:bg-[#d14f0a]"
             >
               {creating ? t('training.creating') : t('training.create_question')}
             </Button>

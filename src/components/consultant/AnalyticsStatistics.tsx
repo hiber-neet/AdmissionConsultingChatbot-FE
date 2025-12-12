@@ -331,7 +331,7 @@ export function AnalyticsStatistics({ onNavigateToTemplates }: AnalyticsStatisti
                           {item.status === 'unanswered' && (
                             <Button
                               size="sm"
-                              className="h-8 px-3 text-xs bg-blue-600 hover:bg-blue-700"
+                              className="h-8 px-3 text-xs bg-[#EB5A0D] hover:bg-[#d14f0a]"
                               onClick={() => onNavigateToTemplates?.(item.question, 'add')}
                             >
                               Thêm vào KB

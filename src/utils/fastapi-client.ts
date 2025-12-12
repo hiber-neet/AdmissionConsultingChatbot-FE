@@ -35,6 +35,20 @@ class FastAPIClient {
     try {
       const response = await fetch(url, config);
 
+      // Handle 401 Unauthorized - token is invalid or expired
+      if (response.status === 401) {
+        console.log('🚫 401 Unauthorized - clearing session and redirecting to login');
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("token_type");
+        
+        // Redirect to login page
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+        
+        throw new Error('Unauthorized - Your session has expired. Please log in again.');
+      }
+
       if (!response.ok) {
         // Try to get error details from response
         let errorMessage = `HTTP error! status: ${response.status}`;

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/system_users/button';
 import { Avatar, AvatarFallback } from '../ui/system_users/avatar';
+import { STAFF_COLORS, getNavigationClasses, getSidebarClasses, getRoleSwitchingClasses } from '../../constants/staffColors';
 
 export function ConsultantLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -50,7 +51,7 @@ export function ConsultantLayout() {
   }, [user, navigate]);
 
   const navigation = [
-    { id: 'overview', label: 'Trang Chủ Dashboard', icon: LayoutDashboard, path: '/consultant/overview' },
+    { id: 'overview', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/consultant/overview' },
     { id: 'analytics', label: 'Phân Tích & Thống Kê', icon: TrendingUp, path: '/consultant/analytics' },
     { id: 'templates', label: 'Câu Hỏi Huấn Luyện', icon: MessageSquare, path: '/consultant/templates' },
     { id: 'documents', label: 'Tài Liệu', icon: FileText, path: '/consultant/documents' },
@@ -58,7 +59,7 @@ export function ConsultantLayout() {
     ...(user?.isLeader ? [
       { id: 'leader', label: 'Duyệt Cơ Sở Tri Thức', icon: Database, path: '/consultant/leader' }
     ] : []),
-    { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/consultant/profile' }
+    { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/consultant/profile' }
   ];
 
   // Define navigation for all roles
@@ -67,22 +68,22 @@ export function ConsultantLayout() {
       { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
       { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
       { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
-      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/admin/profile' },
+      { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/admin/profile' },
     ],
     'Content Manager': [
       { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/content/dashboard" },
       { id: "articles", label: "Article List", icon: FileText, path: "/content/articles" },
       { id: "editor", label: "Article Details", icon: PenSquare, path: "/content/editor" },
       { id: "review", label: "Hàng Đợi Duyệt Bài", icon: ListChecks, path: "/content/review" },
-      { id: "profile", label: "Hồ Sơ", icon: User, path: "/content/profile" },
+      { id: "profile", label: user?.name || "Hồ Sơ", icon: User, path: "/content/profile" },
     ],
     'Admission Official': [
-      { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard, path: '/admission/dashboard' },
+      { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admission/dashboard' },
       { id: 'request-queue', label: 'Hàng Đợi Yêu Cầu', icon: Clock, badge: 8, path: '/admission/request-queue' },
       { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admission/consultation' },
       { id: 'knowledge-base', label: 'Cơ Sở Tri Thức', icon: BookOpen, path: '/admission/knowledge-base' },
       { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
-      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/admission/profile' },
+      { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/admission/profile' },
     ],
     Consultant: navigation
   };
@@ -112,23 +113,19 @@ export function ConsultantLayout() {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#F8FAFC]">
+    <div className={`min-h-screen flex ${STAFF_COLORS.pageBackground}`}>
       {/* Sidebar */}
-      <aside 
-        className={`bg-white border-r border-gray-200 flex flex-col min-h-screen transition-all duration-300 ${
-          sidebarCollapsed ? 'w-16' : 'w-64'
-        }`}
-      >
+      <aside className={getSidebarClasses(sidebarCollapsed)}>
         {/* Logo and Brand */}
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+        <div className={`p-4 ${STAFF_COLORS.brand.border} flex items-center justify-between flex-shrink-0`}>
           {!sidebarCollapsed && (
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-[#3B82F6] rounded-lg flex items-center justify-center">
+              <div className={`h-8 w-8 ${STAFF_COLORS.brand.logoBackground} rounded-lg flex items-center justify-center`}>
                 <Database className="h-5 w-5 text-white" />
               </div>
               <div>
-                <div className="font-semibold">AdmissionBot</div>
-                <div className="text-xs text-muted-foreground">Manager</div>
+                <div className={`font-semibold ${STAFF_COLORS.brand.titleText}`}>AdmissionBot</div>
+                <div className={`text-xs ${STAFF_COLORS.brand.subtitleText}`}>Manager</div>
               </div>
             </div>
           )}
@@ -136,7 +133,7 @@ export function ConsultantLayout() {
             variant="ghost"
             size="icon"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="h-8 w-8"
+            className={`h-8 w-8 ${STAFF_COLORS.button.hover}`}
           >
             {sidebarCollapsed ? <Menu className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
@@ -147,7 +144,7 @@ export function ConsultantLayout() {
           {/* Current Role Pages */}
           <div>
             {!sidebarCollapsed && (
-              <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <div className={`px-3 py-2 text-xs ${STAFF_COLORS.sectionHeader.font} ${STAFF_COLORS.sectionHeader.text} uppercase tracking-wider`}>
                 {roleLabels[activeRole || user?.role]?.label || 'Pages'}
               </div>
             )}
@@ -159,11 +156,7 @@ export function ConsultantLayout() {
                   <button
                     key={item.id}
                     onClick={() => navigate(item.path)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-[#3B82F6] text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                    className={getNavigationClasses(isActive)}
                     title={sidebarCollapsed ? item.label : undefined}
                   >
                     <Icon className="h-5 w-5 flex-shrink-0" />
@@ -178,8 +171,8 @@ export function ConsultantLayout() {
 
           {/* Role Switching Buttons */}
           {accessibleRoles.length > 1 && !sidebarCollapsed && (
-            <div className="space-y-2 border-t pt-4">
-              <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <div className={`space-y-2 border-t ${STAFF_COLORS.divider.border} pt-4`}>
+              <div className={`px-3 py-2 text-xs ${STAFF_COLORS.sectionHeader.font} ${STAFF_COLORS.sectionHeader.text} uppercase tracking-wider`}>
                 Chuyển Vai Trò
               </div>
               {accessibleRoles.map((role) => {
@@ -195,13 +188,7 @@ export function ConsultantLayout() {
                   <button
                     key={role}
                     onClick={() => !isCurrentRole && handleRoleSwitch(role)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors border ${
-                      isCurrentRole
-                        ? `${roleInfo.color} font-medium border-opacity-50`
-                        : 'text-gray-600 hover:bg-gray-50 border-gray-200'
-                    } ${
-                      isCurrentRole ? 'cursor-default' : 'cursor-pointer'
-                    }`}
+                    className={getRoleSwitchingClasses(isCurrentRole)}
                     disabled={isCurrentRole}
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />

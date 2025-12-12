@@ -7,12 +7,11 @@ export function UserManagementHeader({ onAddUser }) {
   return (
     <div className="flex items-center justify-between">
       <div>
-        <h2>Quản Lý Người Dùng</h2>
-        <p className="text-muted-foreground">Quản lý người dùng hệ thống và quyền vai trò</p>
+        <h1 className="text-2xl font-bold">Quản Lý Người Dùng</h1>
       </div>
       <Dialog>
         <DialogTrigger asChild>
-          <Button onClick={onAddUser}>
+          <Button onClick={onAddUser} className="bg-[#EB5A0D] hover:bg-[#d14f0a] text-white">
             <Plus className="h-4 w-4 mr-2" />Thêm Người Dùng</Button>
         </DialogTrigger>
       </Dialog>

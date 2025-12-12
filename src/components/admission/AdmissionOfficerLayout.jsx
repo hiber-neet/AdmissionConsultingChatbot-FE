@@ -25,6 +25,7 @@ import { Button } from '../ui/system_users/button';
 import { Badge } from '../ui/system_users/badge';
 import { Avatar, AvatarFallback } from '../ui/system_users/avatar';
 import { useAuth } from '../../contexts/Auth';
+import { STAFF_COLORS, getNavigationClasses, getSidebarClasses, getRoleSwitchingClasses } from '../../constants/staffColors';
 
 import PropTypes from 'prop-types';
 
@@ -41,12 +42,12 @@ export function AdmissionOfficerLayout() {
   };
 
   const navigation = [
-    { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard, path: '/admission/dashboard' },
+    { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admission/dashboard' },
     { id: 'request-queue', label: 'Hàng Đợi Yêu Cầu', icon: Clock, path: '/admission/request-queue' },
     { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, path: '/admission/consultation' },
     { id: 'knowledge-base', label: 'Cơ Sở Tri Thức', icon: BookOpen, path: '/admission/knowledge-base' },
     { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
-    { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/admission/profile' },
+    { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/admission/profile' },
   ];
 
   // Define navigation for all roles
@@ -55,14 +56,14 @@ export function AdmissionOfficerLayout() {
       { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
       { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
       { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
-      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/admin/profile' },
+      { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/admin/profile' },
     ],
     'Content Manager': [
       { id: "dashboard", label: "Tổng quan content", icon: LayoutDashboard, path: '/content/dashboard' },
       { id: "articles", label: "Tất Cả Bài Viết", icon: FileText, path: '/content/articles' },
       { id: "review", label: "Hàng Đợi Duyệt Bài", icon: ListChecks, path: '/content/review' },
       { id: "editor", label: "Bài Viết Mới", icon: PenSquare, path: '/content/editor' },
-      { id: "profile", label: "Hồ Sơ", icon: User, path: '/content/profile' },
+      { id: "profile", label: user?.name || "Hồ Sơ", icon: User, path: '/content/profile' },
     ],
     'Admission Official': navigation,
     Consultant: [
@@ -73,7 +74,7 @@ export function AdmissionOfficerLayout() {
       ...(user?.isLeader ? [
         { id: 'leader', label: 'Duyệt Cơ Sở Tri Thức', icon: Database, path: '/consultant/leader' }
       ] : []),
-      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/consultant/profile' }
+      { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/consultant/profile' }
     ]
   };
 
@@ -102,22 +103,19 @@ export function AdmissionOfficerLayout() {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#F8FAFC]">
+    <div className={`min-h-screen flex ${STAFF_COLORS.pageBackground}`}>
       {/* Sidebar */}
-      <aside
-        className={`bg-white border-r flex flex-col min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'
-          }`}
-      >
+      <aside className={getSidebarClasses(sidebarCollapsed)}>
         {/* Logo and Brand */}
-        <div className="p-4 border-b flex items-center justify-between flex-shrink-0">
+        <div className={`p-4 ${STAFF_COLORS.brand.border} border-b flex items-center justify-between flex-shrink-0`}>
           {!sidebarCollapsed && (
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-[#3B82F6] rounded-lg flex items-center justify-center">
+              <div className={`h-8 w-8 ${STAFF_COLORS.brand.logoBackground} rounded-lg flex items-center justify-center`}>
                 <GraduationCap className="h-5 w-5 text-white" />
               </div>
               <div>
-                <div className="font-semibold">Cán Bộ Tuyển Sinh</div>
-                <div className="text-xs text-muted-foreground">Bảng Điều Khiển</div>
+                <div className={`font-semibold ${STAFF_COLORS.brand.titleText}`}>Cán Bộ Tuyển Sinh</div>
+                <div className={`text-xs ${STAFF_COLORS.brand.subtitleText}`}>Bảng Điều Khiển</div>
               </div>
             </div>
           )}
@@ -125,7 +123,7 @@ export function AdmissionOfficerLayout() {
             variant="ghost"
             size="icon"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="h-8 w-8"
+            className={`h-8 w-8 ${STAFF_COLORS.button.hover}`}
           >
             {sidebarCollapsed ? <Menu className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
@@ -136,7 +134,7 @@ export function AdmissionOfficerLayout() {
           {/* Current Role Pages */}
           <div className="space-y-1">
             {!sidebarCollapsed && (
-              <h3 className="px-3 text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+              <h3 className={`px-3 text-xs ${STAFF_COLORS.sectionHeader.font} ${STAFF_COLORS.sectionHeader.text} uppercase tracking-wider mb-3`}>
                 {roleLabels[activeRole || user?.role]?.label || 'Pages'}
               </h3>
             )}
@@ -147,10 +145,7 @@ export function AdmissionOfficerLayout() {
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors relative ${isActive
-                      ? 'bg-[#3B82F6] text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                  className={getNavigationClasses(isActive)}
                 >
                   <Icon className="h-5 w-5 flex-shrink-0" />
                   {!sidebarCollapsed && (
@@ -173,8 +168,8 @@ export function AdmissionOfficerLayout() {
 
           {/* Role Switching Buttons */}
           {accessibleRoles.length > 1 && !sidebarCollapsed && (
-            <div className="space-y-2 border-t pt-4">
-              <h3 className="px-3 text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+            <div className={`space-y-2 border-t ${STAFF_COLORS.divider.border} pt-4`}>
+              <h3 className={`px-3 text-xs ${STAFF_COLORS.sectionHeader.font} ${STAFF_COLORS.sectionHeader.text} uppercase tracking-wider mb-3`}>
                 Chuyển Vai Trò
               </h3>
               {accessibleRoles.map((role) => {
@@ -190,13 +185,7 @@ export function AdmissionOfficerLayout() {
                   <button
                     key={role}
                     onClick={() => !isCurrentRole && handleRoleSwitch(role)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors border ${
-                      isCurrentRole
-                        ? `${roleInfo.color} font-medium border-opacity-50`
-                        : 'text-gray-600 hover:bg-gray-50 border-gray-200'
-                    } ${
-                      isCurrentRole ? 'cursor-default' : 'cursor-pointer'
-                    }`}
+                    className={getRoleSwitchingClasses(isCurrentRole)}
                     disabled={isCurrentRole}
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
@@ -209,10 +198,10 @@ export function AdmissionOfficerLayout() {
         </nav>
 
         {/* User Profile */}
-        <div className="p-4 border-t mt-auto flex-shrink-0">
+        <div className={`p-4 border-t ${STAFF_COLORS.divider.border} mt-auto flex-shrink-0`}>
           <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
             <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-[#3B82F6] text-white">
+              <AvatarFallback className={`${STAFF_COLORS.brand.logoBackground} text-white`}>
                 AO
               </AvatarFallback>
             </Avatar>

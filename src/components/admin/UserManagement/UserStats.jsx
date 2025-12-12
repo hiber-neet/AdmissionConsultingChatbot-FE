@@ -40,9 +40,6 @@ export function UserStats({ users }) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl">{consultantCount}</div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {activeCount} người dùng hoạt động
-          </div>
         </CardContent>
       </Card>
     </div>

@@ -188,7 +188,7 @@ export default function ReviewQueue() {
               <button 
                 onClick={() => handleApprove(article)}
                 disabled={actionLoading}
-                className="inline-flex items-center gap-2 rounded-md bg-green-600 text-white text-sm px-3 py-2 hover:opacity-90 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-md bg-[#EB5A0D] text-white text-sm px-3 py-2 hover:opacity-90 disabled:opacity-50"
               >
                 <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-white/15">
                   <Check className="h-3.5 w-3.5" />
