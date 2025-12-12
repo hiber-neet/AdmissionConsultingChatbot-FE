@@ -2,24 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../../ui/system_users/button';
 import { Input } from '../../ui/system_users/input';
 import { Label } from '../../ui/system_users/label';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../ui/system_users/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../../ui/system_users/dialog';
 import { RoleSelector } from '../RoleSelector';
 import PropTypes from 'prop-types';
 import { toast } from 'react-toastify';
-import { loadPermissions, getCachedPermissions, getAllPermissionNames, getEditablePermissionNames } from '../../../constants/permissions';
+import { loadPermissions } from '../../../constants/permissions';
+import { API_CONFIG } from '../../../config/api.js';
 
 // Get available permissions (will be loaded from API)
 const getAvailablePermissions = async () => {
   const permissions = await loadPermissions();
   return permissions.map(p => p.permission_name.toLowerCase().replace(/\s+/g, '_'));
-};
-
-// Get editable permissions (excludes admin)
-const getEditablePermissions = async () => {
-  const permissions = await loadPermissions();
-  return permissions
-    .filter(p => p.permission_name.toLowerCase() !== 'admin')
-    .map(p => p.permission_name.toLowerCase().replace(/\s+/g, '_'));
 };
 
 // Generate permission labels from API data
@@ -60,19 +53,9 @@ export function UserFormDialog({
   const [loadingPermissions, setLoadingPermissions] = useState(false);
   
   // Dynamic permissions state
-  const [availablePermissions, setAvailablePermissions] = useState([]);
-  const [editablePermissions, setEditablePermissions] = useState([]);
   const [permissionLabels, setPermissionLabels] = useState({});
   const [permissionNameToId, setPermissionNameToId] = useState({});
   const [permissionsLoaded, setPermissionsLoaded] = useState(false);
-  
-  // Validation state
-  const [fieldErrors, setFieldErrors] = useState({
-    name: '',
-    email: '',
-    password: '',
-    phone_number: ''
-  });
 
   // Load permissions from API on component mount
   useEffect(() => {
@@ -81,20 +64,15 @@ export function UserFormDialog({
         setLoadingPermissions(true);
         await loadPermissions(); // Load permissions into cache
         
-        const [available, editable, labels, nameToId] = await Promise.all([
-          getAvailablePermissions(),
-          getEditablePermissions(),
+        const [labels, nameToId] = await Promise.all([
           getPermissionLabels(),
           getPermissionNameToId()
         ]);
         
-        setAvailablePermissions(available);
-        setEditablePermissions(editable);
         setPermissionLabels(labels);
         setPermissionNameToId(nameToId);
         setPermissionsLoaded(true);
       } catch (error) {
-        console.error('Failed to load permissions:', error);
         toast.error('Không thể tải dữ liệu quyền hạn');
       } finally {
         setLoadingPermissions(false);
@@ -106,44 +84,10 @@ export function UserFormDialog({
     }
   }, [isOpen, permissionsLoaded]);
 
-  // Helper function to get permissions available for editing
-  // Excludes admin permission when editing existing users
-  const getEditablePermissionsList = (isEditing = false) => {
-    return isEditing ? editablePermissions : availablePermissions;
-  };
-
   // Helper function to filter permissions that can be revoked
   // Admin permission cannot be revoked through edit interface
   const getRevokablePermissions = (permissions) => {
     return permissions.filter(perm => perm !== 'admin');
-  };
-
-  // Function to determine user permissions from profile fields
-  const derivePermissionsFromProfiles = (user) => {
-    const permissions = [];
-    
-    // Check for admin permission (role_id === 1)
-    if (user.role_id === 1) {
-      permissions.push('admin');
-    }
-    
-    // Check for consultant permission (has consultant_profile or role_id === 2)
-    if (user.consultant_profile || user.role_id === 2) {
-      permissions.push('consultant');
-    }
-    
-    // Check for content_manager permission (has content_manager_profile or role_id === 3)
-    if (user.content_manager_profile || user.role_id === 3) {
-      permissions.push('content_manager');
-    }
-    
-    // Check for admission_officer permission (has admission_official_profile or role_id === 4)
-    if (user.admission_official_profile || user.role_id === 4) {
-      permissions.push('admission_officer');
-    }
-    
-    // Remove duplicates and return
-    return Array.from(new Set(permissions));
   };
 
   // Fetch user's current permissions from the backend
@@ -157,7 +101,7 @@ export function UserFormDialog({
         throw new Error('No authentication token found');
       }
 
-      const baseUrl = 'http://localhost:8000';
+  const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
       
       // Step 1: Get all system permissions
       const allPermissionsResponse = await fetch(`${baseUrl}/users/permissions`, {
@@ -173,14 +117,12 @@ export function UserFormDialog({
       }
 
       const allSystemPermissions = await allPermissionsResponse.json();
-      console.log('📋 All system permissions:', allSystemPermissions);
       
       // Normalize system permission names
       const allPermissionNames = allSystemPermissions.map(p => {
         const name = p.permission_name?.toLowerCase().replace(/\s+/g, '_');
         return name;
       });
-      console.log('📋 Normalized system permissions:', allPermissionNames);
       
       // Step 2: Get user's current permissions
       const userResponse = await fetch(`${baseUrl}/users/staffs`, {
@@ -197,8 +139,6 @@ export function UserFormDialog({
 
       const staffUsers = await userResponse.json();
       
-      console.log('👥 Looking for user ID:', userId);
-      
       // Find the specific user
       const user = staffUsers.find(u => 
         u.user_id?.toString() === userId?.toString() || 
@@ -208,9 +148,6 @@ export function UserFormDialog({
       if (!user) {
         throw new Error('User not found in staff list');
       }
-      
-      console.log('✅ Found user:', user);
-      console.log('🔐 User permissions from API:', user.permissions);
       
       // Extract and normalize user's current permission names
       let currentPermissionNames = [];
@@ -222,8 +159,6 @@ export function UserFormDialog({
         }).filter(Boolean);
       }
       
-      console.log('✅ Current permissions:', currentPermissionNames);
-      
       // Step 3: Calculate available permissions (all system permissions minus current permissions)
       // For editing mode, also exclude 'admin' permission
       let availablePermissionNames = allPermissionNames.filter(perm => {
@@ -234,24 +169,12 @@ export function UserFormDialog({
         return true;
       });
       
-      console.log('➕ Available to grant:', availablePermissionNames);
-      
       // Update state
       setCurrentPermissions(currentPermissionNames);
       setAvailableToGrant(availablePermissionNames);
       
     } catch (error) {
-      console.error('❌ Error fetching user permissions:', error);
-      toast.error(`Failed to fetch user permissions: ${error.message}`);
-      
-      // Fallback: use derived permissions if available
-      if (editingUser) {
-        const derivedPermissions = derivePermissionsFromProfiles(editingUser);
-        console.log('⚠️ Using derived fallback permissions:', derivedPermissions);
-        setCurrentPermissions(derivedPermissions);
-        const editablePerms = getEditablePermissionsList(!!editingUser);
-        setAvailableToGrant(editablePerms.filter(perm => !derivedPermissions.includes(perm)));
-      }
+      toast.error(`Không thể tải quyền hạn người dùng: ${error.message}`);
     } finally {
       setLoadingPermissions(false);
     }
@@ -260,10 +183,6 @@ export function UserFormDialog({
   // Reset when dialog opens/closes or editingUser changes
   useEffect(() => {
     if (isOpen && editingUser) {
-      console.log('Dialog opened with editingUser:', editingUser);
-      console.log('editingUser.id:', editingUser.id);
-      console.log('editingUser.permissions:', editingUser.permissions);
-      
       setPermissionsToRevoke([]);
       setPermissionsToGrant([]);
       
@@ -278,77 +197,36 @@ export function UserFormDialog({
   }, [isOpen, editingUser]);
 
   const handleNameChange = (e) => {
-    // Trim extra spaces and limit length
-    const value = e.target.value.slice(0, 100);
-    
-    // Real-time validation
-    let error = '';
-    if (value.trim().length > 0 && value.trim().length < 2) {
-      error = 'Name must be at least 2 characters';
-    }
-    setFieldErrors(prev => ({ ...prev, name: error }));
-    
-    onFormChange({ ...formData, name: value });
+    onFormChange({ ...formData, name: e.target.value });
   };
 
   const handleEmailChange = (e) => {
-    // Trim whitespace and convert to lowercase
-    const value = e.target.value.trim().toLowerCase();
-    
-    // Real-time validation
-    let error = '';
-    if (value && !validateEmail(value)) {
-      error = 'Invalid email format';
-    }
-    setFieldErrors(prev => ({ ...prev, email: error }));
-    
-    onFormChange({ ...formData, email: value });
+    onFormChange({ ...formData, email: e.target.value });
   };
 
   const handlePasswordChange = (e) => {
-    // No trimming for password to allow intentional spaces
-    const value = e.target.value.slice(0, 128); // Limit max length
-    
-    // Real-time validation
-    let error = '';
-    if (value && value.length < 6) {
-      error = 'Password must be at least 6 characters';
-    }
-    setFieldErrors(prev => ({ ...prev, password: error }));
-    
-    onFormChange({ ...formData, password: value });
+    onFormChange({ ...formData, password: e.target.value });
   };
 
   const handlePhoneChange = (e) => {
-    // Only allow digits, limit to 10 characters
-    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-    
-    // Real-time validation
-    let error = '';
-    if (value && !validatePhone(value)) {
-      error = 'Must start with 0 and contain 10 digits';
-    }
-    setFieldErrors(prev => ({ ...prev, phone_number: error }));
-    
-    onFormChange({ ...formData, phone_number: value });
-  };
-
-  const handleInterestMajorChange = (e) => {
-    onFormChange({ ...formData, interest_desired_major: e.target.value });
-  };
-
-  const handleInterestRegionChange = (e) => {
-    onFormChange({ ...formData, interest_region: e.target.value });
+    onFormChange({ ...formData, phone_number: e.target.value });
   };
 
   const handleRoleChange = (role) => {
     onFormChange({ ...formData, role });
   };
 
+  const handleConsultantLeaderChange = (e) => {
+    onFormChange({ ...formData, consultant_is_leader: e.target.checked });
+  };
+
+  const handleContentManagerLeaderChange = (e) => {
+    onFormChange({ ...formData, content_manager_is_leader: e.target.checked });
+  };
+
   const handleRevokePermissionToggle = (permission) => {
     // Prevent admin permission from being revoked through edit interface
     if (permission === 'admin') {
-      console.warn('Admin permission cannot be revoked through edit interface');
       return;
     }
     
@@ -374,13 +252,12 @@ export function UserFormDialog({
         throw new Error('No authentication token found');
       }
 
-      const baseUrl = 'http://localhost:8000';
+  const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
       const permissionIds = permissions
         .map(permName => permissionNameToId[permName])
         .filter(id => id !== undefined);
 
       if (permissionIds.length === 0) {
-        console.warn('No valid permission IDs found for grant:', permissions);
         return { added: [], skipped: [] };
       }
 
@@ -390,8 +267,6 @@ export function UserFormDialog({
         consultant_is_leader: false,
         content_manager_is_leader: false
       };
-
-      console.log('Grant API request:', requestBody);
 
       const response = await fetch(`${baseUrl}/users/permissions/grant`, {
         method: 'POST',
@@ -415,11 +290,9 @@ export function UserFormDialog({
       }
 
       const data = await response.json();
-      console.log('Grant API response:', data);
       return data;
 
     } catch (error) {
-      console.error('Grant API error:', error);
       throw error;
     }
   };
@@ -431,22 +304,24 @@ export function UserFormDialog({
         throw new Error('No authentication token found');
       }
 
-      const baseUrl = 'http://localhost:8000';
+  const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
+      
       const permissionIds = permissions
-        .map(permName => permissionNameToId[permName])
+        .map(permName => {
+          const id = permissionNameToId[permName];
+          return id;
+        })
         .filter(id => id !== undefined);
 
       if (permissionIds.length === 0) {
-        console.warn('No valid permission IDs found for revoke:', permissions);
-        return { removed: [], skipped: [] };
+        const availablePerms = Object.keys(permissionNameToId).join(', ');
+        throw new Error(`No valid permission IDs found. Tried to revoke: [${permissions.join(', ')}]. Available permissions: [${availablePerms}]`);
       }
 
       const requestBody = {
         user_id: parseInt(userId),
         permission_ids: permissionIds
       };
-
-      console.log('Revoke API request:', requestBody);
 
       const response = await fetch(`${baseUrl}/users/permissions/revoke`, {
         method: 'DELETE',
@@ -470,109 +345,15 @@ export function UserFormDialog({
       }
 
       const data = await response.json();
-      console.log('Revoke API response:', data);
       return data;
 
     } catch (error) {
-      console.error('Revoke API error:', error);
       throw error;
     }
   };
 
-  // Validation helper functions
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validatePhone = (phone) => {
-    // Vietnam phone format: starts with 0, 10 digits
-    const phoneRegex = /^0\d{9}$/;
-    return phoneRegex.test(phone);
-  };
-
-  const validatePassword = (password) => {
-    // Minimum 6 characters
-    return password && password.length >= 6;
-  };
-
-  const validateForm = () => {
-    const errors = [];
-
-    // Name validation
-    if (!formData.name || !formData.name.trim()) {
-      errors.push('Name is required');
-    } else if (formData.name.trim().length < 2) {
-      errors.push('Name must be at least 2 characters long');
-    } else if (formData.name.trim().length > 100) {
-      errors.push('Name must not exceed 100 characters');
-    }
-
-    // Email validation
-    if (!formData.email || !formData.email.trim()) {
-      errors.push('Email is required');
-    } else if (!validateEmail(formData.email)) {
-      errors.push('Invalid email format (example: user@domain.com)');
-    }
-
-    // Password validation (only for new users or if password is being changed)
-    if (!editingUser) {
-      if (!formData.password || !formData.password.trim()) {
-        errors.push('Password is required for new users');
-      } else if (!validatePassword(formData.password)) {
-        errors.push('Password must be at least 6 characters long');
-      }
-    } else if (formData.password && formData.password.trim()) {
-      // Password is optional when editing, but if provided, must be valid
-      if (!validatePassword(formData.password)) {
-        errors.push('Password must be at least 6 characters long');
-      }
-    }
-
-    // Phone validation (optional but must be valid if provided)
-    if (formData.phone_number && formData.phone_number.trim()) {
-      if (!validatePhone(formData.phone_number)) {
-        errors.push('Phone number must start with 0 and contain exactly 10 digits');
-      }
-    }
-
-    // Role validation
-    if (!formData.role) {
-      errors.push('Role is required');
-    }
-
-    // Interest major validation (optional but limit length if provided)
-    if (formData.interest_desired_major && formData.interest_desired_major.trim().length > 200) {
-      errors.push('Interest desired major must not exceed 200 characters');
-    }
-
-    // Interest region validation (optional but limit length if provided)
-    if (formData.interest_region && formData.interest_region.trim().length > 200) {
-      errors.push('Interest region must not exceed 200 characters');
-    }
-
-    return errors;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate form
-    const validationErrors = validateForm();
-    if (validationErrors.length > 0) {
-      toast.error(
-        <div>
-          <strong>Validation Errors:</strong>
-          <ul className="list-disc pl-4 mt-2">
-            {validationErrors.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
-        </div>,
-        { autoClose: 5000 }
-      );
-      return;
-    }
     
     if (!editingUser) {
       // For new users, use the original onSubmit
@@ -586,7 +367,6 @@ export function UserFormDialog({
 
       // 1. Revoke permissions first
       if (permissionsToRevoke.length > 0) {
-        console.log('Revoking permissions:', permissionsToRevoke);
         const revokeResult = await callRevokeAPI(userId, permissionsToRevoke);
         results.push(`Revoked: ${revokeResult.removed?.length || 0} permissions`);
         if (revokeResult.skipped?.length > 0) {
@@ -596,7 +376,6 @@ export function UserFormDialog({
 
       // 2. Grant permissions second
       if (permissionsToGrant.length > 0) {
-        console.log('Granting permissions:', permissionsToGrant);
         const grantResult = await callGrantAPI(userId, permissionsToGrant);
         results.push(`Granted: ${grantResult.added?.length || 0} permissions`);
         if (grantResult.skipped?.length > 0) {
@@ -609,8 +388,6 @@ export function UserFormDialog({
         formData.name !== editingUser.name ||
         formData.email !== editingUser.email ||
         formData.phone_number !== editingUser.phone_number ||
-        formData.interest_desired_major !== editingUser.interest_desired_major ||
-        formData.interest_region !== editingUser.interest_region ||
         (formData.password && formData.password.trim() !== '');
 
       if (hasBasicChanges) {
@@ -621,9 +398,9 @@ export function UserFormDialog({
 
       // Show success message
       if (results.length > 0) {
-        toast.success(`User updated successfully! ${results.join(', ')}`);
+        toast.success(`Cập nhật người dùng thành công! ${results.join(', ')}`);
       } else {
-        toast.info('No changes made');
+        toast.info('Không có thay đổi nào');
       }
 
       // Refresh the user list if callback provided
@@ -635,8 +412,14 @@ export function UserFormDialog({
       onClose();
 
     } catch (error) {
-      console.error('Failed to update user permissions:', error);
-      toast.error(`Failed to update user: ${error.message}`);
+      // Check if it's a live chat queue conflict
+      if (error.message && error.message.includes('live chat queue')) {
+        toast.error(`⚠️ ${error.message}`, { autoClose: 8000 });
+      } else if (error.message && error.message.includes('Foreign')) {
+        toast.error('⚠️ Không thể xóa quyền: Người dùng này có dữ liệu liên quan trong hệ thống. Vui lòng kiểm tra các yêu cầu live chat hoặc dữ liệu khác.', { autoClose: 8000 });
+      } else {
+        toast.error(`Không thể cập nhật người dùng: ${error.message}`, { autoClose: 5000 });
+      }
     }
   };
 
@@ -647,19 +430,13 @@ export function UserFormDialog({
           <DialogTitle>
             {editingUser ? 'Chỉnh Sửa Người Dùng' : 'Thêm Người Dùng Mới'}
           </DialogTitle>
-          <DialogDescription>
-            {editingUser 
-              ? 'Update user information and manage permissions separately'
-              : 'Fill out the information to create a new user'
-            }
-          </DialogDescription>
         </DialogHeader>
 
         {/* Show loading state while permissions are being loaded */}
         {!permissionsLoaded && loadingPermissions ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <span className="ml-2">Loading permissions...</span>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            <span className="ml-2">Đang tải quyền...</span>
           </div>
         ) : (
         <>
@@ -667,55 +444,47 @@ export function UserFormDialog({
           {/* Basic User Information */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Họ và Tên<span className="text-red-500">*</span></Label>
+              <Label htmlFor="name">Họ và Tên</Label>
               <Input
                 id="name"
                 value={formData.name || ''}
                 onChange={handleNameChange}
-                placeholder="Enter full name"
+                placeholder="Nhập họ và tên"
+                minLength={2}
+                maxLength={100}
                 required
-                className={fieldErrors.name ? 'border-red-500 focus:ring-red-500' : ''}
               />
-              {fieldErrors.name && (
-                <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
-              )}
-              <p className="text-xs text-gray-500">Min 2 characters, max 100</p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email || ''}
                 onChange={handleEmailChange}
-                placeholder="user@example.com"
+                placeholder="Nhập email"
+                pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
+                title="Vui lòng nhập địa chỉ email hợp lệ"
                 required
-                className={fieldErrors.email ? 'border-red-500 focus:ring-red-500' : ''}
               />
-              {fieldErrors.email && (
-                <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
-              )}
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="password">
-                {editingUser ? 'New Password (optional)' : 'Mật Khẩu'} 
-                {!editingUser && <span className="text-red-500">*</span>}
+                {editingUser ? 'Mật Khẩu Mới (tùy chọn)' : 'Mật Khẩu'}
               </Label>
               <Input
                 id="password"
                 type="password"
                 value={formData.password || ''}
                 onChange={handlePasswordChange}
-                placeholder={editingUser ? 'Leave blank to keep current password' : 'Enter password'}
+                placeholder={editingUser ? 'Để trống nếu giữ nguyên mật khẩu hiện tại' : 'Nhập mật khẩu'}
+                minLength={6}
+                maxLength={100}
+                title="Mật khẩu phải có ít nhất 6 ký tự"
                 required={!editingUser}
-                className={fieldErrors.password ? 'border-red-500 focus:ring-red-500' : ''}
               />
-              {fieldErrors.password && (
-                <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
-              )}
-              <p className="text-xs text-gray-500">Minimum 6 characters</p>
             </div>
             
             <div className="space-y-2">
@@ -725,58 +494,64 @@ export function UserFormDialog({
                 type="tel"
                 value={formData.phone_number || ''}
                 onChange={handlePhoneChange}
-                placeholder="0912345678"
-                className={fieldErrors.phone_number ? 'border-red-500 focus:ring-red-500' : ''}
-              />
-              {fieldErrors.phone_number && (
-                <p className="text-xs text-red-500 mt-1">{fieldErrors.phone_number}</p>
-              )}
-              <p className="text-xs text-gray-500">Format: 0XXXXXXXXX (10 digits)</p>
-            </div>
-          </div>
-
-          {/* Additional Information */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="major">Interest Desired Major</Label>
-              <Input
-                id="major"
-                value={formData.interest_desired_major || ''}
-                onChange={handleInterestMajorChange}
-                placeholder="Enter desired major"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="region">Interest Region</Label>
-              <Input
-                id="region"
-                value={formData.interest_region || ''}
-                onChange={handleInterestRegionChange}
-                placeholder="Enter interest region"
+                placeholder="Nhập số điện thoại (VD: 0912345678)"
+                pattern="0\d{9,10}"
+                title="Số điện thoại phải có 10-11 chữ số và bắt đầu bằng 0"
               />
             </div>
           </div>
 
           {/* Role Selection - Only shown during creation */}
           {!editingUser && (
-            <div className="space-y-2">
-            <Label>Vai Trò</Label>
-            <RoleSelector
-              selectedRole={formData.role || ''}
-              onRoleChange={handleRoleChange}
-            />
-          </div>
+            <>
+              <div className="space-y-2">
+                <Label>Vai Trò</Label>
+                <RoleSelector
+                  selectedRole={formData.role || ''}
+                  onRoleChange={handleRoleChange}
+                />
+              </div>
+
+              {/* Leader checkbox for Consultant role */}
+              {formData.role === 'CONSULTANT' && (
+                <div className="space-y-2 pl-6">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.consultant_is_leader || false}
+                      onChange={handleConsultantLeaderChange}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium">Giám Sát</span>
+                  </label>
+                </div>
+              )}
+
+              {/* Leader checkbox for Content Manager role */}
+              {formData.role === 'CONTENT_MANAGER' && (
+                <div className="space-y-2 pl-6">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.content_manager_is_leader || false}
+                      onChange={handleContentManagerLeaderChange}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium">Giám Sát</span>
+                  </label>
+                </div>
+              )}
+            </>
           )}
 
           {/* Permission Management - Only for editing existing users */}
           {editingUser && (
             <div className="space-y-6 border-t pt-6">
-              <h3 className="text-lg font-semibold">Permission Management</h3>
+              <h3 className="text-lg font-semibold">Quản Lý Quyền</h3>
               
               {loadingPermissions ? (
                 <div className="text-center py-4">
-                  <p className="text-gray-500">Loading user permissions...</p>
+                  <p className="text-gray-500">Đang tải quyền người dùng...</p>
                 </div>
               ) : (
                 <>
@@ -787,7 +562,7 @@ export function UserFormDialog({
                       {currentPermissions.includes('admin') && (
                         <div className="space-y-2">
                           <Label className="text-sm font-medium text-blue-600">
-                            Admin Permission (Cannot be revoked through edit):
+                            Quyền Quản Trị Viên (Không thể thu hồi khi chỉnh sửa):
                           </Label>
                           <div className="p-3 bg-blue-50 border border-blue-200 rounded">
                             <span className="text-sm text-blue-800 flex items-center">
@@ -802,7 +577,7 @@ export function UserFormDialog({
                       {getRevokablePermissions(currentPermissions).length > 0 && (
                         <div className="space-y-2">
                           <Label className="text-sm font-medium text-red-600">
-                            Current Permissions (select to revoke):
+                            Quyền Hiện Tại (chọn để thu hồi):
                           </Label>
                           <div className="grid grid-cols-2 gap-2 p-3 bg-red-50 border border-red-200 rounded">
                             {getRevokablePermissions(currentPermissions).map(permission => (
@@ -824,7 +599,7 @@ export function UserFormDialog({
                     </div>
                   ) : (
                     <div className="text-sm text-gray-500 italic">
-                      No current permissions found for this user.
+                      Không tìm thấy quyền hiện tại cho người dùng này.
                     </div>
                   )}
 
@@ -832,8 +607,8 @@ export function UserFormDialog({
                   {availableToGrant.length > 0 && (
                     <div className="space-y-3">
                       <Label className="text-sm font-medium text-green-600">
-                        Available Permissions (select to grant)
-                        {editingUser && <span className="text-xs text-gray-500"> - Admin permissions only available during creation</span>}:
+                        Quyền Có Sẵn (chọn để cấp)
+                        {editingUser && <span className="text-xs text-gray-500"> - Quyền Admin chỉ khả dụng khi tạo mới</span>}:
                       </Label>
                       <div className="grid grid-cols-2 gap-2 p-3 bg-green-50 border border-green-200 rounded">
                         {availableToGrant.map(permission => (
@@ -856,13 +631,13 @@ export function UserFormDialog({
                   {/* Summary */}
                   <div className="text-sm text-gray-600">
                     {permissionsToRevoke.length > 0 && (
-                      <p>Will revoke: {permissionsToRevoke.map(p => permissionLabels[p] || p).join(', ')}</p>
+                      <p>Sẽ thu hồi: {permissionsToRevoke.map(p => permissionLabels[p] || p).join(', ')}</p>
                     )}
                     {permissionsToGrant.length > 0 && (
-                      <p>Will grant: {permissionsToGrant.map(p => permissionLabels[p] || p).join(', ')}</p>
+                      <p>Sẽ cấp: {permissionsToGrant.map(p => permissionLabels[p] || p).join(', ')}</p>
                     )}
                     {permissionsToRevoke.length === 0 && permissionsToGrant.length === 0 && (
-                      <p>No permission changes selected</p>
+                      <p>Không có thay đổi quyền nào được chọn</p>
                     )}
                   </div>
                 </>
@@ -872,9 +647,11 @@ export function UserFormDialog({
         </form>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
-          <Button type="submit" onClick={handleSubmit}>
-            {editingUser ? 'Update User' : 'Create User'}
+          <Button type="button" variant="outline" onClick={onClose}>
+            Hủy
+          </Button>
+          <Button type="submit" onClick={handleSubmit} className="bg-[#EB5A0D] hover:bg-[#d14f0a] text-white">
+            {editingUser ? 'Cập Nhật Người Dùng' : 'Tạo Người Dùng'}
           </Button>
         </DialogFooter>
         </>

@@ -131,7 +131,6 @@ export function UserManagement() {
         PERMISSION_NAME_TO_ID = nameToId;
         PERMISSION_ID_TO_NAME = idToName;
       } catch (error) {
-        console.error('Failed to load permissions:', error);
         toast.error('Không thể tải dữ liệu quyền hạn');
       }
     };
@@ -176,7 +175,6 @@ export function UserManagement() {
         ROLE_ID_TO_NAME = idToName;
         ROLE_NAME_TO_FRONTEND = nameToFrontend;
       } catch (error) {
-        console.error('Failed to load roles:', error);
         toast.error('Không thể tải dữ liệu vai trò');
       }
     };
@@ -444,6 +442,28 @@ export function UserManagement() {
     return matchesSearch && matchesRole;
   });
 
+  // Admin users (System Administrators) - show separately above staff
+  const adminUsers = filteredUsers.filter(user => 
+    user.permissions && user.permissions.includes('admin')
+  );
+
+  // Separate users into staff and customers
+  const staffUsers = filteredUsers.filter(user => 
+    user.permissions && user.permissions.length > 0 &&
+    !(user.permissions && user.permissions.includes('admin'))
+  );
+  
+  const customerUsers = filteredUsers.filter(user => 
+    !user.permissions || user.permissions.length === 0
+  );
+
+  // Debug logging
+  console.log('🔍 User Distribution Debug:');
+  console.log('Total filtered users:', filteredUsers.length);
+  console.log('Admin users:', adminUsers.length, adminUsers.map(u => ({ name: u.name, permissions: u.permissions })));
+  console.log('Staff users:', staffUsers.length, staffUsers.map(u => ({ name: u.name, permissions: u.permissions })));
+  console.log('Customer users:', customerUsers.length);
+
   const handleAddUser = () => {
     setEditingUser(null);
     setFormData({ 
@@ -462,6 +482,7 @@ export function UserManagement() {
   };
 
   const handleCreateOrUpdate = async () => {
+    // Basic required field validation
     if (!formData.name || !formData.email || !formData.role) {
       toast.error('Vui lòng điền tất cả các trường bắt buộc (Tên, Email, Vai trò)');
       return;
@@ -472,6 +493,40 @@ export function UserManagement() {
     }
     if (!editingUser && !formData.phone_number) {
       toast.error('Số điện thoại là bắt buộc cho người dùng mới');
+      return;
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Địa chỉ email không hợp lệ');
+      return;
+    }
+
+    // Phone number validation (Vietnamese format: 10-11 digits, starts with 0)
+    if (formData.phone_number) {
+      const phoneRegex = /^0\d{9,10}$/;
+      if (!phoneRegex.test(formData.phone_number.replace(/[\s-]/g, ''))) {
+        toast.error('Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số bắt đầu bằng 0');
+        return;
+      }
+    }
+
+    // Password length validation (minimum 6 characters)
+    if (formData.password && formData.password.trim() !== '') {
+      if (formData.password.length < 6) {
+        toast.error('Mật khẩu phải có ít nhất 6 ký tự');
+        return;
+      }
+      if (formData.password.length > 100) {
+        toast.error('Mật khẩu không được vượt quá 100 ký tự');
+        return;
+      }
+    }
+
+    // Name validation
+    if (formData.name.trim().length < 2) {
+      toast.error('Tên phải có ít nhất 2 ký tự');
       return;
     }
 
@@ -598,8 +653,8 @@ export function UserManagement() {
           role_id: roleId,
           permissions: permissionIds, // Automatically assign permissions based on role
           phone_number: formData.phone_number || '',
-          consultant_is_leader: false,
-          content_manager_is_leader: false,
+          consultant_is_leader: formData.consultant_is_leader || false,
+          content_manager_is_leader: formData.content_manager_is_leader || false,
           interest_desired_major: formData.interest_desired_major || '',
           interest_region: formData.interest_region || ''
         };
@@ -659,8 +714,8 @@ export function UserManagement() {
           createdAt: new Date().toISOString().split('T')[0],
           isBanned: false,
           banReason: null,
-          consultant_is_leader: false,
-          content_manager_is_leader: false,
+          consultant_is_leader: formData.consultant_is_leader || false,
+          content_manager_is_leader: formData.content_manager_is_leader || false,
           interest_desired_major: newUser.interest_desired_major || '',
           interest_region: newUser.interest_region || ''
         }]);
@@ -673,7 +728,6 @@ export function UserManagement() {
       await fetchUsers(); // Refresh the user list
 
     } catch (error) {
-      console.error('Failed to create/update user:', error);
       toast.error(`Không thể ${editingUser ? 'cập nhật' : 'tạo'} người dùng: ${error.message}`);
     } finally {
       setLoading(false);
@@ -704,7 +758,7 @@ export function UserManagement() {
       if (!user) return;
       
       // Check if user is admin - admins cannot be banned
-      if (user.role === 'SYSTEM_ADMIN' || (user.permissions && user.permissions.includes('admin'))) {
+      if (user.permissions && user.permissions.includes('admin')) {
         toast.error('Không thể cấm người dùng quản trị. Người dùng quản trị có đặc quyền đặc biệt.');
         return;
       }
@@ -727,15 +781,6 @@ export function UserManagement() {
     }
   };
 
-  // Separate users into staff and customers
-  const staffUsers = filteredUsers.filter(user => 
-    user.permissions && user.permissions.length > 0
-  );
-  
-  const customerUsers = filteredUsers.filter(user => 
-    !user.permissions || user.permissions.length === 0
-  );
-
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -754,7 +799,7 @@ export function UserManagement() {
         {loading && (
           <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
-            <span className="text-sm">Loading users from API...</span>
+            <span className="text-sm">Đang tải người dùng từ API...</span>
           </div>
         )}
 
@@ -765,13 +810,27 @@ export function UserManagement() {
       {/* User Tables */}
       <ScrollArea className="flex-1">
         <div className="p-6 pb-8 space-y-8">
+          {/* Admin Section (read-only actions) */}
+          {adminUsers.length > 0 && (
+            <div>
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Quản Trị Viên</h2>
+              </div>
+              <UserTable
+                users={adminUsers}
+                onEdit={null}
+                onBanUser={null}
+                loading={loading}
+                isCustomerSection={false}
+                showActions={false}
+              />
+            </div>
+          )}
+
           {/* Staff Section */}
           <div>
             <div className="mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Staff Members</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Users with system permissions (Admins, Consultants, Content Managers, Admission Officers)
-              </p>
+              <h2 className="text-xl font-semibold text-gray-900">Nhân Viên</h2>
             </div>
             <UserTable
               users={staffUsers}
@@ -785,10 +844,7 @@ export function UserManagement() {
           {/* Customer Section */}
           <div>
             <div className="mb-4 border-t pt-6">
-              <h2 className="text-xl font-semibold text-gray-900">Customers</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Students and Parents (can only be activated/deactivated, not edited)
-              </p>
+              <h2 className="text-xl font-semibold text-gray-900">Học Sinh & Phụ Huynh</h2>
             </div>
             <UserTable
               users={customerUsers}

@@ -4,7 +4,8 @@ WORKDIR /app
 COPY package.json .
 RUN npm install
 COPY . .
-RUN npm run build
+# Build for production (uses .env.production)
+RUN npm run build:prod
 
 # Stage 2: Serve bằng Nginx
 FROM nginx:alpine

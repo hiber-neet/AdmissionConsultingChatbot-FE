@@ -51,7 +51,8 @@ export function UserTable({
   onEdit, 
   onBanUser,
   loading,
-  isCustomerSection = false
+  isCustomerSection = false,
+  showActions = true,
 }) {
   const getRoleIcon = (role) => {
     switch (role) {
@@ -69,7 +70,7 @@ export function UserTable({
   };
 
   const isAdminUser = (user) => {
-    return user.role === 'SYSTEM_ADMIN' || (user.permissions && user.permissions.includes('admin'));
+    return user.permissions && user.permissions.includes('admin');
   };
 
   const hasMultipleRoles = (permissions) => {
@@ -104,7 +105,7 @@ export function UserTable({
             <TableHead>Người Dùng</TableHead>
             <TableHead>Vai Trò</TableHead>
             <TableHead>Trạng Thái</TableHead>
-            <TableHead className="text-right">Thao Tác</TableHead>
+            {showActions && <TableHead className="text-right">Thao Tác</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -112,14 +113,8 @@ export function UserTable({
             <TableRow key={user.id}>
               <TableCell>
                 <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback>
-                      {user.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
                   <div>
                     <div>{user.name}</div>
-                    <div className="text-sm text-muted-foreground">@{user.username}</div>
                     <div className="text-xs text-muted-foreground flex items-center gap-1">
                       <Mail className="h-3 w-3" />
                       {user.email}
@@ -128,55 +123,59 @@ export function UserTable({
                 </div>
               </TableCell>
               <TableCell>
-                <Badge variant={getRoleColor(user.role)} className="gap-1">
-                  {getRoleIcon(user.role)}
+                <Badge variant="outline" className="bg-white border-gray-300">
                   {getRoleLabel(user.role)}
                 </Badge>
               </TableCell>
               <TableCell>
-                <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
+                <Badge 
+                  variant={user.status === 'active' ? 'default' : 'secondary'}
+                  className={user.status === 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}
+                >
                   {user.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
                 </Badge>
               </TableCell>
-              <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" disabled={loading}>
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {/* Only show Edit for staff members, not customers */}
-                    {!isCustomerSection && onEdit && (
-                      <DropdownMenuItem onClick={() => onEdit(user)} disabled={loading}>
-                        <Edit className="h-4 w-4 mr-2" />Chỉnh Sửa</DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem 
-                      onClick={() => user.status === 'active' ? onBanUser(user.id, false) : onBanUser(user.id, true)} 
-                      disabled={loading || isAdminUser(user)}
-                      className={
-                        isAdminUser(user) 
-                          ? "text-gray-400 cursor-not-allowed" 
-                          : user.status === 'active' 
-                            ? "text-orange-600" 
-                            : "text-green-600"
-                      }
-                    >
-                      {user.status === 'active' ? (
-                        <>
-                          <Ban className="h-4 w-4 mr-2" />
-                          {isAdminUser(user) ? 'Không thể vô hiệu Admin' : 'Vô Hiệu Hóa (Cấm)'}
-                        </>
-                      ) : (
-                        <>
-                          <UserCheck className="h-4 w-4 mr-2" />
-                          {isAdminUser(user) ? 'Không thể kích hoạt Admin' : 'Kích Hoạt (Bỏ cấm)'}
-                        </>
+              {showActions && (
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" disabled={loading}>
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {/* Only show Edit for staff members, not customers */}
+                      {!isCustomerSection && onEdit && (
+                        <DropdownMenuItem onClick={() => onEdit(user)} disabled={loading}>
+                          <Edit className="h-4 w-4 mr-2" />Chỉnh Sửa</DropdownMenuItem>
                       )}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
+                      <DropdownMenuItem 
+                        onClick={() => user.status === 'active' ? onBanUser(user.id, false) : onBanUser(user.id, true)} 
+                        disabled={loading || isAdminUser(user)}
+                        className={
+                          isAdminUser(user) 
+                            ? "text-gray-400 cursor-not-allowed" 
+                            : user.status === 'active' 
+                              ? "text-orange-600" 
+                              : "text-green-600"
+                        }
+                      >
+                        {user.status === 'active' ? (
+                          <>
+                            <Ban className="h-4 w-4 mr-2" />
+                            {isAdminUser(user) ? 'Không thể vô hiệu Admin' : 'Vô Hiệu Hóa (Cấm)'}
+                          </>
+                        ) : (
+                          <>
+                            <UserCheck className="h-4 w-4 mr-2" />
+                            {isAdminUser(user) ? 'Không thể kích hoạt Admin' : 'Kích Hoạt (Bỏ cấm)'}
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
@@ -200,7 +199,8 @@ UserTable.propTypes = {
     banReason: PropTypes.string,
   })).isRequired,
   onEdit: PropTypes.func,
-  onBanUser: PropTypes.func.isRequired,
+  onBanUser: PropTypes.func,
   loading: PropTypes.bool,
   isCustomerSection: PropTypes.bool,
+  showActions: PropTypes.bool,
 };

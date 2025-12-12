@@ -38,39 +38,21 @@ export function AdminDashboard() {
     try {
       setLoading(true);
       
-      console.log('Starting to fetch dashboard data...');
-      
       // Fetch all data in parallel
       const [
         metricsResponse,
         chatbotRequestsResponse,
         healthResponse
       ] = await Promise.all([
-        dashboardAnalyticsAPI.getMetrics(7).catch(err => {
-          console.error('Metrics API error:', err);
-          return null;
-        }),
-        dashboardAnalyticsAPI.getChatbotRequests(30).catch(err => {
-          console.error('Chatbot requests API error:', err);
-          return [];
-        }),
-        dashboardAnalyticsAPI.getSystemHealth().catch(err => {
-          console.error('System health API error:', err);
-          return null;
-        })
+        dashboardAnalyticsAPI.getMetrics(7).catch(() => null),
+        dashboardAnalyticsAPI.getChatbotRequests(30).catch(() => []),
+        dashboardAnalyticsAPI.getSystemHealth().catch(() => null)
       ]);
-
-      console.log('API Responses:', {
-        metricsResponse,
-        chatbotRequestsResponse,
-        healthResponse
-      });
 
       // Update state with API data - handle potential null/undefined responses
       if (metricsResponse) {
         setMetrics(metricsResponse);
       } else {
-        console.warn('No metrics data received, using defaults');
         setMetrics({
           active_chatbot_sessions: 0,
           total_customers: 0,
@@ -85,7 +67,6 @@ export function AdminDashboard() {
       if (healthResponse) {
         setSystemHealth(healthResponse);
       } else {
-        console.warn('No system health data received, using defaults');
         setSystemHealth({
           total_users: 0,
           total_articles: 0,
@@ -95,16 +76,8 @@ export function AdminDashboard() {
         });
       }
       
-      console.log('Dashboard data loaded successfully', {
-        metrics: metricsResponse,
-        chatbotRequests: chatbotRequestsResponse,
-        health: healthResponse
-      });
-      
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
       toast.error('Không thể tải dữ liệu bảng điều khiển');
-      
     } finally {
       setLoading(false);
     }
@@ -133,18 +106,8 @@ export function AdminDashboard() {
     <ScrollArea className="h-full">
       <div className="p-6 pb-8 space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-start">
-          <div>
-            <h1>Bảng Điều Khiển Hệ Thống</h1>
-            <p className="text-muted-foreground">Phân tích và giám sát chatbot tuyển sinh theo thời gian thực</p>
-          </div>
-          <Button 
-            variant="outline"
-            onClick={fetchDashboardData}
-            disabled={loading}
-            className="gap-2"
-          >
-            <TrendingUp className="h-4 w-4" />Làm Mới Dữ Liệu</Button>
+        <div>
+          <h1 className="text-4xl font-bold">Bảng Điều Khiển</h1>
         </div>
 
         {/* Key Metrics */}

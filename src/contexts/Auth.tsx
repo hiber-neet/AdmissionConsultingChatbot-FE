@@ -45,6 +45,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [activeRole, setActiveRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Start as loading during restoration
 
+  // Function to check if token is expired
+  const isTokenExpired = (token: string): boolean => {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        return true;
+      }
+      return false;
+    } catch {
+      return true; // If token can't be decoded, consider it expired
+    }
+  };
+
+  // Function to logout user
+  const performLogout = () => {
+    console.log('🚪 Logging out user - clearing session');
+    setUser(null);
+    setActiveRole(null);
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("token_type");
+    
+    // Redirect to login page
+    window.location.href = '/login';
+  };
+
+  // Active token validation - check every minute
+  useEffect(() => {
+    if (!user) return; // Don't check if user isn't logged in
+
+    const checkTokenValidity = () => {
+      const token = localStorage.getItem("access_token");
+      
+      if (!token) {
+        console.log('⚠️ Token missing - logging out');
+        performLogout();
+        return;
+      }
+
+      if (isTokenExpired(token)) {
+        console.log('⏰ Token expired - logging out');
+        performLogout();
+        return;
+      }
+    };
+
+    // Check immediately
+    checkTokenValidity();
+
+    // Set up interval to check every minute (60000ms)
+    const intervalId = setInterval(checkTokenValidity, 60000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId);
+  }, [user]);
+
   // Restore user session from localStorage on mount
   useEffect(() => {
     const restoreSession = async () => {

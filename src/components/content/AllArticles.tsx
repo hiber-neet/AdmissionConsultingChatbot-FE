@@ -431,7 +431,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
                   <div className="text-red-600 mb-4">❌ {articleDetailsError}</div>
                   <button
                     onClick={() => selectedArticle && fetchArticleDetails(selectedArticle.article_id)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className="px-4 py-2 bg-[#EB5A0D] text-white rounded-lg hover:bg-[#d14f0a]"
                   >
                     Thử Lại
                   </button>
@@ -617,7 +617,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
                         }
                         closeModal();
                       }}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-[#EB5A0D] text-white rounded-lg hover:bg-[#d14f0a] transition-colors"
                     >
                       <Edit className="h-4 w-4" />
                       Chỉnh Sửa Bài Viết
@@ -886,7 +886,7 @@ function EditArticleModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 bg-[#EB5A0D] text-white rounded-lg hover:bg-[#d14f0a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Đang lưu...' : 'Lưu Thay Đổi'}
             </button>

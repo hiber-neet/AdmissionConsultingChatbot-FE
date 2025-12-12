@@ -144,7 +144,7 @@ export function LeaderKnowledgeBase() {
           </Button>
           <Button 
             size="sm"
-            className="gap-2 bg-green-600 hover:bg-green-700"
+            className="gap-2 bg-[#EB5A0D] hover:bg-[#d14f0a]"
             onClick={() => handleApprove(question.question_id, 'qa')}
           >
             <Check className="h-4 w-4" />
@@ -201,7 +201,7 @@ export function LeaderKnowledgeBase() {
           </Button>
           <Button 
             size="sm"
-            className="gap-2 bg-green-600 hover:bg-green-700"
+            className="gap-2 bg-[#EB5A0D] hover:bg-[#d14f0a]"
             onClick={() => handleApprove(document.document_id, 'document')}
           >
             <Check className="h-4 w-4" />

@@ -26,7 +26,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
     {
       id: 'CONSULTANT',
       name: 'Tư Vấn Viên',
-      description: 'Dịch vụ tư vấn - phân tích, cơ sở tri thức, mẫu Q&A',
+      description: 'Dịch vụ tư vấn - phân tích, cơ sở tri thức, mẫu câu hỏi trả lời',
       icon: MessageCircle,
       color: 'bg-green-100 text-green-800 border-green-200'
     },
@@ -84,7 +84,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
             variant="outline"
             size="sm"
             onClick={selectAllPermissions}
-            className="text-xs"
+            className="text-xs border-[#EB5A0D] text-[#EB5A0D] hover:bg-[#FFF8F3]"
           >
             <Plus className="h-3 w-3 mr-1" />Tất Cả</Button>
           <Button
@@ -92,7 +92,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
             variant="outline"
             size="sm"
             onClick={clearAllPermissions}
-            className="text-xs"
+            className="text-xs border-[#EB5A0D] text-[#EB5A0D] hover:bg-[#FFF8F3]"
           >
             <Minus className="h-3 w-3 mr-1" />Xóa</Button>
         </div>

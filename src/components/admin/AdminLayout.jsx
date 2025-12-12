@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/Auth';
 import { canAccessPage } from '../../constants/permissions';
+import { STAFF_COLORS, getNavigationClasses, getSidebarClasses, getRoleSwitchingClasses } from '../../constants/staffColors';
 
 export function AdminLayout() {
   const { user, logout, activeRole, switchToRole, getAccessibleRoles } = useAuth();
@@ -35,16 +36,16 @@ export function AdminLayout() {
   const roleNavigations = {
     Admin: [
       { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
-      { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
+      { id: 'templates', label: 'Mẫu Câu Hỏi Trả Lời', icon: MessageSquareText, path: '/admin/templates' },
       { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
-      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/admin/profile' },
+      { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/admin/profile' },
     ],
     'Content Manager': [
       { id: "dashboard", label: "Tổng quan content", icon: LayoutDashboard, path: '/content/dashboard' },
       { id: "articles", label: "Tất Cả Bài Viết", icon: FileText, path: '/content/articles' },
       { id: "review", label: "Hàng Đợi Duyệt Bài", icon: ListChecks, path: '/content/review' },
       { id: "editor", label: "Bài Viết Mới", icon: PenSquare, path: '/content/editor' },
-      { id: "profile", label: "Hồ Sơ", icon: User, path: '/content/profile' },
+      { id: "profile", label: user?.name || "Hồ Sơ", icon: User, path: '/content/profile' },
     ],
     'Admission Official': [
       { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard, path: '/admission/dashboard' },
@@ -52,7 +53,7 @@ export function AdminLayout() {
       { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admission/consultation' },
       { id: 'knowledge-base', label: 'Cơ Sở Tri Thức', icon: BookOpen, path: '/admission/knowledge-base' },
       { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
-      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/admission/profile' },
+      { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/admission/profile' },
     ],
     Consultant: [
       { id: 'overview', label: 'Trang Chủ Dashboard', icon: LayoutDashboard, path: '/consultant/overview' },
@@ -62,7 +63,7 @@ export function AdminLayout() {
       ...(user?.isLeader ? [
         { id: 'leader', label: 'Duyệt Cơ Sở Tri Thức', icon: Database, path: '/consultant/leader' }
       ] : []),
-      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/consultant/profile' }
+      { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/consultant/profile' }
     ]
   };
 
@@ -92,25 +93,23 @@ export function AdminLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC]">
+    <div className={`flex min-h-screen ${STAFF_COLORS.pageBackground}`}>
       {/* Sidebar */}
-      <div className="w-64 border-r bg-white flex flex-col min-h-screen">
-        <div className="p-6 border-b flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 bg-[#3B82F6] rounded-lg flex items-center justify-center">
-              <Shield className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <div className="font-semibold">Admin Panel</div>
-              <p className="text-xs text-muted-foreground">System Control</p>
-            </div>
+      <div className={`w-64 ${getSidebarClasses(false)} min-h-screen shadow-sm`}>
+        <div className={`p-4 ${STAFF_COLORS.brand.border} border-b flex-shrink-0`}>
+          <div className="flex items-center justify-center">
+            <img 
+              src="https://upload.wikimedia.org/wikipedia/vi/thumb/2/2d/Logo_Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_FPT.svg/1200px-Logo_Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_FPT.svg.png" 
+              alt="FPTU Logo" 
+              className="w-full h-auto object-contain max-h-16"
+            />
           </div>
         </div>
         
         <nav className="p-4 space-y-4 flex-grow overflow-y-auto">
           {/* Current Role Pages */}
           <div className="space-y-1">
-            <h3 className="px-3 text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+            <h3 className={`px-3 text-xs ${STAFF_COLORS.sectionHeader.font} ${STAFF_COLORS.sectionHeader.text} uppercase tracking-wider mb-3`}>
               {roleLabels[activeRole || user?.role]?.label || 'Pages'}
             </h3>
             {currentNavigation.map((item) => {
@@ -122,15 +121,7 @@ export function AdminLayout() {
                 <button
                   key={item.id}
                   onClick={() => allowed && navigate(item.path)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-[#3B82F6] text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  } ${
-                    !allowed
-                      ? 'opacity-50 cursor-not-allowed text-gray-400 hover:bg-transparent'
-                      : ''
-                  }`}
+                  className={getNavigationClasses(isActive, !allowed)}
                   disabled={!allowed}
                   title={!allowed ? 'Bạn không có quyền truy cập mục này' : undefined}
                 >
@@ -148,16 +139,14 @@ export function AdminLayout() {
 
           {/* Role Switching Buttons */}
           {accessibleRoles.length > 1 && (
-            <div className="space-y-2 border-t pt-4">
-              <h3 className="px-3 text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+            <div className={`space-y-2 border-t ${STAFF_COLORS.divider.border} pt-4`}>
+              <h3 className={`px-3 text-xs ${STAFF_COLORS.sectionHeader.font} ${STAFF_COLORS.sectionHeader.text} uppercase tracking-wider mb-3`}>
                 Chuyển Vai Trò
               </h3>
               {accessibleRoles.map((role) => {
                 const roleInfo = roleLabels[role];
-                if (!roleInfo) {
-                  console.warn('Role info not found for role:', role);
-                  return null;
-                }
+                if (!roleInfo) return null;
+                
                 const Icon = roleInfo.icon;
                 const isCurrentRole = role === (activeRole || user?.role);
                 
@@ -165,13 +154,7 @@ export function AdminLayout() {
                   <button
                     key={role}
                     onClick={() => !isCurrentRole && handleRoleSwitch(role)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors border ${
-                      isCurrentRole
-                        ? `${roleInfo.color} font-medium border-opacity-50`
-                        : 'text-gray-600 hover:bg-gray-50 border-gray-200'
-                    } ${
-                      isCurrentRole ? 'cursor-default' : 'cursor-pointer'
-                    }`}
+                    className={getRoleSwitchingClasses(isCurrentRole)}
                     disabled={isCurrentRole}
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
@@ -184,7 +167,7 @@ export function AdminLayout() {
         </nav>
 
         {/* Logout Button */}
-        <div className="p-4 border-t flex-shrink-0">
+        <div className={`p-4 border-t ${STAFF_COLORS.divider.border} flex-shrink-0`}>
           <button
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-red-600 hover:bg-red-50"
             onClick={() => {

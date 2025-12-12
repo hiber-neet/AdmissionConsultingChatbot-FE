@@ -311,7 +311,7 @@ export function ContentOptimization({
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" className="bg-[#3B82F6] hover:bg-[#2563EB]">
+                      <Button size="sm" className="bg-[#EB5A0D] hover:bg-[#d14f0a]">
                         Chỉnh Sửa Câu Trả Lời
                       </Button>
                       <Button size="sm" variant="outline">

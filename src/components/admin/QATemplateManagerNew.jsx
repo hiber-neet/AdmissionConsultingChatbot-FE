@@ -3,8 +3,6 @@ import { toast } from 'react-toastify';
 import { templateAPI } from '../../services/fastapi';
 
 const QATemplateManagerNew = () => {
-  console.log('✅ NEW QATemplateManager loaded - Q&A PAIRS VERSION');
-  
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,11 +31,14 @@ const QATemplateManagerNew = () => {
     setLoading(true);
     try {
       const data = await templateAPI.getTemplates();
-      console.log('📥 Fetched templates:', data);
       setTemplates(data);
     } catch (error) {
-      console.error('Failed to fetch templates:', error);
-      toast.error('Không thể tải danh sách mẫu');
+      // Check if it's a permission error
+      if (error.message && error.message.includes('permission')) {
+        toast.error('Bạn không có quyền xem mẫu câu hỏi trả lời. Vui lòng liên hệ quản trị viên để được cấp quyền Admin hoặc Consultant.');
+      } else {
+        toast.error('Không thể tải danh sách mẫu');
+      }
     } finally {
       setLoading(false);
     }
@@ -70,8 +71,6 @@ const QATemplateManagerNew = () => {
 
     setLoading(true);
     try {
-      console.log('📤 Sending template data:', JSON.stringify(formData, null, 2));
-      
       if (editingTemplate) {
         await templateAPI.updateTemplate(editingTemplate.template_id, formData);
         toast.success('Cập nhật mẫu thành công!');
@@ -84,7 +83,6 @@ const QATemplateManagerNew = () => {
       resetForm();
       setIsDialogOpen(false);
     } catch (error) {
-      console.error('Failed to save template:', error);
       toast.error(editingTemplate ? 'Không thể cập nhật mẫu' : 'Không thể tạo mẫu mới');
     } finally {
       setLoading(false);
@@ -115,7 +113,6 @@ const QATemplateManagerNew = () => {
       toast.success('Xóa mẫu thành công!');
       await fetchTemplates();
     } catch (error) {
-      console.error('Failed to delete template:', error);
       toast.error('Không thể xóa mẫu');
     }
   };
@@ -173,13 +170,13 @@ const QATemplateManagerNew = () => {
     <div className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Quản Lý Mẫu Q&A</h2>
+        <h2 className="text-2xl font-bold text-gray-800">Quản Lý Mẫu Câu Hỏi Trả Lời</h2>
         <button
           onClick={() => {
             resetForm();
             setIsDialogOpen(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-[#EB5A0D] text-white px-4 py-2 rounded-lg hover:bg-[#d14f0a]"
         >
           Tạo Mẫu Mới
         </button>
@@ -216,7 +213,7 @@ const QATemplateManagerNew = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(template)}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                    className="bg-[#EB5A0D] text-white px-3 py-1 rounded hover:bg-[#d14f0a]"
                   >
                     Chỉnh Sửa
                   </button>
@@ -307,7 +304,7 @@ const QATemplateManagerNew = () => {
                 </label>
                 <button
                   onClick={addQAPair}
-                  className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                  className="bg-[#EB5A0D] text-white px-3 py-1 rounded text-sm hover:bg-[#d14f0a]"
                 >
                   + Thêm Q&A
                 </button>
@@ -378,7 +375,7 @@ const QATemplateManagerNew = () => {
               <button
                 onClick={handleCreateOrUpdate}
                 disabled={loading}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+                className="bg-[#EB5A0D] text-white px-4 py-2 rounded hover:bg-[#d14f0a] disabled:opacity-50"
               >
                 {loading ? 'Đang lưu...' : (editingTemplate ? 'Cập Nhật' : 'Tạo')}
               </button>

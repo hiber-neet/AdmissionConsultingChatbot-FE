@@ -28,6 +28,7 @@ import {
 import { Button } from "@/components/ui/system_users/button";
 import { Avatar, AvatarFallback } from "@/components/ui/system_users/avatar";
 import { useAuth } from "@/contexts/Auth";
+import { STAFF_COLORS, getNavigationClasses, getSidebarClasses, getRoleSwitchingClasses } from '../../constants/staffColors';
 
 // Page type
 type ContentPage = "dashboard" | "articles" | "review" | "editor" | "profile";
@@ -64,7 +65,7 @@ export default function ContentManagerLayOut() {
     ...(isContentManagerLeader() ? [
       { id: "review" as ContentPage, label: "Hàng Đợi Duyệt Bài", icon: ListChecks, path: "/content/review", permission: "Content Manager" }
     ] : []),
-    { id: "profile" as ContentPage, label: "Hồ Sơ", icon: User, path: "/content/profile", permission: "Student" },
+    { id: "profile" as ContentPage, label: user?.name || "Hồ Sơ", icon: User, path: "/content/profile", permission: "Student" },
   ];
 
   // Define navigation for all roles
@@ -73,7 +74,7 @@ export default function ContentManagerLayOut() {
       { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
       { id: 'templates', label: 'Mẫu Q&A', icon: MessageSquareText, path: '/admin/templates' },
       { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
-      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/admin/profile' },
+      { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/admin/profile' },
     ],
     'Content Manager': navigation,
     'Admission Official': [
@@ -82,7 +83,7 @@ export default function ContentManagerLayOut() {
       { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, badge: 5, path: '/admission/consultation' },
       { id: 'knowledge-base', label: 'Cơ Sở Tri Thức', icon: BookOpen, path: '/admission/knowledge-base' },
       { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
-      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/admission/profile' },
+      { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/admission/profile' },
     ],
     Consultant: [
       { id: 'overview', label: 'Trang Chủ Dashboard', icon: LayoutDashboard, path: '/consultant/overview' },
@@ -92,7 +93,7 @@ export default function ContentManagerLayOut() {
       ...(user?.isLeader ? [
         { id: 'leader', label: 'Duyệt Cơ Sở Tri Thức', icon: Database, path: '/consultant/leader' }
       ] : []),
-      { id: 'profile', label: 'Hồ Sơ', icon: User, path: '/consultant/profile' }
+      { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/consultant/profile' }
     ]
   };
 
@@ -160,23 +161,19 @@ export default function ContentManagerLayOut() {
   ];
 
   return (
-     <div className="min-h-screen flex bg-[#F8FAFC]">
+     <div className={`min-h-screen flex ${STAFF_COLORS.pageBackground}`}>
       {/* Sidebar */}
-      <aside
-        className={`bg-white border-r border-gray-200 flex flex-col min-h-screen transition-all duration-300 ${
-          sidebarCollapsed ? "w-16" : "w-64"
-        }`}
-      >
+      <aside className={getSidebarClasses(sidebarCollapsed)}>
         {/* Brand */}
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div className={`p-4 ${STAFF_COLORS.brand.border} flex items-center justify-between`}>
           {!sidebarCollapsed && (
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-[#3B82F6] rounded-lg flex items-center justify-center">
+              <div className={`h-8 w-8 ${STAFF_COLORS.brand.logoBackground} rounded-lg flex items-center justify-center`}>
                 <Database className="h-5 w-5 text-white" />
               </div>
               <div>
-                <div className="font-semibold">Content Hub</div>
-                <div className="text-xs text-gray-500">Editorial Manager</div>
+                <div className={`font-semibold ${STAFF_COLORS.brand.titleText}`}>Content Hub</div>
+                <div className={`text-xs ${STAFF_COLORS.brand.subtitleText}`}>Editorial Manager</div>
               </div>
             </div>
           )}
@@ -184,7 +181,7 @@ export default function ContentManagerLayOut() {
             variant="ghost"
             size="icon"
             onClick={() => setSidebarCollapsed((v) => !v)}
-            className="h-8 w-8"
+            className={`h-8 w-8 ${STAFF_COLORS.button.hover}`}
           >
             {sidebarCollapsed ? (
               <Menu className="h-4 w-4" />
@@ -199,7 +196,7 @@ export default function ContentManagerLayOut() {
           {/* Current Role Pages */}
           <div>
             {!sidebarCollapsed && (
-              <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <div className={`px-3 py-2 text-xs ${STAFF_COLORS.sectionHeader.font} ${STAFF_COLORS.sectionHeader.text} uppercase tracking-wider`}>
                 {roleLabels[activeRole || user?.role]?.label || 'Pages'}
               </div>
             )}
@@ -211,11 +208,7 @@ export default function ContentManagerLayOut() {
                   <button
                     key={item.id}
                     onClick={() => navigate(item.path)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      isActive
-                        ? "bg-[#3B82F6] text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                    className={getNavigationClasses(isActive)}
                     title={sidebarCollapsed ? item.label : undefined}
                   >
                     <Icon className="h-5 w-5 flex-shrink-0" />
@@ -228,8 +221,8 @@ export default function ContentManagerLayOut() {
 
           {/* Role Switching Buttons */}
           {accessibleRoles.length > 1 && !sidebarCollapsed && (
-            <div className="space-y-2 border-t pt-4">
-              <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <div className={`space-y-2 border-t ${STAFF_COLORS.divider.border} pt-4`}>
+              <div className={`px-3 py-2 text-xs ${STAFF_COLORS.sectionHeader.font} ${STAFF_COLORS.sectionHeader.text} uppercase tracking-wider`}>
                 Chuyển Vai Trò
               </div>
               {accessibleRoles.map((role) => {
@@ -245,13 +238,7 @@ export default function ContentManagerLayOut() {
                   <button
                     key={role}
                     onClick={() => !isCurrentRole && handleRoleSwitch(role)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors border ${
-                      isCurrentRole
-                        ? `${roleInfo.color} font-medium border-opacity-50`
-                        : 'text-gray-600 hover:bg-gray-50 border-gray-200'
-                    } ${
-                      isCurrentRole ? 'cursor-default' : 'cursor-pointer'
-                    }`}
+                    className={getRoleSwitchingClasses(isCurrentRole)}
                     disabled={isCurrentRole}
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
@@ -264,14 +251,14 @@ export default function ContentManagerLayOut() {
         </nav>
 
         {/* User */}
-        <div className="mt-auto p-4 border-t border-gray-200 flex-shrink-0">
+        <div className={`mt-auto p-4 ${STAFF_COLORS.divider.border} border-t flex-shrink-0`}>
           <div
             className={`flex items-center gap-3 ${
               sidebarCollapsed ? "justify-center" : ""
             }`}
           >
             <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-[#3B82F6] text-white">
+              <AvatarFallback className={`${STAFF_COLORS.brand.logoBackground} text-white`}>
                 <User className="h-5 w-5" />
               </AvatarFallback>
             </Avatar>
@@ -281,7 +268,7 @@ export default function ContentManagerLayOut() {
                 <div className="text-xs text-gray-500 truncate">
                   {!user ? 'Đang kết nối...' : user?.isLeader ? 'Trưởng Nhóm Quản Lý Nội Dung' : 'Quản Lý Nội Dung'}
                 </div>
-                <div className="text-xs text-blue-600 truncate">
+                <div className={`text-xs ${STAFF_COLORS.brand.subtitleText} truncate`}>
                   Quyền: {user?.permissions?.length || 0}
                 </div>
               </div>
