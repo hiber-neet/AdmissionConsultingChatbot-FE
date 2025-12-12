@@ -6,7 +6,6 @@ export function UserStats({ users }) {
   const contentManagerCount = users.filter(u => u.role === 'CONTENT_MANAGER').length;
   const admissionOfficerCount = users.filter(u => u.role === 'ADMISSION_OFFICER').length;
   const consultantCount = users.filter(u => u.role === 'CONSULTANT').length;
-  const activeCount = users.filter(u => u.status === 'active').length;
 
   return (
     <div className="grid grid-cols-4 gap-4">

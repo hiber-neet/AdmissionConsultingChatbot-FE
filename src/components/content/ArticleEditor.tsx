@@ -9,7 +9,6 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState("");
   const [linkImage, setLinkImage] = useState("");
-  const [note, setNote] = useState("");
   const [majorId, setMajorId] = useState<number>(0);
   const [specializationId, setSpecializationId] = useState<number>(0);
   
@@ -144,7 +143,6 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
         description: description.trim(),
         url: url.trim(),
         link_image: linkImage.trim() || null,
-        note: note.trim() || null,
         major_id: majorId === 0 ? null : majorId,
         specialization_id: specializationId
       };
@@ -163,7 +161,6 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
       setDescription('');
       setUrl('');
       setLinkImage('');
-      setNote('');
       setMajorId(0);
       setSpecializationId(0);
       
@@ -192,24 +189,9 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
 
       {/* Created Article Display */}
       {createdArticle && (
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-          <h3 className="text-lg font-semibold text-blue-800 mb-3">Bài Viết Đã Được Tạo Thành Công!</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-            <div><strong>Mã Bài Viết:</strong> {createdArticle.article_id}</div>
-            <div><strong>Trạng Thái:</strong> {createdArticle.status}</div>
-            <div><strong>Tiêu Đề:</strong> {createdArticle.title}</div>
-            <div><strong>Người Tạo:</strong> {createdArticle.created_by}</div>
-            <div><strong>Mô Tả:</strong> {createdArticle.description}</div>
-            <div><strong>Ngày Tạo:</strong> {createdArticle.create_at}</div>
-            <div><strong>URL:</strong> <a href={createdArticle.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{createdArticle.url}</a></div>
-            <div><strong>Ảnh:</strong> {createdArticle.link_image || 'Không có'}</div>
-            <div><strong>Tác Giả:</strong> {createdArticle.author_name || 'Không có'}</div>
-            <div><strong>Ghi Chú:</strong> {createdArticle.note || 'Không có'}</div>
-            <div><strong>Mã Ngành:</strong> {createdArticle.major_id || 'Không có'}</div>
-            <div><strong>Tên Ngành:</strong> {createdArticle.major_name || 'Không có'}</div>
-            <div><strong>Mã Chuyên Ngành:</strong> {createdArticle.specialization_id}</div>
-            <div><strong>Tên Chuyên Ngành:</strong> {createdArticle.specialization_name || 'Không có'}</div>
-          </div>
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+          <h3 className="text-lg font-semibold text-green-800">Thành Công!</h3>
+          <p className="text-sm text-green-700 mt-1">Bài viết đã được thêm thành công.</p>
         </div>
       )}
 
@@ -264,17 +246,6 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
           </div>
 
           <div>
-            <div className="text-sm text-gray-500 mb-1">Ghi Chú</div>
-            <textarea 
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="w-full border rounded-md px-2 py-2 text-sm resize-none" 
-              placeholder="Ghi chú tùy chọn về bài viết này..."
-              rows={3}
-            />
-          </div>
-
-          <div>
             <div className="text-sm text-gray-500 mb-1">Ngành</div>
             <select 
               value={majorId} 
@@ -323,31 +294,8 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
             {loadingSpecializations && (
               <div className="text-xs text-blue-500 mt-1">Đang tải chuyên ngành từ API...</div>
             )}
-            {majorId && filteredSpecializations.length === 0 && !loadingSpecializations && (
-              <div className="text-xs text-gray-400 mt-1">Không có chuyên ngành cho ngành này</div>
-            )}
             {!majorId && (
               <div className="text-xs text-gray-400 mt-1">Vui lòng chọn ngành trước</div>
-            )}
-          </div>
-
-          {/* Status indicator */}
-          <div className="border-t pt-4">
-            <div className="text-xs text-gray-400">
-              {saving ? 'Đang lưu...' : 
-               loading ? 'Đang tải ngành từ API...' : 
-               loadingSpecializations ? 'Đang tải chuyên ngành...' :
-               `Sẵn sàng (${majors.length} ngành, ${filteredSpecializations.length} chuyên ngành)`}
-            </div>
-            {majorId > 0 && (
-              <div className="text-xs text-green-600 mt-1">
-                Đã chọn ngành: {majors.find(m => m.major_id === majorId)?.major_name}
-              </div>
-            )}
-            {specializationId > 0 && (
-              <div className="text-xs text-green-600">
-                Chuyên ngành: {filteredSpecializations.find(s => s.specialization_id === specializationId)?.specialization_name}
-              </div>
             )}
           </div>
         </div>

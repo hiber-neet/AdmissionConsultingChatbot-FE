@@ -1,4 +1,3 @@
-import { Shield, Edit, User, GraduationCap } from 'lucide-react';
 import { Label } from '../ui/system_users/label';
 import PropTypes from 'prop-types';
 

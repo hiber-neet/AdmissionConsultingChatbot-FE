@@ -1,26 +1,10 @@
-import { MoreVertical, Edit, Shield, Mail, User, GraduationCap, Crown, Users, Ban, UserCheck } from 'lucide-react';
+import { MoreVertical, Edit, Mail, User, Ban, UserCheck } from 'lucide-react';
 import { Button } from '../../ui/system_users/button';
 import { Badge } from '../../ui/system_users/badge';
-import { Avatar, AvatarFallback } from '../../ui/system_users/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/system_users/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/system_users/dropdown-menu';
 import { Card } from '../../ui/system_users/card';
 import PropTypes from 'prop-types';
-
-// Helper function to get role color
-const getRoleColor = (role) => {
-  const colorMap = {
-    SYSTEM_ADMIN: 'destructive',
-    ADMIN: 'destructive',
-    CONTENT_MANAGER: 'default',
-    ADMISSION_OFFICER: 'outline',
-    CONSULTANT: 'secondary',
-    CUSTOMER: 'secondary',
-    STUDENT: 'secondary',
-    PARENT: 'secondary',
-  };
-  return colorMap[role] || 'secondary';
-};
 
 // Helper function to get role label (Vietnamese)
 const getRoleLabel = (role) => {
@@ -54,35 +38,8 @@ export function UserTable({
   isCustomerSection = false,
   showActions = true,
 }) {
-  const getRoleIcon = (role) => {
-    switch (role) {
-      case 'SYSTEM_ADMIN':
-        return <Shield className="h-4 w-4" />;
-      case 'CONTENT_MANAGER':
-        return <Edit className="h-4 w-4" />;
-      case 'ADMISSION_OFFICER':
-        return <GraduationCap className="h-4 w-4" />;
-      case 'CONSULTANT':
-        return <User className="h-4 w-4" />;
-      default:
-        return <User className="h-4 w-4" />;
-    }
-  };
-
   const isAdminUser = (user) => {
     return user.permissions && user.permissions.includes('admin');
-  };
-
-  const hasMultipleRoles = (permissions) => {
-    // In the role-based system, users with multiple role permissions are considered "advanced users"
-    return permissions && permissions.length > 1;
-  };
-
-  const getPermissionsBadgeColor = (permissions) => {
-    if (!permissions || permissions.length === 0) return 'secondary';
-    if (permissions.includes('SYSTEM_ADMIN')) return 'destructive';
-    if (permissions.length > 1) return 'default';
-    return 'secondary';
   };
 
   if (users.length === 0) {

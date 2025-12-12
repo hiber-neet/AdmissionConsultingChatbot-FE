@@ -45,7 +45,7 @@ import { StudentProfilePage } from "../components/admission/StudentProfilePage.j
 
 import ContentManagerLayOut from "../components/content/ContentManagerLayOut.tsx";
 import { ContentManagerDashboardPage } from "../components/content/ContentManagerDashboardPage.tsx";
-import { AllArticlesPage } from "../components/content/AllArticlesPage.tsx";
+import { AllArticlesPage } from "../components/content/ArticleList/AllArticlesPage.tsx";
 import ReviewQueue from "../components/content/ReviewQueue.tsx";
 import { ArticleEditorPage } from "../components/content/ArticleEditorPage.tsx";
 import ArticlePage from "../pages/article/ArticlePage.jsx";

@@ -484,8 +484,6 @@ return { ok: true, token: access_token, role: userData.role };
     const roleMappings: Record<string, Role> = {
       'admin': 'Admin',
       'system_admin': 'Admin',
-      'consultantleader': 'ConsultantLeader',
-      'consultant_leader': 'ConsultantLeader',
       'consultant': 'Consultant', 
       'content_manager': 'Content Manager',
       'content': 'Content Manager',
@@ -501,7 +499,6 @@ return { ok: true, token: access_token, role: userData.role };
   const getDefaultRoute = (role: Role): string => {
     const roleRoutes: Record<Role, string> = {
       'Admin': '/admin/dashboard',
-      'ConsultantLeader': '/consultant',
       'Content Manager': '/content/dashboard',
       'Consultant': '/consultant',
       'Admission Official': '/admission/dashboard',

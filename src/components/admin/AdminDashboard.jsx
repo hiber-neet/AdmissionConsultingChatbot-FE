@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Users, MessageSquare, Database, TrendingUp, AlertCircle } from 'lucide-react';
+import { Activity, Users, MessageSquare, Database } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/system_users/card';
-import { Button } from '../ui/system_users/button';
 import { ScrollArea } from '../ui/system_users/scroll-area';
 import { dashboardAnalyticsAPI } from '../../services/fastapi';
 import { toast } from 'react-toastify';
@@ -86,7 +85,6 @@ export function AdminDashboard() {
   useEffect(() => {
     fetchDashboardData();
     
-    // Refresh data every 5 minutes
     const interval = setInterval(fetchDashboardData, 300000);
     
     return () => clearInterval(interval);

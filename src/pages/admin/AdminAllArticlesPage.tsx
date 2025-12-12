@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import AllArticles from '../../components/content/AllArticles';
+import AllArticles from '../../components/content/ArticleList/AllArticles';
 import { useNavigate } from 'react-router-dom';
 
 export function AdminAllArticlesPage() {

@@ -457,13 +457,6 @@ export function UserManagement() {
     !user.permissions || user.permissions.length === 0
   );
 
-  // Debug logging
-  console.log('🔍 User Distribution Debug:');
-  console.log('Total filtered users:', filteredUsers.length);
-  console.log('Admin users:', adminUsers.length, adminUsers.map(u => ({ name: u.name, permissions: u.permissions })));
-  console.log('Staff users:', staffUsers.length, staffUsers.map(u => ({ name: u.name, permissions: u.permissions })));
-  console.log('Customer users:', customerUsers.length);
-
   const handleAddUser = () => {
     setEditingUser(null);
     setFormData({ 

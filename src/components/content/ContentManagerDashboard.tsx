@@ -1,20 +1,12 @@
-// src/components/content/ContentManagerDashboard.tsx
 import { useState, useEffect } from "react";
 import {
   Plus,
-  CalendarDays,
-  Eye,
-  PencilLine,
-  Clock3,
   Loader2,
-  FileText,
-  TrendingUp,
-  Users,
-  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/system_users/button";
 import { fastAPIContentAnalytics, type ContentStatistics } from "@/services/fastapi";
 import { useAuth } from "@/contexts/Auth";
+import { STAFF_COLORS } from "@/constants/staffColors";
 
 type Props = {
   onCreate?: () => void;    
@@ -114,44 +106,26 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
     fetchContentStatistics();
   }, [user?.id]);
 
-  // Auto-refresh every 5 minutes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      console.log('🔄 Auto-refreshing content statistics...');
-      fetchContentStatistics();
-    }, 5 * 60 * 1000); // 5 minutes
-
-    return () => clearInterval(interval);
-  }, []);
-
   // Generate stats array from API data
   const stats: Stat[] = contentData ? [
     { 
       label: "Tổng Đã Xuất Bản", 
       value: contentData.overview.published_articles, 
-      sublabel: "Đang hoạt động trên cổng thông tin", 
-      icon: <Eye className="h-4 w-4 text-emerald-500" />,
       isLoading: loading 
     },
     { 
       label: "Cần Xem Xét", 
       value: contentData.overview.review_articles, 
-      sublabel: "Đang chờ phê duyệt", 
-      icon: <Clock3 className="h-4 w-4 text-amber-500" />,
       isLoading: loading 
     },
     { 
       label: "Bài Viết Của Tôi", 
       value: contentData.overview.my_articles, 
-      sublabel: "Do bạn tạo", 
-      icon: <PencilLine className="h-4 w-4 text-sky-500" />,
       isLoading: loading 
     },
     { 
       label: "Tổng Bài Viết", 
       value: contentData.overview.total_articles, 
-      sublabel: "Tất cả nội dung", 
-      icon: <FileText className="h-4 w-4 text-purple-500" />,
       isLoading: loading 
     },
   ] : [];
@@ -201,11 +175,16 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
         {error && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-red-600" />
               <span className="text-red-800 text-sm">
                 Lỗi tải thống kê nội dung: {error}
               </span>
-              <Button onClick={handleRefresh} variant="outline" size="sm" className="ml-auto">
+              <Button 
+                onClick={handleRefresh} 
+                variant="outline" 
+                size="sm" 
+                className="ml-auto"
+                style={{ backgroundColor: STAFF_COLORS.primary, color: 'white' }}
+              >
                 Thử Lại
               </Button>
             </div>
@@ -216,22 +195,14 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold">Tổng Quan Nội Dung</h1>
-            <p className="text-sm text-gray-500">
-              Quản lý quy trình biên tập của bạn
-              {contentData && (
-                <span className="ml-2">
-                  • Cập nhật lần cuối: {lastRefresh.toLocaleTimeString()}
-                </span>
-              )}
-            </p>
           </div>
         
           <div className="flex gap-2">
-            <Button onClick={handleRefresh} variant="outline" disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Làm Mới
-            </Button>
-            <Button onClick={handleCreate} className="bg-black text-white hover:opacity-90">
+            <Button 
+              onClick={handleCreate} 
+              style={{ backgroundColor: STAFF_COLORS.primary, color: 'white' }}
+              className="hover:opacity-90"
+            >
               <Plus className="mr-2 h-4 w-4" />
               Tạo Bài Viết Mới
             </Button>
@@ -245,9 +216,8 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
               key={s.label}
               className="rounded-xl border border-gray-200 bg-white p-4"
             >
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3">
                 <span className="text-sm text-gray-600">{s.label}</span>
-                {s.icon}
               </div>
               <div className="text-2xl font-semibold">
                 {s.isLoading ? (
@@ -256,12 +226,6 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
                   s.value
                 )}
               </div>
-              {s.sublabel && (
-                <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
-                  <Clock3 className="h-3.5 w-3.5" />
-                  {s.sublabel}
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -282,37 +246,6 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
             </div>
           </div>
         )}
-
-        {/* Quick Actions */}
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="mb-3 text-sm font-medium text-gray-800">
-            Hành Động Nhanh
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button  onClick={handleCreate}
-              variant="outline"
-              className="border-gray-300 hover:bg-gray-100"
-            >
-              <Plus className="mr-2 h-4 w-4" />Bài Viết Mới</Button>
-            <Button
-              onClick={handleViewArticles}
-              variant="outline"
-              className="border-gray-300 hover:bg-gray-100"
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              Xem Tất Cả Bài Viết
-            </Button>
-            <Button
-              onClick={handleRefresh}
-              variant="outline"
-              className="border-gray-300 hover:bg-gray-100"
-              disabled={loading}
-            >
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TrendingUp className="mr-2 h-4 w-4" />}
-              Làm Mới Dữ Liệu
-            </Button>
-          </div>
-        </div>
 
         {/* Recent Activity */}
         <div className="rounded-xl border border-gray-200 bg-white">
@@ -338,7 +271,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
                         {a.title}
                       </div>
                       <div className="mt-1 text-xs text-gray-500">
-                        {a.author} • updated • {a.updatedAt}
+                        {a.author} • {a.updatedAt}
                       </div>
                     </div>
                   </div>
@@ -351,25 +284,16 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
             </ul>
           ) : (
             <div className="p-8 text-center text-gray-500">
-              <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p className="text-sm">Không tìm thấy bài viết gần đây</p>
-              <Button onClick={handleCreate} variant="outline" className="mt-3">
+              <Button 
+                onClick={handleCreate} 
+                variant="outline" 
+                className="mt-3"
+                style={{ backgroundColor: STAFF_COLORS.primary, color: 'white' }}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Tạo Bài Viết Đầu Tiên Của Bạn
               </Button>
-            </div>
-          )}
-        </div>
-
-        {/* Footer note */}
-        <div className="mt-6 flex items-center justify-between text-xs text-gray-400">
-          <div className="flex items-center gap-2">
-            <CalendarDays className="h-3.5 w-3.5" />
-            Tự động làm mới mỗi 5 phút
-          </div>
-          {contentData && (
-            <div>
-              Dữ liệu được tạo: {new Date(contentData.generated_at).toLocaleString()}
             </div>
           )}
         </div>

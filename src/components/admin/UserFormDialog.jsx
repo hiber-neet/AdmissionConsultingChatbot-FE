@@ -31,14 +31,6 @@ export function UserFormDialog({
     onFormChange({ ...formData, phone_number: e.target.value });
   };
 
-  const handleInterestMajorChange = (e) => {
-    onFormChange({ ...formData, interest_desired_major: e.target.value });
-  };
-
-  const handleInterestRegionChange = (e) => {
-    onFormChange({ ...formData, interest_region: e.target.value });
-  };
-
   const handleRoleChange = (role) => {
     onFormChange({ ...formData, role, permissions: [] }); // Reset permissions when role changes
   };
