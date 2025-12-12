@@ -8,9 +8,11 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState("");
-  const [linkImage, setLinkImage] = useState("");
+  // const [linkImage, setLinkImage] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [majorId, setMajorId] = useState<number>(0);
   const [specializationId, setSpecializationId] = useState<number>(0);
+  const [note, setNote] = useState("");
   
   const [majors, setMajors] = useState<Major[]>([]);
   const [specializations, setSpecializations] = useState<Specialization[]>([]);
@@ -111,68 +113,76 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
     }
   }, [message]);
 
-  const handleAddArticle = async () => {
-    if (!title.trim()) {
-      setMessage({ type: 'error', text: 'Tiêu đề là bắt buộc' });
-      return;
-    }
-    if (!description.trim()) {
-      setMessage({ type: 'error', text: 'Mô tả là bắt buộc' });
-      return;
-    }
-    if (!url.trim()) {
-      setMessage({ type: 'error', text: 'URL là bắt buộc' });
-      return;
-    }
-    if (!majorId) {
-      setMessage({ type: 'error', text: 'Vui lòng chọn ngành' });
-      return;
-    }
-    if (!specializationId) {
-      setMessage({ type: 'error', text: 'Vui lòng chọn chuyên ngành' });
-      return;
-    }
+ const handleAddArticle = async () => {
+  if (!title.trim()) {
+    setMessage({ type: 'error', text: 'Tiêu đề là bắt buộc' });
+    return;
+  }
+  if (!description.trim()) {
+    setMessage({ type: 'error', text: 'Mô tả là bắt buộc' });
+    return;
+  }
+  if (!url.trim()) {
+    setMessage({ type: 'error', text: 'URL là bắt buộc' });
+    return;
+  }
+  if (!majorId) {
+    setMessage({ type: 'error', text: 'Vui lòng chọn ngành' });
+    return;
+  }
+  if (!specializationId) {
+    setMessage({ type: 'error', text: 'Vui lòng chọn chuyên ngành' });
+    return;
+  }
+  if (!imageFile) {
+    setMessage({ type: 'error', text: 'Vui lòng chọn ảnh bài viết' });
+    return;
+  }
 
-    try {
-      setSaving(true);
-      setMessage(null);
-      setCreatedArticle(null);
+  try {
+    setSaving(true);
+    setMessage(null);
+    setCreatedArticle(null);
 
-      const articleData = {
-        title: title.trim(),
-        description: description.trim(),
-        url: url.trim(),
-        link_image: linkImage.trim() || null,
-        major_id: majorId === 0 ? null : majorId,
-        specialization_id: specializationId
-      };
-
-      console.log('Sending POST request to /articles with data:', articleData);
-      
-      const response = await fastAPIArticles.create(articleData);
-      
-      console.log('Received response:', response);
-      
-      setMessage({ type: 'success', text: `Bài viết "${response.title}" đã được thêm thành công!` });
-      setCreatedArticle(response);
-      
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setUrl('');
-      setLinkImage('');
-      setMajorId(0);
-      setSpecializationId(0);
-      
-    } catch (error: any) {
-      console.error('Error adding article:', error);
-      const errorMessage = error.message || 'Không thể thêm bài viết';
-      setMessage({ type: 'error', text: errorMessage });
-      setCreatedArticle(null);
-    } finally {
-      setSaving(false);
+    // Tạo FormData 
+    const formData = new FormData();
+    formData.append("title", title.trim());
+    formData.append("description", description.trim());
+    formData.append("url", url.trim());
+    if (note.trim()) {
+      formData.append("note", note.trim());
     }
-  };
+    formData.append("major_id", String(majorId));
+    formData.append("specialization_id", String(specializationId));
+    formData.append("image", imageFile); // tên phải là "image" như FastAPI: image: UploadFile = File(...)
+
+    console.log('Sending POST /articles with FormData');
+
+    const response = await fastAPIArticles.create(formData);
+
+    console.log('Received response:', response);
+
+    setMessage({ type: 'success', text: `Bài viết "${response.title}" đã được thêm thành công!` });
+    setCreatedArticle(response);
+
+    // Reset form
+    setTitle('');
+    setDescription('');
+    setUrl('');
+    setNote('');
+    setMajorId(0);
+    setSpecializationId(0);
+    setImageFile(null);
+
+  } catch (error: any) {
+    console.error('Error adding article:', error);
+    const errorMessage = error.message || 'Không thể thêm bài viết';
+    setMessage({ type: 'error', text: errorMessage });
+    setCreatedArticle(null);
+  } finally {
+    setSaving(false);
+  }
+};
 
   return (
     <div className="p-6">
@@ -236,14 +246,26 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
           </div>
 
           <div>
-            <div className="text-sm text-gray-500 mb-1">URL Ảnh</div>
-            <input 
-              value={linkImage}
-              onChange={(e) => setLinkImage(e.target.value)}
-              className="w-full border rounded-md px-2 py-2 text-sm" 
-              placeholder="https://example.com/image.jpg" 
-            />
-          </div>
+  <div className="text-sm text-gray-500 mb-1">Ảnh bài viết</div>
+  <input
+    type="file"
+    accept="image/*"
+    onChange={(e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        setImageFile(file);
+      } else {
+        setImageFile(null);
+      }
+    }}
+    className="w-full text-sm"
+  />
+  {imageFile && (
+    <div className="mt-1 text-xs text-gray-500">
+      Đã chọn: {imageFile.name}
+    </div>
+  )}
+</div>
 
           <div>
             <div className="text-sm text-gray-500 mb-1">Ngành</div>

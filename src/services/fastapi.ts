@@ -85,7 +85,32 @@ export const articlesAPI = {
   getAll: () => fastAPIClient.get<Article[]>('/articles'),
   getById: (id: number) => fastAPIClient.get<Article>(`/articles/${id}`),
   getByUserId: (userId: number) => fastAPIClient.get<Article[]>(`/articles/users/${userId}`),
-  create: (data: Partial<Article>) => fastAPIClient.post<Article>('/articles', data),
+  create: (formData: FormData) => {
+    const token = localStorage.getItem("access_token");
+    const headers: HeadersInit = {};
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const url = `${API_CONFIG.FASTAPI_BASE_URL}/articles`;
+
+    return fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    }).then(async (response) => {
+      if (!response.ok) {
+        let message = `HTTP error! status: ${response.status}`;
+        try {
+          const err = await response.json();
+          if (err.detail) message = err.detail;
+        } catch (_) {}
+        throw new Error(message);
+      }
+      return response.json() as Promise<Article>;
+    });
+  },
   update: (id: number, data: Partial<Article>) => fastAPIClient.put<Article>(`/articles/${id}`, data),
   delete: (id: number) => fastAPIClient.delete(`/articles/${id}`),
   

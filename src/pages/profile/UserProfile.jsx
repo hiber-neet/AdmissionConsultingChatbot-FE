@@ -194,7 +194,6 @@ const buildAcademicPayload = () => {
 };
 
 // --- Save academic scores ---
- // --- Save academic scores ---
 const saveAcademicScores = async (e) => {
   e?.preventDefault?.();
 
@@ -391,8 +390,28 @@ const [sessionId, setSessionId] = useState(null);
 const [liveMessages, setLiveMessages] = useState([]);
 const [liveInput, setLiveInput] = useState('');
 const [loading, setLoading] = useState(false);
+
+// timeout hàng chờ + popup
+const queueTimeoutRef = useRef(null);
+const [showQueueTimeoutModal, setShowQueueTimeoutModal] = useState(false);
+
+// popup đánh giá sau khi kết thúc phiên tư vấn viên
+const [showLiveRatingModal, setShowLiveRatingModal] = useState(false);
+const [liveRating, setLiveRating] = useState(0);
+
 const handleMessageReceived = (newMsg) => {
   console.log('[UserProfile Consultant] 📨 WS message:', newMsg);
+  if (newMsg.event === "chat_ended") {
+    disconnect();
+    setQueueStatus("ended");
+    setSessionId(null);
+    setLiveMessages([]);
+    setShowLiveRatingModal(true);    
+    setLiveRating(0);
+    toast.info("Chat session ended");
+    return; 
+  }
+
   setLiveMessages((prev) => [...prev, newMsg]);
 };
 
@@ -592,11 +611,38 @@ const handleEndLiveChat = async () => {
     setQueueStatus("ended");
     setSessionId(null);
     setLiveMessages([]);
+    setShowLiveRatingModal(true); //mở popup rating
+    setLiveRating(0);
     toast.success("Chat session ended");
   } catch {
     toast.error("Failed to end session");
   }
 };
+
+const handleReconnectAfterTimeout = async () => {
+  // đóng popup
+  setShowQueueTimeoutModal(false);
+
+  // nếu lỡ còn session thì kết thúc cho sạch
+  if (sessionId && user) {
+    try {
+      await liveChatAPI.endSession(sessionId, parseInt(user.id));
+    } catch (err) {
+      console.warn("End session after timeout failed:", err);
+    } finally {
+      disconnect();
+      setSessionId(null);
+      setLiveMessages([]);
+    }
+  }
+
+  // reset trạng thái rồi join queue mới
+  setQueueStatus("idle");
+  setQueueInfo(null);
+  handleJoinQueue();
+};
+
+
 
 const handleSendLiveMessage = (e) => {
   e.preventDefault();
@@ -605,41 +651,138 @@ const handleSendLiveMessage = (e) => {
   if (success) setLiveInput("");
 };
 
+const handleChooseLiveRating = (value) => {
+  setLiveRating(value);
+};
+
+const handleSubmitLiveRating = () => {
+  if (!liveRating) {
+    toast.info("Vui lòng chọn số sao trước khi gửi.");
+    return;
+  }
+
+  //API đánh giá:
+  //await liveChatAPI.rateLiveSession(lastSessionIdRef.current, parseInt(user.id), liveRating);
+
+  toast.success("Cảm ơn bạn đã đánh giá!");
+  setShowLiveRatingModal(false);
+  setLiveRating(0);
+};
+
+const handleSkipLiveRating = () => {
+  setShowLiveRatingModal(false);
+  setLiveRating(0);
+};
+
   // ====== SSE CUSTOMER (queue + accepted + chat_ended) ======
 useEffect(() => {
-  if (!user || queueStatus !== "in_queue") return;
+  // Lắng nghe cả khi đang ở hàng chờ và đang trò chuyện
+  if (
+    !user ||
+    (queueStatus !== "in_queue" && queueStatus !== "chatting")
+  ) {
+    return;
+  }
 
   const token = localStorage.getItem("access_token") || "";
   const sseUrl = `${API_BASE_URL}/live_chat/livechat/sse/customer/${user.id}?token=${encodeURIComponent(token)}`;
   const eventSource = new EventSource(sseUrl);
 
-  eventSource.onopen = () => console.log("[Consultant SSE] Connected");
-  eventSource.onmessage = (event) => {
+  console.log("[Consultant SSE] Open:", sseUrl);
+
+  // Hàm xử lý chung cho mọi event SSE
+  const handleSseData = (rawData, sseType) => {
+    console.log("[Consultant SSE] recv:", sseType, rawData);
+    let data;
     try {
-      const data = JSON.parse(event.data);
-      const ev = data.event || data.data?.event;
-      if (ev === "accepted") {
-        const newSessionId = data.session_id || data.data?.session_id;
-        if (newSessionId) {
-          setSessionId(newSessionId);
-          setQueueStatus("chatting");
-          toast.success("Connected to consultant!");
-        }
-      } else if (ev === "chat_ended") {
-        disconnect();
-        setQueueStatus("ended");
-        setSessionId(null);
-        setLiveMessages([]);
-        toast.info("Chat session ended");
-      }
+      data = JSON.parse(rawData);
     } catch (err) {
-      console.warn("[Consultant SSE] parse error:", err);
+      console.warn("[Consultant SSE] JSON parse error:", err);
+      return;
+    }
+
+    const ev = data.event || sseType; // ưu tiên field event trong JSON, fallback sang loại SSE
+
+    if (ev === "accepted") {
+      const newSessionId = data.session_id || data.data?.session_id;
+      if (newSessionId) {
+        setSessionId(newSessionId);
+        setQueueStatus("chatting");
+        toast.success("Connected to consultant!");
+      }
+    } else if (ev === "chat_ended") {
+      disconnect();
+      setQueueStatus("ended");
+      setSessionId(null);
+      setLiveMessages([]);
+      setShowLiveRatingModal(true);
+      setLiveRating(0);
+      toast.info("Chat session ended");
     }
   };
-  eventSource.onerror = (err) => console.error("SSE error:", err);
 
-  return () => eventSource.close();
-}, [user, queueStatus]);
+  // Trường hợp server dùng event: message (data.event = "accepted"/"chat_ended")
+  eventSource.onmessage = (event) =>
+    handleSseData(event.data, "message");
+
+  // Trường hợp server dùng event: accepted / event: chat_ended
+  eventSource.addEventListener("accepted", (event) =>
+    handleSseData(event.data, "accepted")
+  );
+  eventSource.addEventListener("chat_ended", (event) =>
+    handleSseData(event.data, "chat_ended")
+  );
+
+  eventSource.onerror = (err) => console.error("[Consultant SSE] error:", err);
+
+  return () => {
+    console.log("[Consultant SSE] closed");
+    eventSource.close();
+  };
+}, [user, queueStatus, disconnect]);
+
+// Auto hủy hàng chờ sau 3 phút nếu chưa được nối
+useEffect(() => {
+  // chỉ set timeout khi đang trong hàng chờ
+  if (queueStatus === "in_queue") {
+    if (queueTimeoutRef.current) {
+      clearTimeout(queueTimeoutRef.current);
+    }
+
+    queueTimeoutRef.current = setTimeout(async () => {
+      console.log("[LiveChat] Queue timeout 3 minutes, auto cancel");
+
+      try {
+        if (user) {
+          await liveChatAPI.cancelQueueRequest(parseInt(user.id));
+        }
+      } catch (err) {
+        console.warn("Auto cancel queue failed:", err);
+      }
+
+      setQueueStatus("timeout");
+      setQueueInfo(null);
+      setShowQueueTimeoutModal(true);
+      toast.info("Các tư vấn viên đang bận, vui lòng thử kết nối lại.");
+    }, 3 * 60 * 1000); // 3 phút
+  } else {
+    // rời khỏi trạng thái in_queue -> clear timeout
+    if (queueTimeoutRef.current) {
+      clearTimeout(queueTimeoutRef.current);
+      queueTimeoutRef.current = null;
+    }
+  }
+
+  // cleanup khi unmount
+  return () => {
+    if (queueTimeoutRef.current) {
+      clearTimeout(queueTimeoutRef.current);
+      queueTimeoutRef.current = null;
+    }
+  };
+}, [queueStatus, user]);
+
+
 
   // ====== PROFILE ======
   const [form, setForm] = useState({
@@ -1521,6 +1664,7 @@ if (isAuthenticated && user && !isStudent) {
           {queueStatus === "in_queue" && "Đang trong hàng chờ"}
           {queueStatus === "chatting" && "Đang trò chuyện"}
           {queueStatus === "ended" && "Đã kết thúc"}
+          {queueStatus === "timeout" && "Tư vấn viên đang bận"}
         </span>
       </div>
     </div>
@@ -1654,6 +1798,85 @@ if (isAuthenticated && user && !isStudent) {
         Gửi
       </button>
     </form>
+
+{showQueueTimeoutModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="bg-white rounded-xl shadow-lg max-w-sm w-full p-6">
+      <h2 className="text-lg font-semibold mb-2">
+        Các tư vấn viên đang bận
+      </h2>
+      <p className="text-sm text-gray-600 mb-4">
+        Các tư vấn viên đang bận, xin vui lòng thử kết nối lại sau ít phút.
+      </p>
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setShowQueueTimeoutModal(false)}
+          className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+        >
+          Đóng
+        </button>
+        <button
+          type="button"
+          onClick={handleReconnectAfterTimeout}
+          className="px-4 py-2 text-sm rounded-md bg-[#EB5A0D] text-white hover:opacity-90"
+        >
+          Kết nối lại
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{showLiveRatingModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="bg-white rounded-xl shadow-lg max-w-sm w-full p-6">
+      <h2 className="text-lg font-semibold mb-2">
+        Đánh giá cuộc trò chuyện
+      </h2>
+      <p className="text-sm text-gray-600 mb-4">
+        Bạn hài lòng thế nào với cuộc trò chuyện vừa rồi?
+      </p>
+
+      <div className="flex justify-center gap-1 mb-4">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => handleChooseLiveRating(star)}
+            className="text-2xl focus:outline-none"
+          >
+            <span
+              className={
+                star <= liveRating ? "text-yellow-400" : "text-gray-300"
+              }
+            >
+              ★
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={handleSkipLiveRating}
+          className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+        >
+          Bỏ qua
+        </button>
+        <button
+          type="button"
+          onClick={handleSubmitLiveRating}
+          className="px-4 py-2 text-sm rounded-md bg-[#EB5A0D] text-white hover:opacity-90"
+        >
+          Gửi đánh giá
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
   </div>
 )}
 
