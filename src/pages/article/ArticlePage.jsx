@@ -98,11 +98,18 @@ export default function ArticlePage() {
                     className="border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer bg-white"
                     onClick={() => setSelected(a)}
                   >
-                    <img
-                      src={a.url}
-                      alt={a.title}
-                      className="w-full h-48 object-cover"
-                    />
+                    {a.link_image && (
+                      <img
+                        src={a.link_image.startsWith('http://') || a.link_image.startsWith('https://') 
+                          ? a.link_image 
+                          : `https://${a.link_image}`}
+                        alt={a.title}
+                        className="w-full h-48 object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    )}
                     <div className="p-4">
                       <h2 className="text-lg font-semibold mb-1 line-clamp-2">
                         {a.title}
@@ -146,11 +153,18 @@ export default function ArticlePage() {
               ← Quay lại danh sách
             </button>
 
-            <img
-              src={selected.url}
-              alt={selected.title}
-              className="w-full h-64 object-cover rounded-lg mb-6"
-            />
+            {selected.link_image && (
+              <img
+                src={selected.link_image.startsWith('http://') || selected.link_image.startsWith('https://') 
+                  ? selected.link_image 
+                  : `https://${selected.link_image}`}
+                alt={selected.title}
+                className="w-full h-64 object-cover rounded-lg mb-6"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            )}
 
             <h1 className="text-2xl font-semibold mb-1">
               {selected.title}
