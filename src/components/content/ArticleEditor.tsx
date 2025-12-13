@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { fastAPIArticles, fastAPIMajors, fastAPISpecializations } from '../../services/fastapi';
 import { Article, Major, Specialization } from '../../utils/fastapi-client';
+import { Upload, X } from 'lucide-react';
 
 export default function ArticleEditor({ initialData }: { initialData?: { title: string } }) {
   console.log('ArticleEditor mounted with initialData:', initialData);
@@ -8,11 +9,10 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState("");
-  // const [linkImage, setLinkImage] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [majorId, setMajorId] = useState<number>(0);
   const [specializationId, setSpecializationId] = useState<number>(0);
-  const [note, setNote] = useState("");
   
   const [majors, setMajors] = useState<Major[]>([]);
   const [specializations, setSpecializations] = useState<Specialization[]>([]);
@@ -113,76 +113,122 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
     }
   }, [message]);
 
- const handleAddArticle = async () => {
-  if (!title.trim()) {
-    setMessage({ type: 'error', text: 'Tiêu đề là bắt buộc' });
-    return;
-  }
-  if (!description.trim()) {
-    setMessage({ type: 'error', text: 'Mô tả là bắt buộc' });
-    return;
-  }
-  if (!url.trim()) {
-    setMessage({ type: 'error', text: 'URL là bắt buộc' });
-    return;
-  }
-  if (!majorId) {
-    setMessage({ type: 'error', text: 'Vui lòng chọn ngành' });
-    return;
-  }
-  if (!specializationId) {
-    setMessage({ type: 'error', text: 'Vui lòng chọn chuyên ngành' });
-    return;
-  }
-  if (!imageFile) {
-    setMessage({ type: 'error', text: 'Vui lòng chọn ảnh bài viết' });
-    return;
-  }
-
-  try {
-    setSaving(true);
-    setMessage(null);
-    setCreatedArticle(null);
-
-    // Tạo FormData 
-    const formData = new FormData();
-    formData.append("title", title.trim());
-    formData.append("description", description.trim());
-    formData.append("url", url.trim());
-    if (note.trim()) {
-      formData.append("note", note.trim());
+  // Handle image file selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setMessage({ type: 'error', text: 'Vui lòng chọn file ảnh hợp lệ' });
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setMessage({ type: 'error', text: 'Kích thước ảnh không được vượt quá 5MB' });
+        return;
+      }
+      
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-    formData.append("major_id", String(majorId));
-    formData.append("specialization_id", String(specializationId));
-    formData.append("image", imageFile); // tên phải là "image" như FastAPI: image: UploadFile = File(...)
+  };
 
-    console.log('Sending POST /articles with FormData');
-
-    const response = await fastAPIArticles.create(formData);
-
-    console.log('Received response:', response);
-
-    setMessage({ type: 'success', text: `Bài viết "${response.title}" đã được thêm thành công!` });
-    setCreatedArticle(response);
-
-    // Reset form
-    setTitle('');
-    setDescription('');
-    setUrl('');
-    setNote('');
-    setMajorId(0);
-    setSpecializationId(0);
+  // Remove selected image
+  const handleRemoveImage = () => {
     setImageFile(null);
+    setImagePreview(null);
+  };
 
-  } catch (error: any) {
-    console.error('Error adding article:', error);
-    const errorMessage = error.message || 'Không thể thêm bài viết';
-    setMessage({ type: 'error', text: errorMessage });
-    setCreatedArticle(null);
-  } finally {
-    setSaving(false);
-  }
-};
+  const handleAddArticle = async () => {
+    if (!title.trim()) {
+      setMessage({ type: 'error', text: 'Tiêu đề là bắt buộc' });
+      return;
+    }
+    if (!description.trim()) {
+      setMessage({ type: 'error', text: 'Mô tả là bắt buộc' });
+      return;
+    }
+    if (!url.trim()) {
+      setMessage({ type: 'error', text: 'URL là bắt buộc' });
+      return;
+    }
+    if (!imageFile) {
+      setMessage({ type: 'error', text: 'Vui lòng chọn ảnh cho bài viết' });
+      return;
+    }
+    if (!majorId) {
+      setMessage({ type: 'error', text: 'Vui lòng chọn ngành' });
+      return;
+    }
+    if (!specializationId) {
+      setMessage({ type: 'error', text: 'Vui lòng chọn chuyên ngành' });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setMessage(null);
+      setCreatedArticle(null);
+
+      // Build FormData because the API expects multipart/form-data for file upload
+      const formData = new FormData();
+      formData.append('title', title.trim());
+      formData.append('description', description.trim());
+      formData.append('url', url.trim());
+      
+      // Append the image file (required by backend)
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+      
+      if (majorId !== 0) {
+        formData.append('major_id', String(majorId));
+      }
+      if (specializationId !== 0) {
+        formData.append('specialization_id', String(specializationId));
+      }
+
+      console.log('Sending POST request to /articles with FormData:', {
+        title: title.trim(),
+        description: description.trim(),
+        url: url.trim(),
+        image: imageFile?.name,
+        major_id: majorId === 0 ? null : majorId,
+        specialization_id: specializationId
+      });
+
+      const response = await fastAPIArticles.create(formData);
+      
+      console.log('Received response:', response);
+      
+      setMessage({ type: 'success', text: `Bài viết "${response.title}" đã được thêm thành công!` });
+      setCreatedArticle(response);
+      
+      // Reset form
+      setTitle('');
+      setDescription('');
+      setUrl('');
+      setImageFile(null);
+      setImagePreview(null);
+      setMajorId(0);
+      setSpecializationId(0);
+      
+    } catch (error: any) {
+      console.error('Error adding article:', error);
+      const errorMessage = error.message || 'Không thể thêm bài viết';
+      setMessage({ type: 'error', text: errorMessage });
+      setCreatedArticle(null);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="p-6">
@@ -246,26 +292,46 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
           </div>
 
           <div>
-  <div className="text-sm text-gray-500 mb-1">Ảnh bài viết</div>
-  <input
-    type="file"
-    accept="image/*"
-    onChange={(e) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        setImageFile(file);
-      } else {
-        setImageFile(null);
-      }
-    }}
-    className="w-full text-sm"
-  />
-  {imageFile && (
-    <div className="mt-1 text-xs text-gray-500">
-      Đã chọn: {imageFile.name}
-    </div>
-  )}
-</div>
+            <div className="text-sm text-gray-500 mb-1">
+              Ảnh Bài Viết <span className="text-red-500">*</span>
+            </div>
+            
+            {!imagePreview ? (
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <Upload className="w-8 h-8 mb-2 text-gray-400" />
+                  <p className="text-xs text-gray-500 mb-1">
+                    <span className="font-semibold">Nhấp để tải lên</span> hoặc kéo thả
+                  </p>
+                  <p className="text-xs text-gray-400">PNG, JPG, GIF (MAX. 5MB)</p>
+                </div>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+              </label>
+            ) : (
+              <div className="relative">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-lg border border-gray-300"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="mt-2 text-xs text-gray-600 truncate">
+                  {imageFile?.name}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div>
             <div className="text-sm text-gray-500 mb-1">Ngành</div>

@@ -1,13 +1,13 @@
 import { useNavigate } from 'react-router-dom';
-import { AnalyticsStatistics } from '../../components/consultant/AnalyticsStatistics';
+import { AnalyticsStatistics } from '../../components/consultant/chatbotAnalytics/AnalyticsStatistics';
 
 export function ConsultantAnalyticsPage() {
   const navigate = useNavigate();
 
-  const handleNavigateToTemplates = (question?: string, action?: 'edit' | 'add' | 'view') => {
-    // Navigate to templates page, could pass state if needed
-    navigate('/consultant/templates', { state: { question, action } });
+  const handleNavigateToKnowledgeBase = (question: string) => {
+    // Navigate to training data page to add the question
+    navigate('/consultant/trainingdata', { state: { question, action: 'add' } });
   };
 
-  return <AnalyticsStatistics onNavigateToTemplates={handleNavigateToTemplates} />;
+  return <AnalyticsStatistics onNavigateToKnowledgeBase={handleNavigateToKnowledgeBase} />;
 }

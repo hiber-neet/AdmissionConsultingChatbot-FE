@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X, Upload } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Article, Major } from '../../../utils/fastapi-client';
 
@@ -6,7 +6,7 @@ interface EditArticleModalProps {
   article: Article;
   majors: Major[];
   onClose: () => void;
-  onSave: (data: Partial<Article>) => Promise<void>;
+  onSave: (data: Partial<Article> | FormData) => Promise<void>;
 }
 
 export default function EditArticleModal({ 
@@ -19,11 +19,12 @@ export default function EditArticleModal({
     title: article.title,
     description: article.description,
     url: article.url || '',
-    link_image: article.link_image || '',
     note: article.note || '',
     major_id: article.major_id,
     specialization_id: article.specialization_id
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(article.link_image || null);
   const [specializations, setSpecializations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -45,11 +46,59 @@ export default function EditArticleModal({
     fetchSpecs();
   }, [formData.major_id]);
 
+  // Handle image file selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Vui lòng chọn file ảnh hợp lệ');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Kích thước ảnh không được vượt quá 5MB');
+        return;
+      }
+      
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove selected image
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(article.link_image || null); // Reset to original image
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await onSave(formData);
+      // If there's a new image file, send as FormData
+      if (imageFile) {
+        const formDataToSend = new FormData();
+        formDataToSend.append('title', formData.title);
+        formDataToSend.append('description', formData.description);
+        formDataToSend.append('url', formData.url);
+        formDataToSend.append('note', formData.note);
+        formDataToSend.append('major_id', String(formData.major_id));
+        formDataToSend.append('specialization_id', String(formData.specialization_id));
+        formDataToSend.append('image', imageFile);
+        
+        await onSave(formDataToSend);
+      } else {
+        // Otherwise, send as JSON (no image change)
+        await onSave(formData);
+      }
     } finally {
       setLoading(false);
     }
@@ -113,18 +162,56 @@ export default function EditArticleModal({
               />
             </div>
 
-            {/* Link Image */}
+            {/* Image Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Liên Kết Hình Ảnh
+                Ảnh Bài Viết
               </label>
-              <input
-                type="url"
-                value={formData.link_image}
-                onChange={(e) => setFormData({ ...formData, link_image: e.target.value })}
-                placeholder="https://example.com/image.jpg"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              
+              {imagePreview ? (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-48 object-cover rounded-lg border border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {imageFile && (
+                    <div className="text-xs text-gray-600 truncate">
+                      Ảnh mới: {imageFile.name}
+                    </div>
+                  )}
+                  {!imageFile && article.link_image && (
+                    <div className="text-xs text-gray-500">
+                      Ảnh hiện tại
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="w-8 h-8 mb-2 text-gray-400" />
+                    <p className="text-xs text-gray-500 mb-1">
+                      <span className="font-semibold">Nhấp để tải lên</span> ảnh mới
+                    </p>
+                    <p className="text-xs text-gray-400">PNG, JPG, GIF (MAX. 5MB)</p>
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                </label>
+              )}
             </div>
 
             {/* Note */}

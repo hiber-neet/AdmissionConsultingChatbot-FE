@@ -1,0 +1,426 @@
+import { useState, useEffect } from 'react';
+import { Plus } from 'lucide-react';
+import { toast } from 'react-toastify';
+import { useAuth } from '../../../contexts/Auth';
+import { knowledgeAPI, intentAPI } from '../../../services/fastapi';
+import { TabSwitcher } from './TabSwitcher';
+import { SearchAndFilter } from './SearchAndFilter';
+import { QuestionList } from './QuestionList';
+import { DocumentList } from './DocumentList';
+import { QuestionDetailModal } from './QuestionDetailModal';
+import { DocumentDetailModal } from './DocumentDetailModal';
+import { AddQuestionModal } from './AddQuestionModal';
+import { UploadDocumentModal } from './UploadDocumentModal';
+import { TabType, TrainingQuestion, TrainingDocument, Intent } from './types';
+import { Button } from '../../ui/system_users/button';
+
+export function TrainingDataManagement() {
+  const { user, isConsultantLeader } = useAuth();
+  const isLeader = isConsultantLeader();
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<TabType>('questions');
+
+  // Common state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [intents, setIntents] = useState<Intent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Questions state
+  const [questions, setQuestions] = useState<TrainingQuestion[]>([]);
+  const [selectedQuestion, setSelectedQuestion] = useState<TrainingQuestion | null>(null);
+  const [showQuestionModal, setShowQuestionModal] = useState(false);
+  const [showAddQuestionModal, setShowAddQuestionModal] = useState(false);
+
+  // Documents state
+  const [documents, setDocuments] = useState<TrainingDocument[]>([]);
+  const [selectedDocument, setSelectedDocument] = useState<TrainingDocument | null>(null);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [showUploadDocumentModal, setShowUploadDocumentModal] = useState(false);
+
+  // Fetch data on mount
+  useEffect(() => {
+    fetchIntents();
+    if (activeTab === 'questions') {
+      fetchQuestions();
+    } else {
+      fetchDocuments();
+    }
+  }, [activeTab, statusFilter]);
+
+  const fetchIntents = async () => {
+    try {
+      const data = await intentAPI.getIntents();
+      setIntents(data.map(intent => ({ ...intent, description: intent.description || '' })));
+    } catch (error) {
+      console.error('Failed to fetch intents:', error);
+      toast.error('Không thể tải danh sách intent');
+    }
+  };
+
+  const fetchQuestions = async () => {
+    try {
+      setLoading(true);
+      const data = await knowledgeAPI.getTrainingQuestions(
+        statusFilter !== 'all' ? statusFilter : undefined
+      );
+      setQuestions(data);
+    } catch (error) {
+      console.error('Failed to fetch questions:', error);
+      toast.error('Không thể tải câu hỏi huấn luyện');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDocuments = async () => {
+    try {
+      setLoading(true);
+      const data = await knowledgeAPI.getDocuments(
+        statusFilter !== 'all' ? statusFilter : undefined
+      );
+      // Add missing properties with safe defaults
+      setDocuments(data.map(doc => ({ 
+        ...doc, 
+        file_size: 0, 
+        file_type: doc.file_path.split('.').pop() || 'unknown' 
+      })));
+    } catch (error) {
+      console.error('Failed to fetch documents:', error);
+      toast.error('Không thể tải tài liệu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Question handlers
+  const handleSelectQuestion = (question: TrainingQuestion) => {
+    setSelectedQuestion(question);
+    setShowQuestionModal(true);
+  };
+
+  const handleUpdateQuestion = async (
+    questionId: number,
+    data: { question: string; answer: string; intent_id?: number }
+  ) => {
+    try {
+      // Note: API doesn't have update endpoint yet, this is a placeholder
+      toast.info('Chức năng cập nhật đang được phát triển');
+      throw new Error('Update not implemented');
+    } catch (error) {
+      console.error('Failed to update question:', error);
+      toast.error('Không thể cập nhật câu hỏi');
+      throw error;
+    }
+  };
+
+  const handleDeleteQuestion = async (questionId: number) => {
+    try {
+      await knowledgeAPI.deleteTrainingQuestion(questionId);
+      toast.success('Xóa câu hỏi thành công');
+      await fetchQuestions();
+      setShowQuestionModal(false);
+      setSelectedQuestion(null);
+    } catch (error) {
+      console.error('Failed to delete question:', error);
+      toast.error('Không thể xóa câu hỏi');
+      throw error;
+    }
+  };
+
+  const handleApproveQuestion = async (questionId: number) => {
+    try {
+      await knowledgeAPI.approveTrainingQuestion(questionId);
+      toast.success('Duyệt câu hỏi thành công');
+      await fetchQuestions();
+      // Refresh the selected question
+      const allQuestions = await knowledgeAPI.getTrainingQuestions();
+      const updated = allQuestions.find(q => q.question_id === questionId);
+      if (updated) setSelectedQuestion(updated);
+    } catch (error) {
+      console.error('Failed to approve question:', error);
+      toast.error('Không thể duyệt câu hỏi');
+      throw error;
+    }
+  };
+
+  const handleRejectQuestion = async (questionId: number) => {
+    try {
+      await knowledgeAPI.rejectTrainingQuestion(questionId, 'Từ chối bởi người quản lý');
+      toast.success('Từ chối câu hỏi thành công');
+      await fetchQuestions();
+      // Refresh the selected question
+      const allQuestions = await knowledgeAPI.getTrainingQuestions();
+      const updated = allQuestions.find(q => q.question_id === questionId);
+      if (updated) setSelectedQuestion(updated);
+    } catch (error) {
+      console.error('Failed to reject question:', error);
+      toast.error('Không thể từ chối câu hỏi');
+      throw error;
+    }
+  };
+
+  // Document handlers
+  const handleSelectDocument = async (document: TrainingDocument) => {
+    try {
+      // Fetch full document details including content
+      const fullDoc = await knowledgeAPI.getDocumentById(document.document_id);
+      setSelectedDocument({ 
+        ...fullDoc, 
+        file_size: 0, 
+        file_type: fullDoc.file_path.split('.').pop() || 'unknown' 
+      });
+      setShowDocumentModal(true);
+    } catch (error) {
+      console.error('Failed to fetch document details:', error);
+      toast.error('Không thể tải chi tiết tài liệu');
+    }
+  };
+
+  const handleUpdateDocument = async (
+    documentId: number,
+    data: { title: string; intent_id?: number; category?: string }
+  ) => {
+    try {
+      // Note: API doesn't have update endpoint yet, this is a placeholder
+      toast.info('Chức năng cập nhật đang được phát triển');
+      throw new Error('Update not implemented');
+    } catch (error) {
+      console.error('Failed to update document:', error);
+      toast.error('Không thể cập nhật tài liệu');
+      throw error;
+    }
+  };
+
+  const handleDeleteDocument = async (documentId: number) => {
+    try {
+      await knowledgeAPI.deleteDocument(documentId);
+      toast.success('Xóa tài liệu thành công');
+      await fetchDocuments();
+      setShowDocumentModal(false);
+      setSelectedDocument(null);
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+      toast.error('Không thể xóa tài liệu');
+      throw error;
+    }
+  };
+
+  const handleApproveDocument = async (documentId: number) => {
+    try {
+      await knowledgeAPI.approveDocument(documentId);
+      toast.success('Duyệt tài liệu thành công');
+      await fetchDocuments();
+      // Refresh the selected document
+      const fullDoc = await knowledgeAPI.getDocumentById(documentId);
+      setSelectedDocument({ 
+        ...fullDoc, 
+        file_size: 0, 
+        file_type: fullDoc.file_path.split('.').pop() || 'unknown' 
+      });
+    } catch (error) {
+      console.error('Failed to approve document:', error);
+      toast.error('Không thể duyệt tài liệu');
+      throw error;
+    }
+  };
+
+  const handleRejectDocument = async (documentId: number) => {
+    try {
+      await knowledgeAPI.rejectDocument(documentId, 'Từ chối bởi người quản lý');
+      toast.success('Từ chối tài liệu thành công');
+      await fetchDocuments();
+      // Refresh the selected document
+      const fullDoc = await knowledgeAPI.getDocumentById(documentId);
+      setSelectedDocument({ 
+        ...fullDoc, 
+        file_size: 0, 
+        file_type: fullDoc.file_path.split('.').pop() || 'unknown' 
+      });
+    } catch (error) {
+      console.error('Failed to reject document:', error);
+      toast.error('Không thể từ chối tài liệu');
+      throw error;
+    }
+  };
+
+  // Add new question
+  const handleAddQuestion = async (data: { question: string; answer: string; intent_id: number }) => {
+    try {
+      await knowledgeAPI.uploadTrainingQuestion(data);
+      toast.success('Tạo câu hỏi thành công! Đang chờ duyệt.');
+      await fetchQuestions();
+    } catch (error) {
+      console.error('Failed to create question:', error);
+      toast.error('Không thể tạo câu hỏi');
+      throw error;
+    }
+  };
+
+  // Upload new document
+  const handleUploadDocument = async (formData: FormData, intentId: number) => {
+    try {
+      await knowledgeAPI.uploadDocument(formData, intentId);
+      toast.success('Tải lên tài liệu thành công! Đang chờ duyệt.');
+      await fetchDocuments();
+    } catch (error) {
+      console.error('Failed to upload document:', error);
+      toast.error('Không thể tải lên tài liệu');
+      throw error;
+    }
+  };
+
+  // Helper function to sort by date and status
+  const sortByDateAndStatus = <T extends { created_at?: string | Date; status?: string }>(items: T[]): T[] => {
+    return [...items].sort((a, b) => {
+      // First, try to sort by created_at date (most recent first)
+      if (a.created_at && b.created_at) {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        if (dateA !== dateB) {
+          return dateB - dateA; // Most recent first
+        }
+      }
+      
+      // Fallback: sort by status (nhap -> da duyet -> tu choi)
+      const statusOrder: { [key: string]: number } = {
+        'nhap': 1,
+        'da duyet': 2,
+        'tu choi': 3
+      };
+      
+      const statusA = statusOrder[a.status || ''] || 999;
+      const statusB = statusOrder[b.status || ''] || 999;
+      
+      return statusA - statusB;
+    });
+  };
+
+  // Filter and sort data based on search query
+  const filteredQuestions = sortByDateAndStatus(
+    questions.filter((q) =>
+      q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      q.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      q.intent_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  );
+
+  const filteredDocuments = sortByDateAndStatus(
+    documents.filter((d) =>
+      d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.intent_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  );
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dữ Liệu Huấn Luyện</h1>
+          <p className="text-gray-600 mt-1">
+            Quản lý câu hỏi huấn luyện và tài liệu cho hệ thống chatbot
+          </p>
+        </div>
+        <Button 
+          className="bg-[#EB5A0D] hover:bg-[#d14f0a]"
+          onClick={() => activeTab === 'questions' ? setShowAddQuestionModal(true) : setShowUploadDocumentModal(true)}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          {activeTab === 'questions' ? 'Thêm Câu Hỏi' : 'Tải Tài Liệu'}
+        </Button>
+      </div>
+
+      {/* Tab Switcher */}
+      <TabSwitcher
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        questionCount={questions.length}
+        documentCount={documents.length}
+      />
+
+      {/* Search and Filter */}
+      <SearchAndFilter
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        isLeader={isLeader}
+      />
+
+      {/* Content Area */}
+      <div className="bg-white rounded-lg border shadow-sm p-4">
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">
+            <p>Đang tải dữ liệu...</p>
+          </div>
+        ) : activeTab === 'questions' ? (
+          <QuestionList
+            questions={filteredQuestions}
+            selectedQuestion={selectedQuestion}
+            onSelectQuestion={handleSelectQuestion}
+          />
+        ) : (
+          <DocumentList
+            documents={filteredDocuments}
+            selectedDocument={selectedDocument}
+            onSelectDocument={handleSelectDocument}
+          />
+        )}
+      </div>
+
+      {/* Modals */}
+      {showQuestionModal && selectedQuestion && (
+        <QuestionDetailModal
+          question={selectedQuestion}
+          intents={intents}
+          isLeader={isLeader}
+          onClose={() => {
+            setShowQuestionModal(false);
+            setSelectedQuestion(null);
+          }}
+          onUpdate={handleUpdateQuestion}
+          onDelete={handleDeleteQuestion}
+          onApprove={isLeader ? handleApproveQuestion : undefined}
+          onReject={isLeader ? handleRejectQuestion : undefined}
+        />
+      )}
+
+      {showDocumentModal && selectedDocument && (
+        <DocumentDetailModal
+          document={selectedDocument}
+          intents={intents}
+          isLeader={isLeader}
+          onClose={() => {
+            setShowDocumentModal(false);
+            setSelectedDocument(null);
+          }}
+          onUpdate={handleUpdateDocument}
+          onDelete={handleDeleteDocument}
+          onApprove={isLeader ? handleApproveDocument : undefined}
+          onReject={isLeader ? handleRejectDocument : undefined}
+        />
+      )}
+
+      {/* Add/Upload Modals */}
+      {showAddQuestionModal && (
+        <AddQuestionModal
+          key="add-question-modal"
+          intents={intents}
+          onClose={() => setShowAddQuestionModal(false)}
+          onSubmit={handleAddQuestion}
+        />
+      )}
+
+      {showUploadDocumentModal && (
+        <UploadDocumentModal
+          intents={intents}
+          onClose={() => setShowUploadDocumentModal(false)}
+          onSubmit={handleUploadDocument}
+        />
+      )}
+    </div>
+  );
+}

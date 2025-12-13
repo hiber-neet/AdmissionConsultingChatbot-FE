@@ -111,7 +111,49 @@ export const articlesAPI = {
       return response.json() as Promise<Article>;
     });
   },
-  update: (id: number, data: Partial<Article>) => fastAPIClient.put<Article>(`/articles/${id}`, data),
+  update: (id: number, data: Partial<Article> | FormData) => {
+    const token = localStorage.getItem("access_token");
+    const headers: HeadersInit = {};
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    // If data is already FormData, use it directly
+    // Otherwise, convert plain object to FormData
+    let formData: FormData;
+    if (data instanceof FormData) {
+      formData = data;
+    } else {
+      formData = new FormData();
+      // Only append non-null/non-undefined values
+      if (data.title !== undefined) formData.append('title', data.title);
+      if (data.description !== undefined) formData.append('description', data.description);
+      if (data.url !== undefined) formData.append('url', data.url || '');
+      if (data.note !== undefined) formData.append('note', data.note || '');
+      if (data.major_id !== undefined) formData.append('major_id', data.major_id.toString());
+      if (data.specialization_id !== undefined) formData.append('specialization_id', data.specialization_id.toString());
+      // Note: image file would need to be handled separately if provided
+    }
+
+    const url = `${API_CONFIG.FASTAPI_BASE_URL}/articles/${id}`;
+
+    return fetch(url, {
+      method: 'PUT',
+      headers,
+      body: formData,
+    }).then(async (response) => {
+      if (!response.ok) {
+        let message = `HTTP error! status: ${response.status}`;
+        try {
+          const err = await response.json();
+          if (err.detail) message = err.detail;
+        } catch (_) {}
+        throw new Error(message);
+      }
+      return response.json() as Promise<Article>;
+    });
+  },
   delete: (id: number) => fastAPIClient.delete(`/articles/${id}`),
   
   // Review APIs for Content Manager Leaders

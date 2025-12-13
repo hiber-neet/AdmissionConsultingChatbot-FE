@@ -153,7 +153,7 @@ const handleLogin = async (event) => {
               <input
                 className="button-login button-admin"
                 type="button"
-                value="Quản Trị Viên"
+                value="Cán Bộ FPT"
                 onClick={() => navigate('/loginforad')}
               />
             </form>
