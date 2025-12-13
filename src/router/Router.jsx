@@ -45,9 +45,8 @@ import ReviewQueue from "../components/content/ReviewQueue.tsx";
 import { ArticleEditorPage } from "../components/content/ArticleEditorPage.tsx";
 import ArticlePage from "../pages/article/ArticlePage.jsx";
 import CustomerLiveChatPage from "../pages/livechat/CustomerLiveChatPage.jsx";
-function NotFound() {
-  return <h1 style={{ padding: 24 }}>404</h1>;
-}
+import NotFoundPage from "../pages/404/NotFoundPage.jsx";
+
 
 export default function Router() {
   return (
@@ -59,7 +58,7 @@ export default function Router() {
       <Route path="/chatbot" element={<ChatGuestPage />} />
       <Route path="/riasec" element={<RiasecPage />} />
       <Route path="/articles" element={<ArticlePage />} />
-      <Route path="/404" element={<NotFound />} />
+      <Route path="/404" element={<NotFoundPage />} />
       
       {/* Student-only routes */}
       <Route path="/profile" element={
