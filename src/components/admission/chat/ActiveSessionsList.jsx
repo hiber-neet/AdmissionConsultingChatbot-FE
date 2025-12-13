@@ -32,7 +32,7 @@ export function ActiveSessionsList({
     <div className="w-80 border-r bg-white flex flex-col">
       <div className="p-4 border-b">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Active Sessions</h3>
+          <h3 className="font-semibold">Phiên hoạt động</h3>
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"

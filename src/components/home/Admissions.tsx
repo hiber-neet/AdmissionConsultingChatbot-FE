@@ -144,11 +144,11 @@ navigate('/loginprivate');
               <div className="relative z-10">
                 <GraduationCap className="h-16 w-16 mb-6" />
                 <h3 className="text-3xl font-bold mb-4">
-                  Đăng ký tuyển sinh 2025
+                  Đăng ký tuyển sinh ngay hôm nay!
                 </h3>
-                <p className="text-orange-50 mb-6 leading-relaxed text-lg">
+                {/* <p className="text-orange-50 mb-6 leading-relaxed text-lg">
                   Tuyển sinh đợt 1: <span className="font-semibold">Tháng 3 - Tháng 8, 2025</span>
-                </p>
+                </p> */}
                 <ul className="space-y-4">
                   <li className="flex items-start">
                     <CheckCircle className="h-6 w-6 mr-3 flex-shrink-0 mt-0.5" />
@@ -274,7 +274,7 @@ navigate('/loginprivate');
                 </select>
               </div>
 
-              <div>
+              {/* <div>
                  <label htmlFor="person" className="block text-sm font-semibold text-gray-700 mb-2">
                   Bạn là? <span className="text-red-500">*</span>
                 </label>
@@ -289,7 +289,7 @@ navigate('/loginprivate');
                   <option value="parent">Phụ huynh</option>
                   <option value="student">Học sinh</option>
                 </select>
-              </div>
+              </div> */}
 
               <button
                 type="submit"

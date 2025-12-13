@@ -187,6 +187,7 @@ function ProgramDetailModal({ program, onClose }) {
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) onClose();
   };
+  
 
   return (
     <div
@@ -296,6 +297,12 @@ function ProgramDetailModal({ program, onClose }) {
 export default function Programs() {
   const [activeProgram, setActiveProgram] = useState(null);
 
+  const handleScrollToAdmissions = () => {
+    const el = document.getElementById("admissions");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
   return (
     <section id="programs" className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -366,7 +373,9 @@ export default function Programs() {
               Đội ngũ tư vấn của chúng tôi sẵn sàng hỗ trợ bạn tìm ra ngành học phù hợp nhất với đam mê
               và năng lực.
             </p>
-            <button className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105">
+            <button 
+            onClick={handleScrollToAdmissions}
+            className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105">
               Đặt lịch tư vấn miễn phí
             </button>
           </div>

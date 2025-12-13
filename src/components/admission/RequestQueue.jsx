@@ -292,10 +292,10 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
                                 <AlertCircle className="h-3 w-3" />
                                 {priorityConfig.label}
                               </Badge>
-                              <Badge variant="outline" className={`gap-1 ${waitTimeColor}`}>
+                              {/* <Badge variant="outline" className={`gap-1 ${waitTimeColor}`}>
                                 <Clock className="h-3 w-3" />
                                 Chờ {request.waitTime} phút
-                              </Badge>
+                              </Badge> */}
                             </div>
                           </div>
                           <Button

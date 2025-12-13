@@ -228,6 +228,15 @@ case "done": {
     send(input);
   };
 
+
+  const handleKeyDown = (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    if (!wsReady) return;
+    if (!input.trim()) return;
+    send(input);
+  }
+};
   return (
     <div className="min-h-screen bg-[#f7f7f8]">
       <ChatGuestHeader />
@@ -282,6 +291,7 @@ case "done": {
                 rows={1}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown} 
                 placeholder={wsReady ? "Hỏi bất kỳ điều gì…" : "Đang kết nối…"}
                 className="max-h-40 flex-1 resize-none border-none p-2 focus:outline-none"
               />

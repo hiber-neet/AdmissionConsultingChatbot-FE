@@ -1631,6 +1631,11 @@ if (isAuthenticated && user && !isStudent) {
           placeholder="Nhập tin nhắn..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      handleSend(e);    
+    }
+  }}
           className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D]"
         />
         <button
@@ -1781,6 +1786,11 @@ if (isAuthenticated && user && !isStudent) {
         }
         value={liveInput}
         onChange={(e) => setLiveInput(e.target.value)}
+          onKeyDown={(e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      handleSendLiveMessage(e);
+    }
+  }}
         disabled={queueStatus !== "chatting" || !isConnected}
         className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#EB5A0D] disabled:bg-gray-100"
       />
@@ -1857,7 +1867,7 @@ if (isAuthenticated && user && !isStudent) {
         ))}
       </div>
 
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-center gap-2">
         <button
           type="button"
           onClick={handleSkipLiveRating}
