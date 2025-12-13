@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FileText, 
-  MessageSquare, 
-  TrendingUp,
-  Users,
-  BarChart3
+import {
+  FileText,
+  MessageSquare,
+  Users
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/system_users/card';
-import { Progress } from '../ui/system_users/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/system_users/card';
 import { ScrollArea } from '../ui/system_users/scroll-area';
-import { Button } from '../ui/system_users/button';
 import {
   BarChart,
   Bar,
@@ -24,6 +20,7 @@ import { toast } from 'react-toastify';
 
 export function AdmissionDashboard() {
   const [loading, setLoading] = useState(true);
+  const [chartDays, setChartDays] = useState(7); // State for chart interval
   const [stats, setStats] = useState({
     chatbot_interactions: 0,
     published_articles: 0,
@@ -50,10 +47,10 @@ export function AdmissionDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-    
+
     // Refresh data every 5 minutes
     const interval = setInterval(fetchDashboardData, 300000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -72,22 +69,8 @@ export function AdmissionDashboard() {
     <ScrollArea className="h-full">
       <div className="p-6 pb-8 space-y-6">
         {/* Page Header */}
-        <div className="flex justify-between items-start">
-          <div>
-            <h1>Tổng Quan Hôm Nay</h1>
-            <p className="text-muted-foreground">
-              Theo dõi hiệu suất và tương tác của sinh viên
-            </p>
-          </div>
-          <Button 
-            variant="outline"
-            onClick={fetchDashboardData}
-            disabled={loading}
-            className="gap-2"
-          >
-            <TrendingUp className="h-4 w-4" />
-            Làm Mới Dữ Liệu
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold">Tổng Quan Tuyển Sinh</h1>
         </div>
 
         {/* Key Metrics */}
@@ -103,9 +86,6 @@ export function AdmissionDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl">{stats.chatbot_interactions}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Phiên kết thúc trong 30 ngày
-              </p>
             </CardContent>
           </Card>
 
@@ -120,9 +100,6 @@ export function AdmissionDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl">{stats.published_articles}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Tổng số bài viết công khai
-              </p>
             </CardContent>
           </Card>
 
@@ -137,9 +114,6 @@ export function AdmissionDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl">{stats.queue_count}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Yêu cầu đang chờ của bạn
-              </p>
             </CardContent>
           </Card>
 
@@ -154,9 +128,6 @@ export function AdmissionDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl">{stats.drafted_articles}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Bản nháp chờ xuất bản
-              </p>
             </CardContent>
           </Card>
         </div>
@@ -166,26 +137,63 @@ export function AdmissionDashboard() {
           {/* Weekly Articles Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>Thống Kê Bài Viết Trong Tuần</CardTitle>
-              <CardDescription>Số lượng bài viết được xuất bản trong 7 ngày qua</CardDescription>
+              <div className="flex items-center justify-between">
+                <CardTitle>Thống Kê Bài Viết Trong Tuần</CardTitle>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setChartDays(7)}
+                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                      chartDays === 7
+                        ? 'bg-[#EB5A0D] text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    7 Ngày
+                  </button>
+                  <button
+                    onClick={() => setChartDays(14)}
+                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                      chartDays === 14
+                        ? 'bg-[#EB5A0D] text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    14 Ngày
+                  </button>
+                  <button
+                    onClick={() => setChartDays(30)}
+                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                      chartDays === 30
+                        ? 'bg-[#EB5A0D] text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    30 Ngày
+                  </button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {stats.weekly_articles.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={stats.weekly_articles}>
+                  <BarChart data={stats.weekly_articles.slice(-chartDays)}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="date" 
+                    <XAxis
+                      dataKey="date"
                       tick={{ fontSize: 12 }}
                       stroke="hsl(var(--muted-foreground))"
                     />
-                    <YAxis 
+                    <YAxis
                       tick={{ fontSize: 12 }}
                       stroke="hsl(var(--muted-foreground))"
+                      domain={[0, 'dataMax']}        // Set range from 0 to max data value
+                      tickCount={5}                  // Number of ticks to show
+                      interval={0}                   // Show all ticks (no skipping)
+                      ticks={[0, 1, 2, 3, 4, 5]}
                     />
-                    <Bar 
-                      dataKey="articles" 
-                      fill="#3B82F6" 
+                    <Bar
+                      dataKey="articles"
+                      fill="#3B82F6"
                       name="Bài viết"
                       radius={[8, 8, 0, 0]}
                     />
@@ -204,35 +212,15 @@ export function AdmissionDashboard() {
         <div className="grid grid-cols-1 gap-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Xu Hướng Cơ Sở Tri Thức</CardTitle>
-                  <CardDescription>Phân bổ Intent từ câu hỏi huấn luyện</CardDescription>
-                </div>
-                <BarChart3 className="h-5 w-5 text-muted-foreground" />
-              </div>
+              <CardTitle>Xu Hướng Cơ Sở Tri Thức</CardTitle>
             </CardHeader>
             <CardContent>
               {stats.intent_distribution.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {stats.intent_distribution.map((item, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-semibold flex-shrink-0">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">{item.topic}</span>
-                          <span className="text-xs text-muted-foreground">{item.count} câu hỏi</span>
-                        </div>
-                        <Progress 
-                          value={stats.intent_distribution.length > 0 
-                            ? (item.count / stats.intent_distribution[0].count) * 100 
-                            : 0
-                          } 
-                          className="h-2" 
-                        />
-                      </div>
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm">{item.topic}</span>
+                      <span className="text-2xl font-bold">{item.count}</span>
                     </div>
                   ))}
                 </div>

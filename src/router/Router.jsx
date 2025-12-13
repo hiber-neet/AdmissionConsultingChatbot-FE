@@ -8,11 +8,8 @@ import Home from "../pages/home/Home.jsx";
 import { ConsulantPage } from "../pages/consulant/ConsulantPage.tsx";
 import { ConsultantOverviewPage } from "../pages/consulant/ConsultantOverviewPage.tsx";
 import { ConsultantAnalyticsPage } from "../pages/consulant/ConsultantAnalyticsPage.tsx";
-import { ConsultantTemplatesPage } from "../pages/consulant/ConsultantTemplatesPage.tsx";
-import { ConsultantDocumentsPage } from "../pages/consulant/ConsultantDocumentsPage.tsx";
-import { ConsultantOptimizationPage } from "../pages/consulant/ConsultantOptimizationPage.tsx";
+import { ConsultantTrainingDataPage } from "../pages/consulant/ConsultantTrainingDataPage.tsx";
 import { ConsultantLeaderPage } from "../pages/consulant/ConsultantLeaderPage.tsx";
-import { AdmissionPage } from "../pages/admission/AdmissionPage.tsx";
 import { ContentManagerPage } from "../pages/contentManager/ContentManagerPage.tsx";
 import LoginPage from "../pages/loginForAd/LoginPage.tsx";
 import ProtectedRoute from "../components/auth/ProtectedRoute.tsx";
@@ -27,7 +24,6 @@ import { AdminConsultationPage } from "../pages/admin/AdminConsultationPage.tsx"
 import { AdminConsultantDashboardPage } from "../pages/admin/AdminConsultantDashboardPage.tsx";
 import { AdminAnalyticsPage } from "../pages/admin/AdminAnalyticsPage.tsx";
 import { AdminKnowledgeBasePage } from "../pages/admin/AdminKnowledgeBasePage.tsx";
-import { AdminContentOptimizationPage } from "../pages/admin/AdminContentOptimizationPage.tsx";
 import { AdminContentManagerDashboardPage } from "../pages/admin/AdminContentManagerDashboardPage.tsx";
 import { AdminAllArticlesPage } from "../pages/admin/AdminAllArticlesPage.tsx";
 import { AdminReviewQueuePage } from "../pages/admin/AdminReviewQueuePage.tsx";
@@ -36,7 +32,6 @@ import RiasecPage from "../pages/riasec/RiasecPage.jsx";
 import ChatGuestPage from "../pages/chatbot/ChatGuestPage.jsx";
 import { ManagerProfilePage } from "../pages/manager/ManagerProfilePage.tsx";
 import { AdmissionOfficerLayout } from "../components/admission/AdmissionOfficerLayout.jsx";
-import { AdmissionDashboard } from "../components/admission/AdmissionDashboard.jsx";
 import { RequestQueuePage } from "../components/admission/RequestQueuePage.jsx";
 import { LiveChatView } from "../components/admission/chat/LiveChatView.jsx";
 import { KnowledgeBaseViewer } from "../components/admission/knowledgebase/KnowledgeBaseViewer.jsx";
@@ -87,9 +82,7 @@ export default function Router() {
         <Route index element={<Navigate to="overview" replace />} />
         <Route path="overview" element={<ConsultantOverviewPage />} />
         <Route path="analytics" element={<ConsultantAnalyticsPage />} />
-        <Route path="templates" element={<ConsultantTemplatesPage />} />
-        <Route path="documents" element={<ConsultantDocumentsPage />} />
-        <Route path="optimization" element={<ConsultantOptimizationPage />} />
+        <Route path="trainingdata" element={<ConsultantTrainingDataPage />} />
         <Route path="leader" element={<ConsultantLeaderPage />} />
         <Route path="profile" element={<ManagerProfilePage />} />
       </Route>
@@ -100,8 +93,7 @@ export default function Router() {
           <AdmissionOfficerLayout />
         </AdmissionOfficerGuard>
       }>
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<AdmissionDashboard />} />
+        <Route index element={<Navigate to="students" replace />} />
         <Route path="request-queue" element={<RequestQueuePage />} />
         <Route path="consultation" element={<LiveChatView />} />
         <Route path="knowledge-base" element={<KnowledgeBaseViewer />} />
@@ -143,7 +135,6 @@ export default function Router() {
         <Route path="overview" element={<AdminConsultantDashboardPage />} />
         <Route path="analytics" element={<AdminAnalyticsPage />} />
         <Route path="knowledge" element={<AdminKnowledgeBasePage />} />
-        <Route path="optimization" element={<AdminContentOptimizationPage />} />
         {/* Content Management Routes */}
         <Route path="dashboardcontent" element={<AdminContentManagerDashboardPage />} />
         <Route path="articles" element={<AdminAllArticlesPage />} />

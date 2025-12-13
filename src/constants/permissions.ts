@@ -123,7 +123,7 @@ export type PagePermission =
   // Admission Officer pages  
   | "admissions" | "content" | "consultation" | "insights"
   // Consultant pages
-  | "overview" | "analytics" | "knowledge" | "optimization"
+  | "overview" | "analytics" | "knowledge"
   // Content Manager pages
   | "dashboardcontent" | "articles" | "review" | "editor"
   // Shared/Student pages
@@ -147,7 +147,6 @@ let PAGE_PERMISSIONS: Record<PagePermission, Permission> = {
   "overview": "Consultant",
   "analytics": "Consultant",
   "knowledge": "Consultant", 
-  "optimization": "Consultant",
   
   // Content Manager pages
   "dashboardcontent": "Content Manager",

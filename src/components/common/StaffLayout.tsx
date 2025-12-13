@@ -5,7 +5,6 @@ import {
   FileText,
   ListChecks,
   PenSquare,
-  Lightbulb,
   Database,
   TrendingUp,
   MessageCircle,
@@ -69,20 +68,18 @@ export function StaffLayout({ roleKey }: StaffLayoutProps) {
       { id: "profile", label: user?.name || "Hồ Sơ", icon: User, path: '/content/profile', permission: "Student" },
     ],
     'Admission Official': [
-      { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admission/dashboard' },
+      { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
       { id: 'request-queue', label: 'Hàng Đợi Yêu Cầu', icon: Clock, path: '/admission/request-queue' },
       { id: 'consultation', label: 'Tư Vấn Trực Tiếp', icon: MessageCircle, path: '/admission/consultation' },
       { id: 'knowledge-base', label: 'Cơ Sở Tri Thức', icon: BookOpen, path: '/admission/knowledge-base' },
-      { id: 'students', label: 'Danh Sách Học Sinh', icon: Users, path: '/admission/students' },
       { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/admission/profile' },
     ],
     Consultant: [
       { id: 'overview', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/consultant/overview' },
-      { id: 'analytics', label: 'Phân Tích & Thống Kê', icon: TrendingUp, path: '/consultant/analytics' },
-      { id: 'templates', label: 'Câu Hỏi Huấn Luyện', icon: MessageSquareText, path: '/consultant/templates' },
-      { id: 'optimization', label: 'Tối Ưu Hóa Nội Dung', icon: Lightbulb, path: '/consultant/optimization' },
+      { id: 'analytics', label: 'Phân Tích Chatbot', icon: TrendingUp, path: '/consultant/analytics' },
+      { id: 'trainingdata', label: 'Dữ Liệu Huấn Luyện', icon: Database, path: '/consultant/trainingdata' },
       ...(user?.isLeader ? [
-        { id: 'leader', label: 'Duyệt Cơ Sở Tri Thức', icon: Database, path: '/consultant/leader' }
+        { id: 'leader', label: 'Duyệt Cơ Sở Tri Thức', icon: Shield, path: '/consultant/leader' }
       ] : []),
       { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/consultant/profile' }
     ]

@@ -83,7 +83,7 @@ function getDefaultRouteForUser(user: any): string {
   } else if (permissions.includes('Consultant')) {
     return '/consultant';
   } else if (permissions.includes('Admission Official')) {
-    return '/admission/dashboard';
+    return '/admission/students';
   } else {
     return '/profile';
   }

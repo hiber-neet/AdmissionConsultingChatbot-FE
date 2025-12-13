@@ -501,7 +501,7 @@ return { ok: true, token: access_token, role: userData.role };
       'Admin': '/admin/dashboard',
       'Content Manager': '/content/dashboard',
       'Consultant': '/consultant',
-      'Admission Official': '/admission/dashboard',
+      'Admission Official': '/admission/students',
       'Student': '/profile',
       'Parent': '/profile'
     };

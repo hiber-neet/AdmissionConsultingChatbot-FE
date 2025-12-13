@@ -47,8 +47,8 @@ export default function LoginPage() {
         <div className="flex items-center gap-3 mb-6">
           <Shield className="h-6 w-6 text-orange-600" />
           <div>
-            <div className="text-lg font-semibold text-[#f97316]">Admin & Staff Login</div>
-            <div className="text-xs text-gray-500">FPT Platform</div>
+            <div className="text-lg font-semibold text-[#f97316]">Đăng nhập</div>
+            <div className="text-xs text-gray-500">Nền tảng FPT</div>
           </div>
         </div>
 
@@ -65,7 +65,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="text-sm text-gray-600">Password</label>
+            <label className="text-sm text-gray-600">Mật khẩu</label>
             <input
               type="password"
               className="mt-1 w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-black/10"
@@ -82,9 +82,18 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-[#f97316] text-white rounded-md py-2.5 text-sm hover:opacity-90 disabled:opacity-60"
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
+
+        <div className="mt-4">
+          <button
+            onClick={() => navigate('/')}
+            className="w-full bg-white text-black rounded-md py-2.5 text-sm border border-gray-300 hover:bg-gray-50"
+          >
+            Trang chủ
+          </button>
+        </div>
 
       </div>
     </div>

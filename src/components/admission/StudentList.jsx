@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '../ui/system_users/select';
 import { toast } from 'react-toastify';
-import { StudentDetailDialog } from './StudentDetailDialog';
+import { StudentDetailModal } from './StudentDetailModal';
 import { API_CONFIG } from '../../config/api.js';
 
 // Props: { onSelectStudent: (studentId: string) => void }
@@ -302,8 +302,8 @@ export function StudentList({ onSelectStudent }) {
           </CardContent>
         </Card>
 
-        {/* Student Detail Dialog */}
-        <StudentDetailDialog
+        {/* Student Detail Modal */}
+        <StudentDetailModal
           isOpen={isDetailDialogOpen}
           onClose={() => setIsDetailDialogOpen(false)}
           userId={selectedStudentId}
