@@ -69,6 +69,8 @@ export default function ArticlePage() {
     <>
       <Header />
       <div className="max-w-6xl mx-auto px-4 py-10">
+        <div className="mb-20">
+        </div>
         {loading && (
           <p className="text-center text-gray-500 mt-10">
             Đang tải bài viết...

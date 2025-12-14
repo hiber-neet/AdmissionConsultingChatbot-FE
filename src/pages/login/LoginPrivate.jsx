@@ -168,11 +168,11 @@ const handleLogin = async (event) => {
                 <h3>Reach us</h3>
                 <li>
                   <img src="/src/assets/phone.svg" alt="" />
-                  <span>+843899999999</span>
+                  <span>(028) 7300 5588</span>
                 </li>
                 <li>
                   <img src="/src/assets/email.svg" alt="" />
-                  <span>petcare@gmail.com</span>
+                  <span>tuyensinhhcm@fpt.edu.vn</span>
                 </li>
                 <li>
                   <img src="/src/assets/location.svg" alt="" />
@@ -201,7 +201,7 @@ const handleLogin = async (event) => {
               <img src="/src/assets/twitter.svg" alt="" />
             </div>
             <div className="line-end"></div>
-            <h5>Copyright&copy; : petcare@gmail.com</h5>
+            <h5>Copyright&copy; : tuyensinhhcm@fpt.edu.vn</h5>
           </div>
         </div>
       </>

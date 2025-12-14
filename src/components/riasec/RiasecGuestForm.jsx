@@ -326,6 +326,8 @@ export default function RiasecGuestForm() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <header className="mb-6">
+        <div className="mb-10">
+        </div>
         <h1 className="text-2xl font-semibold">Trắc nghiệm RIASEC</h1>
         <p className="text-gray-600">
           Đánh giá xu hướng nghề nghiệp theo 6 nhóm: Realistic, Investigative,
@@ -399,9 +401,6 @@ export default function RiasecGuestForm() {
           {/* Tóm tắt nhanh cho mọi đối tượng */}
           <section className="rounded-xl border bg-white p-5">
             <h2 className="text-lg font-semibold mb-2">Kết quả tóm tắt</h2>
-            <p className="text-gray-600 mb-2">
-              Bộ 3 nổi trội: <b>{top3}</b>
-            </p>
             <p className="text-sm text-gray-600">
               Điểm chi tiết (0–5 mỗi nhóm):{" "}
               {Object.keys(scores)

@@ -1819,13 +1819,13 @@ if (isAuthenticated && user && !isStudent) {
         Các tư vấn viên đang bận, xin vui lòng thử kết nối lại sau ít phút.
       </p>
       <div className="flex justify-end gap-2">
-        <button
+        {/* <button
           type="button"
           onClick={() => setShowQueueTimeoutModal(false)}
           className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
         >
           Đóng
-        </button>
+        </button> */}
         <button
           type="button"
           onClick={handleReconnectAfterTimeout}
@@ -1924,7 +1924,7 @@ if (isAuthenticated && user && !isStudent) {
         <div>
           <div className="grid grid-cols-2 gap-4 font-semibold mb-3 text-white">
             <div>Môn học</div>
-            <div className="text-center">Học kỳ 2</div>
+            <div className="text-center">Học kỳ</div>
           </div>
 
           <div>
@@ -1947,7 +1947,7 @@ if (isAuthenticated && user && !isStudent) {
           className="bg-purple-700 hover:bg-purple-800 text-white font-bold text-2xl px-16 py-3 rounded-full"
           disabled={uploading}
         >
-          {uploading ? "Đang lưu..." : "Save"}
+          {uploading ? "Đang lưu..." : "Lưu"}
         </button>
       </div>
     </div>

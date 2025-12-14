@@ -44,7 +44,7 @@ export function ChatHeader({
           size="sm"
           onClick={onEndSession}
         >
-          End Session
+          Kết thúc phiên
         </Button>
       </div>
     </div>

@@ -81,7 +81,6 @@ useEffect(() => {
     ws.send(
       JSON.stringify({
 
-        session_id: sessionId,
       })
     );
   };
@@ -105,7 +104,7 @@ useEffect(() => {
             break;
 case "go":
 case "done": {
-  const finalText = (partialRef.current || "").trim();
+const finalText = (partialRef.current || "").trim();
   if (finalText) {
     const botMsg = { sender: "bot", text: finalText };
     setMessages((prev) => [...prev, botMsg]);
@@ -194,13 +193,13 @@ case "done": {
   wsRef.current.send(
     JSON.stringify({
       message: prefillMessage,
-      session_id: sessionId,
+
     })
   );
 
   prefillSentRef.current = true; 
   setPrefillMessage(null);
-}, [wsReady, prefillMessage, guestId, sessionId]);
+}, [wsReady, prefillMessage]);
 
   const send = (text) => {
     if (!text.trim()) return;
@@ -216,7 +215,7 @@ case "done": {
       wsRef.current.send(
         JSON.stringify({
           message: text,
-          session_id: sessionId,
+
         })
       );
     }
@@ -228,17 +227,8 @@ case "done": {
     send(input);
   };
 
-
-  const handleKeyDown = (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    if (!wsReady) return;
-    if (!input.trim()) return;
-    send(input);
-  }
-};
   return (
-    <div className="min-h-screen bg-[#f7f7f8]">
+<div className="min-h-screen bg-[#f7f7f8]">
       <ChatGuestHeader />
 
       {/* Khung chat */}
@@ -291,7 +281,6 @@ case "done": {
                 rows={1}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown} 
                 placeholder={wsReady ? "Hỏi bất kỳ điều gì…" : "Đang kết nối…"}
                 className="max-h-40 flex-1 resize-none border-none p-2 focus:outline-none"
               />
