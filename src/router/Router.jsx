@@ -142,8 +142,8 @@ export default function Router() {
         <Route path="profile" element={<ManagerProfilePage />} />
       </Route>
 
-      {/* Catch-all route */}
-      <Route path="*" element={<Navigate to="/404" replace />} />
+      {/* Catch-all route - redirect to home instead of 404 to prevent HMR issues */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

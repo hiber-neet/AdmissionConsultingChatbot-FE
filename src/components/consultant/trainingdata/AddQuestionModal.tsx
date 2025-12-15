@@ -87,7 +87,7 @@ export function AddQuestionModal({ intents, onClose, onSubmit }: AddQuestionModa
       return;
     }
     if (!intentId) {
-      alert('Vui lòng chọn intent');
+      alert('Vui lòng chọn danh mục');
       return;
     }
 
@@ -175,14 +175,14 @@ export function AddQuestionModal({ intents, onClose, onSubmit }: AddQuestionModa
           {/* Intent Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Intent <span className="text-red-500">*</span>
+              Danh mục <span className="text-red-500">*</span>
             </label>
             <Select
               value={intentId?.toString() || ''}
               onValueChange={(value) => setIntentId(parseInt(value))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Chọn intent" />
+                <SelectValue placeholder="Chọn danh mục" />
               </SelectTrigger>
               <SelectContent>
                 {intents.map((intent) => (

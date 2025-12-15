@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Edit, Trash2, Download } from 'lucide-react';
+import { X, Edit, Trash2, Download, Loader2 } from 'lucide-react';
 import { TrainingDocument, Intent } from './types';
 import { Input } from '../../ui/system_users/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/system_users/select';
@@ -15,6 +15,8 @@ interface DocumentDetailModalProps {
   onDelete: (documentId: number) => Promise<void>;
   onApprove?: (documentId: number) => Promise<void>;
   onReject?: (documentId: number) => Promise<void>;
+  isApproving?: boolean;
+  isRejecting?: boolean;
 }
 
 export function DocumentDetailModal({
@@ -25,7 +27,9 @@ export function DocumentDetailModal({
   onUpdate,
   onDelete,
   onApprove,
-  onReject
+  onReject,
+  isApproving = false,
+  isRejecting = false
 }: DocumentDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(document.title);
@@ -201,23 +205,13 @@ export function DocumentDetailModal({
           </div>
 
           {/* File Information */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Loại File
-              </label>
-              <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                {document.file_type?.toUpperCase() || 'UNKNOWN'}
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Kích Thước
-              </label>
-              <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                {formatFileSize(document.file_size)}
-              </p>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Loại File
+            </label>
+            <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+              {document.file_type?.toUpperCase() || 'UNKNOWN'}
+            </p>
           </div>
 
           {/* Document Content Preview */}
@@ -311,22 +305,37 @@ export function DocumentDetailModal({
                       onClick={handleReject}
                       variant="outline"
                       className="text-red-600 hover:bg-red-50"
-                      disabled={loading}
+                      disabled={loading || isApproving || isRejecting}
                     >
-                      Từ chối
+                      {isRejecting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Đang xử lý...
+                        </>
+                      ) : (
+                        'Từ chối'
+                      )}
                     </Button>
                     <Button
                       onClick={handleApprove}
                       className="bg-green-600 hover:bg-green-700"
-                      disabled={loading}
+                      disabled={loading || isApproving || isRejecting}
                     >
-                      Duyệt
+                      {isApproving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Đang duyệt...
+                        </>
+                      ) : (
+                        'Duyệt'
+                      )}
                     </Button>
                   </>
                 )}
                 <Button
                   onClick={() => setIsEditing(true)}
                   className="bg-[#EB5A0D] hover:bg-[#d14f0a]"
+                  disabled={isApproving || isRejecting}
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Chỉnh Sửa

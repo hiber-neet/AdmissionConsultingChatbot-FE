@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Edit, Trash2 } from 'lucide-react';
+import { X, Edit, Trash2, Loader2 } from 'lucide-react';
 import { TrainingQuestion, Intent } from './types';
 import { Textarea } from '../../ui/system_users/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/system_users/select';
@@ -14,6 +14,8 @@ interface QuestionDetailModalProps {
   onDelete: (questionId: number) => Promise<void>;
   onApprove?: (questionId: number) => Promise<void>;
   onReject?: (questionId: number) => Promise<void>;
+  isApproving?: boolean;
+  isRejecting?: boolean;
 }
 
 export function QuestionDetailModal({
@@ -24,7 +26,9 @@ export function QuestionDetailModal({
   onUpdate,
   onDelete,
   onApprove,
-  onReject
+  onReject,
+  isApproving = false,
+  isRejecting = false
 }: QuestionDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedQuestion, setEditedQuestion] = useState(question.question);
@@ -127,7 +131,7 @@ export function QuestionDetailModal({
           {/* Intent Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Intent
+              Danh mục
             </label>
             {isEditing ? (
               <Select
@@ -135,7 +139,7 @@ export function QuestionDetailModal({
                 onValueChange={(value) => setEditedIntentId(parseInt(value))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn intent" />
+                  <SelectValue placeholder="Chọn danh mục" />
                 </SelectTrigger>
                 <SelectContent>
                   {intents.map((intent) => (
@@ -258,22 +262,37 @@ export function QuestionDetailModal({
                       onClick={handleReject}
                       variant="outline"
                       className="text-red-600 hover:bg-red-50"
-                      disabled={loading}
+                      disabled={loading || isApproving || isRejecting}
                     >
-                      Từ chối
+                      {isRejecting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Đang xử lý...
+                        </>
+                      ) : (
+                        'Từ chối'
+                      )}
                     </Button>
                     <Button
                       onClick={handleApprove}
                       className="bg-green-600 hover:bg-green-700"
-                      disabled={loading}
+                      disabled={loading || isApproving || isRejecting}
                     >
-                      Duyệt
+                      {isApproving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Đang duyệt...
+                        </>
+                      ) : (
+                        'Duyệt'
+                      )}
                     </Button>
                   </>
                 )}
                 <Button
                   onClick={() => setIsEditing(true)}
                   className="bg-[#EB5A0D] hover:bg-[#d14f0a]"
+                  disabled={isApproving || isRejecting}
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Chỉnh Sửa

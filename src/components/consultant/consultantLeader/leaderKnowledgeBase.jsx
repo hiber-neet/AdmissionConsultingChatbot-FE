@@ -18,6 +18,8 @@ export function LeaderKnowledgeBase() {
   const [rejectReason, setRejectReason] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedItemType, setSelectedItemType] = useState(null);
+  const [approvingId, setApprovingId] = useState(null); // Track which item is being approved
+  const [rejectingId, setRejectingId] = useState(null); // Track which item is being rejected
   
   useEffect(() => {
     fetchPendingItems();
@@ -42,6 +44,7 @@ export function LeaderKnowledgeBase() {
   
   const handleApprove = async (id, type) => {
     try {
+      setApprovingId(id); // Set loading state for this specific item
       if (type === 'qa') {
         await knowledgeAPI.approveTrainingQuestion(id);
         toast.success('Đã duyệt câu hỏi huấn luyện!');
@@ -54,6 +57,8 @@ export function LeaderKnowledgeBase() {
     } catch (error) {
       console.error('Không thể duyệt:', error);
       toast.error('Không thể duyệt. Vui lòng thử lại.');
+    } finally {
+      setApprovingId(null); // Clear loading state
     }
   };
 
@@ -70,6 +75,7 @@ export function LeaderKnowledgeBase() {
     }
 
     try {
+      setRejectingId(selectedItem); // Set loading state
       if (selectedItemType === 'qa') {
         await knowledgeAPI.rejectTrainingQuestion(selectedItem, rejectReason);
         toast.success('Đã từ chối câu hỏi huấn luyện!');
@@ -89,6 +95,8 @@ export function LeaderKnowledgeBase() {
     } catch (error) {
       console.error('Không thể từ chối:', error);
       toast.error('Không thể từ chối. Vui lòng thử lại.');
+    } finally {
+      setRejectingId(null); // Clear loading state
     }
   };
 
@@ -102,13 +110,16 @@ export function LeaderKnowledgeBase() {
       });
     };
 
+    const isApproving = approvingId === question.question_id;
+    const isRejecting = rejectingId === question.question_id;
+
     return (
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3 flex-1">
             <MessageCircle className="h-5 w-5 text-blue-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <h3 className="font-medium truncate">ID #{question.question_id}</h3>
+              <h3 className="font-medium truncate">Training Question {question.question_id}</h3>
               <p className="text-sm text-muted-foreground">
                 Tạo: {formatDate(question.created_at)}
               </p>
@@ -138,17 +149,37 @@ export function LeaderKnowledgeBase() {
             size="sm"
             className="gap-2"
             onClick={() => openRejectDialog(question.question_id, 'qa')}
+            disabled={isApproving || isRejecting}
           >
-            <X className="h-4 w-4" />
-            Từ Chối
+            {isRejecting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Đang xử lý...
+              </>
+            ) : (
+              <>
+                <X className="h-4 w-4" />
+                Từ Chối
+              </>
+            )}
           </Button>
           <Button 
             size="sm"
             className="gap-2 bg-[#EB5A0D] hover:bg-[#d14f0a]"
             onClick={() => handleApprove(question.question_id, 'qa')}
+            disabled={isApproving || isRejecting}
           >
-            <Check className="h-4 w-4" />
-            Phê Duyệt
+            {isApproving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Đang duyệt...
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4" />
+                Phê Duyệt
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -165,6 +196,9 @@ export function LeaderKnowledgeBase() {
       });
     };
 
+    const isApproving = approvingId === document.document_id;
+    const isRejecting = rejectingId === document.document_id;
+
     return (
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
         <div className="flex items-start justify-between mb-4">
@@ -173,7 +207,7 @@ export function LeaderKnowledgeBase() {
             <div className="flex-1 min-w-0">
               <h3 className="font-medium truncate">{document.title}</h3>
               <p className="text-sm text-muted-foreground">
-                {document.category} • Tạo: {formatDate(document.created_at)}
+                Tạo: {formatDate(document.created_at)}
               </p>
             </div>
           </div>
@@ -195,17 +229,37 @@ export function LeaderKnowledgeBase() {
             size="sm"
             className="gap-2"
             onClick={() => openRejectDialog(document.document_id, 'document')}
+            disabled={isApproving || isRejecting}
           >
-            <X className="h-4 w-4" />
-            Từ Chối
+            {isRejecting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Đang xử lý...
+              </>
+            ) : (
+              <>
+                <X className="h-4 w-4" />
+                Từ Chối
+              </>
+            )}
           </Button>
           <Button 
             size="sm"
             className="gap-2 bg-[#EB5A0D] hover:bg-[#d14f0a]"
             onClick={() => handleApprove(document.document_id, 'document')}
+            disabled={isApproving || isRejecting}
           >
-            <Check className="h-4 w-4" />
-            Phê Duyệt
+            {isApproving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Đang duyệt...
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4" />
+                Phê Duyệt
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -308,11 +362,23 @@ export function LeaderKnowledgeBase() {
                 setSelectedItem(null);
                 setSelectedItemType(null);
               }}
+              disabled={rejectingId !== null}
             >
               Hủy
             </Button>
-            <Button variant="destructive" onClick={handleReject}>
-              Từ Chối
+            <Button 
+              variant="destructive" 
+              onClick={handleReject}
+              disabled={rejectingId !== null}
+            >
+              {rejectingId !== null ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Đang xử lý...
+                </>
+              ) : (
+                'Từ Chối'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

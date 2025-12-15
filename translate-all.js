@@ -147,7 +147,7 @@ const TRANSLATIONS = {
   "Content": "Nội Dung",
   "Question": "Câu Hỏi",
   "Answer": "Câu Trả Lời",
-  "Intent": "Ý Định",
+  "Intent": "Danh Mục",
   "Priority": "Ưu Tiên",
   "Type": "Loại",
   "Created Date": "Ngày Tạo",
@@ -217,7 +217,7 @@ const TRANSLATIONS = {
   "No active sessions": "Không có phiên hoạt động",
   "Try adjusting your search or filters": "Thử điều chỉnh tìm kiếm hoặc bộ lọc của bạn",
   "No article data this week": "Chưa có dữ liệu bài viết trong tuần này",
-  "No Intent data in system": "Chưa có dữ liệu Intent trong hệ thống",
+  "No Intent data in system": "Chưa có dữ liệu Danh mục trong hệ thống",
   
   // ==== CONFIRMATION MESSAGES ====
   "Are you sure?": "Bạn có chắc không?",
@@ -259,7 +259,7 @@ const TRANSLATIONS = {
   "Low Satisfaction Answers": "Câu Trả Lời Đánh Giá Thấp",
   "Recent Questions": "Câu Hỏi Gần Đây",
   "Articles published in last 7 days": "Số lượng bài viết được xuất bản trong 7 ngày qua",
-  "Intent distribution from training questions": "Phân bổ Intent từ câu hỏi huấn luyện",
+  "Intent distribution from training questions": "Phân bổ Danh mục từ câu hỏi huấn luyện",
   "Total public articles": "Tổng số bài viết công khai",
   "Your pending requests": "Yêu cầu đang chờ của bạn",
   "Drafts pending publish": "Bản nháp chờ xuất bản",

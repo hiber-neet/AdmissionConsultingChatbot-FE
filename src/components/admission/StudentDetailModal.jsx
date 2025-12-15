@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, Calendar, Award, Brain, TrendingUp } from 'lucide-react';
-import { riasecAPI } from '../../services/fastapi';
+import { X, User, Mail, Phone, Calendar, Award, Brain, TrendingUp, BookOpen } from 'lucide-react';
+import { riasecAPI, academicScoresAPI } from '../../services/fastapi';
 import { API_CONFIG } from '../../config/api.js';
 
 export function StudentDetailModal({ isOpen, onClose, userId }) {
@@ -9,6 +9,8 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
   const [error, setError] = useState(null);
   const [riasecResults, setRiasecResults] = useState([]);
   const [riasecLoading, setRiasecLoading] = useState(false);
+  const [academicScores, setAcademicScores] = useState(null);
+  const [scoresLoading, setScoresLoading] = useState(false);
 
   // Fetch student details
   const fetchStudentDetail = async (id) => {
@@ -81,6 +83,34 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
     }
   };
 
+  // Fetch Academic Scores
+  const fetchAcademicScores = async (id) => {
+    if (!id) return;
+    
+    setScoresLoading(true);
+
+    try {
+      const idString = String(id);
+      let numericId;
+      if (idString.startsWith('ST')) {
+        numericId = parseInt(idString.replace('ST', '').replace(/^0+/, '') || '1');
+      } else {
+        numericId = parseInt(idString);
+      }
+      
+      const response = await academicScoresAPI.getUserAcademicScores(numericId);
+      setAcademicScores(response || null);
+
+    } catch (err) {
+      if (err.response?.status !== 404) {
+        console.error('Academic scores fetch error:', err);
+      }
+      setAcademicScores(null);
+    } finally {
+      setScoresLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && userId) {
       fetchStudentDetail(userId);
@@ -90,6 +120,7 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
   useEffect(() => {
     if (student && isOpen) {
       fetchRiasecResults(userId);
+      fetchAcademicScores(userId);
     }
   }, [student, isOpen, userId]);
 
@@ -394,6 +425,87 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Academic Scores Section */}
+              <div className="bg-white rounded-2xl border-2 border-orange-100 shadow-lg overflow-hidden">
+                <div className="bg-[#EB5A0D] px-8 py-6 text-white">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                      <BookOpen className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold">Kết Quả Học Tập</h3>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-8">
+                  {scoresLoading && (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <div className="relative">
+                        <div className="w-16 h-16 border-8 border-orange-200 border-t-[#EB5A0D] rounded-full animate-spin"></div>
+                        <BookOpen className="absolute inset-0 m-auto h-8 w-8 text-[#EB5A0D]" />
+                      </div>
+                      <p className="mt-4 text-gray-600 font-medium">Đang tải kết quả học tập...</p>
+                    </div>
+                  )}
+
+                  {!scoresLoading && !academicScores && (
+                    <div className="text-center py-16">
+                      <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <BookOpen className="h-10 w-10 text-orange-400" />
+                      </div>
+                      <h4 className="text-xl font-bold text-gray-900 mb-2">Chưa có dữ liệu</h4>
+                      <p className="text-gray-600">Học sinh chưa cập nhật kết quả học tập</p>
+                    </div>
+                  )}
+
+                  {!scoresLoading && academicScores && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        { key: 'math', label: 'Toán', color: 'from-blue-500 to-cyan-600', bg: 'bg-blue-50', border: 'border-blue-200' },
+                        { key: 'literature', label: 'Ngữ Văn', color: 'from-purple-500 to-violet-600', bg: 'bg-purple-50', border: 'border-purple-200' },
+                        { key: 'english', label: 'Tiếng Anh', color: 'from-green-500 to-emerald-600', bg: 'bg-green-50', border: 'border-green-200' },
+                        { key: 'physics', label: 'Vật Lý', color: 'from-indigo-500 to-blue-600', bg: 'bg-indigo-50', border: 'border-indigo-200' },
+                        { key: 'chemistry', label: 'Hóa Học', color: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', border: 'border-amber-200' },
+                        { key: 'biology', label: 'Sinh Học', color: 'from-lime-500 to-green-600', bg: 'bg-lime-50', border: 'border-lime-200' },
+                        { key: 'history', label: 'Lịch Sử', color: 'from-yellow-500 to-amber-600', bg: 'bg-yellow-50', border: 'border-yellow-200' },
+                        { key: 'geography', label: 'Địa Lý', color: 'from-teal-500 to-cyan-600', bg: 'bg-teal-50', border: 'border-teal-200' },
+                      ].map(({ key, label, color, bg, border }) => {
+                        const score = academicScores[key] || 0;
+                        const percentage = (score / 10.0) * 100;
+                        
+                        return (
+                          <div key={key} className={`${bg} border ${border} rounded-xl p-5`}>
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-sm font-bold text-gray-900">{label}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xl font-extrabold text-gray-900">
+                                  {score.toFixed(1)}
+                                </span>
+                                <span className="text-sm text-gray-500 font-medium">/10</span>
+                              </div>
+                            </div>
+                            <div className="relative h-8 bg-white rounded-lg overflow-hidden border-2 border-gray-200">
+                              <div 
+                                className={`h-full bg-gradient-to-r ${color} transition-all duration-700 ease-out relative`}
+                                style={{ width: `${percentage}%` }}
+                              >
+                                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                              </div>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-sm font-bold text-gray-700 drop-shadow-sm">
+                                  {percentage.toFixed(0)}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

@@ -32,24 +32,7 @@ export function ActiveSessionsList({
     <div className="w-80 border-r bg-white flex flex-col">
       <div className="p-4 border-b">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Phiên hoạt động</h3>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onRefresh}
-              disabled={isLoading}
-            >
-              {isLoading ? '...' : '🔄'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onGoToQueue}
-            >
-              Queue
-            </Button>
-          </div>
+          <h3 className="font-semibold">Danh Sách Chat</h3>
         </div>
       </div>
       
@@ -87,10 +70,10 @@ export function ActiveSessionsList({
                       {formatDate(session.start_time)}
                     </span>
                   </div>
-                  <div className="text-sm text-muted-foreground truncate">{session.session_type || 'Live Chat'}</div>
+                  <div className="text-sm text-muted-foreground truncate">{session.session_type || 'Trò Chuyện Trực Tiếp'}</div>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant="outline" className="text-xs font-normal">
-                      Session {session.session_id}
+                      Phiên {session.session_id}
                     </Badge>
                     <div className="flex items-center gap-1">
                       <div className="h-2 w-2 rounded-full bg-green-500"></div>

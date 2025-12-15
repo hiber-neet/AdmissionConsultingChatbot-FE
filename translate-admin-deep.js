@@ -98,7 +98,7 @@ const TRANSLATIONS = {
   "Content": "Nội Dung",
   "Question": "Câu Hỏi",
   "Answer": "Câu Trả Lời",
-  "Intent": "Ý Định",
+  "Intent": "Danh Mục",
   "Priority": "Ưu Tiên",
   "Type": "Loại",
   "Created Date": "Ngày Tạo",
