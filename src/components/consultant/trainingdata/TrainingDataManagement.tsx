@@ -39,6 +39,12 @@ export function TrainingDataManagement() {
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [showUploadDocumentModal, setShowUploadDocumentModal] = useState(false);
 
+  // Loading states for approve/reject operations
+  const [approvingQuestionId, setApprovingQuestionId] = useState<number | null>(null);
+  const [rejectingQuestionId, setRejectingQuestionId] = useState<number | null>(null);
+  const [approvingDocumentId, setApprovingDocumentId] = useState<number | null>(null);
+  const [rejectingDocumentId, setRejectingDocumentId] = useState<number | null>(null);
+
   // Fetch data on mount
   useEffect(() => {
     fetchIntents();
@@ -55,7 +61,7 @@ export function TrainingDataManagement() {
       setIntents(data.map(intent => ({ ...intent, description: intent.description || '' })));
     } catch (error) {
       console.error('Failed to fetch intents:', error);
-      toast.error('Không thể tải danh sách intent');
+      toast.error('Không thể tải danh sách danh mục');
     }
   };
 
@@ -131,6 +137,7 @@ export function TrainingDataManagement() {
 
   const handleApproveQuestion = async (questionId: number) => {
     try {
+      setApprovingQuestionId(questionId);
       await knowledgeAPI.approveTrainingQuestion(questionId);
       toast.success('Duyệt câu hỏi thành công');
       await fetchQuestions();
@@ -142,11 +149,14 @@ export function TrainingDataManagement() {
       console.error('Failed to approve question:', error);
       toast.error('Không thể duyệt câu hỏi');
       throw error;
+    } finally {
+      setApprovingQuestionId(null);
     }
   };
 
   const handleRejectQuestion = async (questionId: number) => {
     try {
+      setRejectingQuestionId(questionId);
       await knowledgeAPI.rejectTrainingQuestion(questionId, 'Từ chối bởi người quản lý');
       toast.success('Từ chối câu hỏi thành công');
       await fetchQuestions();
@@ -158,6 +168,8 @@ export function TrainingDataManagement() {
       console.error('Failed to reject question:', error);
       toast.error('Không thể từ chối câu hỏi');
       throw error;
+    } finally {
+      setRejectingQuestionId(null);
     }
   };
 
@@ -209,6 +221,7 @@ export function TrainingDataManagement() {
 
   const handleApproveDocument = async (documentId: number) => {
     try {
+      setApprovingDocumentId(documentId);
       await knowledgeAPI.approveDocument(documentId);
       toast.success('Duyệt tài liệu thành công');
       await fetchDocuments();
@@ -223,11 +236,14 @@ export function TrainingDataManagement() {
       console.error('Failed to approve document:', error);
       toast.error('Không thể duyệt tài liệu');
       throw error;
+    } finally {
+      setApprovingDocumentId(null);
     }
   };
 
   const handleRejectDocument = async (documentId: number) => {
     try {
+      setRejectingDocumentId(documentId);
       await knowledgeAPI.rejectDocument(documentId, 'Từ chối bởi người quản lý');
       toast.success('Từ chối tài liệu thành công');
       await fetchDocuments();
@@ -242,6 +258,8 @@ export function TrainingDataManagement() {
       console.error('Failed to reject document:', error);
       toast.error('Không thể từ chối tài liệu');
       throw error;
+    } finally {
+      setRejectingDocumentId(null);
     }
   };
 
@@ -385,6 +403,8 @@ export function TrainingDataManagement() {
           onDelete={handleDeleteQuestion}
           onApprove={isLeader ? handleApproveQuestion : undefined}
           onReject={isLeader ? handleRejectQuestion : undefined}
+          isApproving={approvingQuestionId === selectedQuestion.question_id}
+          isRejecting={rejectingQuestionId === selectedQuestion.question_id}
         />
       )}
 
@@ -401,6 +421,8 @@ export function TrainingDataManagement() {
           onDelete={handleDeleteDocument}
           onApprove={isLeader ? handleApproveDocument : undefined}
           onReject={isLeader ? handleRejectDocument : undefined}
+          isApproving={approvingDocumentId === selectedDocument.document_id}
+          isRejecting={rejectingDocumentId === selectedDocument.document_id}
         />
       )}
 

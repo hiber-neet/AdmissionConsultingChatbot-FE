@@ -61,8 +61,6 @@ export function DocumentList({ documents, selectedDocument, onSelectDocument }: 
               
               <div className="flex items-center gap-3 text-xs text-gray-500">
                 <span>{doc.file_type?.toUpperCase() || 'FILE'}</span>
-                <span>•</span>
-                <span>{formatFileSize(doc.file_size)}</span>
                 {doc.intent_name && (
                   <>
                     <span>•</span>

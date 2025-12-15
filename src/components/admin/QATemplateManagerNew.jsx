@@ -7,7 +7,6 @@ const QATemplateManagerNew = () => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState(null);
 
   // Form state with Q&A pairs structure
   const [formData, setFormData] = useState({
@@ -71,38 +70,17 @@ const QATemplateManagerNew = () => {
 
     setLoading(true);
     try {
-      if (editingTemplate) {
-        await templateAPI.updateTemplate(editingTemplate.template_id, formData);
-        toast.success('Cập nhật mẫu thành công!');
-      } else {
-        await templateAPI.createTemplate(formData);
-        toast.success('Tạo mẫu mới thành công!');
-      }
+      await templateAPI.createTemplate(formData);
+      toast.success('Tạo mẫu mới thành công!');
 
       await fetchTemplates();
       resetForm();
       setIsDialogOpen(false);
     } catch (error) {
-      toast.error(editingTemplate ? 'Không thể cập nhật mẫu' : 'Không thể tạo mẫu mới');
+      toast.error('Không thể tạo mẫu mới');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleEdit = (template) => {
-    setEditingTemplate(template);
-    setFormData({
-      template_name: template.template_name,
-      description: template.description || '',
-      qa_pairs: template.qa_pairs?.length > 0 
-        ? template.qa_pairs.map(qa => ({
-            question: qa.question,
-            answer: qa.answer,
-            order_position: qa.order_position
-          }))
-        : [{ question: '', answer: '', order_position: 1 }]
-    });
-    setIsDialogOpen(true);
   };
 
   const handleDelete = async (templateId) => {
@@ -123,7 +101,6 @@ const QATemplateManagerNew = () => {
       description: '',
       qa_pairs: [{ question: '', answer: '', order_position: 1 }]
     });
-    setEditingTemplate(null);
   };
 
   const addQAPair = () => {
@@ -212,12 +189,6 @@ const QATemplateManagerNew = () => {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handleEdit(template)}
-                    className="bg-[#EB5A0D] text-white px-3 py-1 rounded hover:bg-[#d14f0a]"
-                  >
-                    Chỉnh Sửa
-                  </button>
-                  <button
                     onClick={() => handleDelete(template.template_id)}
                     className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                   >
@@ -257,9 +228,7 @@ const QATemplateManagerNew = () => {
           <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Dialog Header */}
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold">
-                {editingTemplate ? 'Chỉnh Sửa Mẫu' : 'Tạo Mẫu'}
-              </h3>
+              <h3 className="text-xl font-semibold">Tạo Mẫu</h3>
               <button
                 onClick={() => setIsDialogOpen(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -377,7 +346,7 @@ const QATemplateManagerNew = () => {
                 disabled={loading}
                 className="bg-[#EB5A0D] text-white px-4 py-2 rounded hover:bg-[#d14f0a] disabled:opacity-50"
               >
-                {loading ? 'Đang lưu...' : (editingTemplate ? 'Cập Nhật' : 'Tạo')}
+                {loading ? 'Đang lưu...' : 'Tạo'}
               </button>
             </div>
           </div>

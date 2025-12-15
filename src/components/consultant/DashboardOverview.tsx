@@ -78,12 +78,12 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     
     if (diffInHours < 1) {
-      return 'Less than 1 hour ago';
+      return 'Chưa đến 1 giờ trước';
     } else if (diffInHours < 24) {
-      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+      return `${diffInHours} giờ trước`;
     } else {
       const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+      return `${diffInDays} ngày trước`;
     }
   };
 
@@ -94,7 +94,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
         <div className="p-6 pb-8 space-y-6">
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-3 text-muted-foreground">{t('dashboard.loading_data')}</span>
+            <span className="ml-3 text-muted-foreground">Đang tải dữ liệu...</span>
           </div>
         </div>
       </ScrollArea>
@@ -109,7 +109,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-              <p className="text-destructive font-medium">{t('dashboard.loading_failed')}</p>
+              <p className="text-destructive font-medium">Không thể tải dữ liệu</p>
               <p className="text-sm text-muted-foreground mt-2">{error}</p>
             </div>
           </div>
@@ -124,7 +124,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
       <ScrollArea className="min-h-screen h-full">
         <div className="p-6 pb-8 space-y-6">
           <div className="flex items-center justify-center h-64">
-            <p className="text-muted-foreground">{t('dashboard.no_data')}</p>
+            <p className="text-muted-foreground">Không có dữ liệu</p>
           </div>
         </div>
       </ScrollArea>
@@ -136,19 +136,16 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
       <div className="p-6 pb-8 space-y-6">
         {/* Page Header */}
         <div>
-          <h1>{t('dashboard.overview_title')}</h1>
-          <p className="text-muted-foreground">
-            {t('dashboard.overview_description')}
-          </p>
+          <h1 className="text-3xl font-bold">Tổng Quan</h1>
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="border-l-4 border-l-[#3B82F6]">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm text-muted-foreground">
-                  {t('dashboard.total_user_queries')}
+                  Tổng Số Câu Hỏi
                 </CardTitle>
                 <MessageSquare className="h-4 w-4 text-[#3B82F6]" />
               </div>
@@ -158,41 +155,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
               <p className="text-xs text-muted-foreground mt-1">
                 <span className={stats.overview_stats.queries_growth >= 0 ? "text-[#10B981]" : "text-[#EF4444]"}>
                   {stats.overview_stats.queries_growth >= 0 ? '↑' : '↓'} {Math.abs(stats.overview_stats.queries_growth)}%
-                </span> {t(timeRange === 'today' ? 'dashboard.from_last_hour' : 'dashboard.from_last_week')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-[#10B981]">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm text-muted-foreground">
-                  {t('dashboard.accuracy_rate')}
-                </CardTitle>
-                <Target className="h-4 w-4 text-[#10B981]" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl">{stats.overview_stats.accuracy_rate}%</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                <span className="text-[#10B981]">↑ {stats.overview_stats.accuracy_improvement}%</span> {t('dashboard.improvement')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-[#F59E0B]">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm text-muted-foreground">
-                  {t('dashboard.most_active_day')}
-                </CardTitle>
-                <Clock className="h-4 w-4 text-[#F59E0B]" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl">{stats.overview_stats.most_active_time}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('dashboard.peak_engagement_day')}
+                </span> {timeRange === 'today' ? 'từ giờ trước' : 'từ tuần trước'}
               </p>
             </CardContent>
           </Card>
@@ -201,7 +164,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm text-muted-foreground">
-                  {t('dashboard.unanswered_queries')}
+                  Câu Hỏi Chưa Trả Lời
                 </CardTitle>
                 <AlertCircle className="h-4 w-4 text-[#EF4444]" />
               </div>
@@ -209,7 +172,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             <CardContent>
               <div className="text-3xl">{stats.overview_stats.unanswered_queries}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {t('dashboard.requires_attention')}
+                Cần chú ý
               </p>
             </CardContent>
           </Card>
@@ -220,8 +183,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
           {/* Questions Over Time Chart */}
           <Card className="lg:col-span-full">
             <CardHeader>
-              <CardTitle>{t('dashboard.questions_over_time')}</CardTitle>
-              <CardDescription>{t('dashboard.daily_query_volume')}</CardDescription>
+              <CardTitle>Câu Hỏi Theo Thời Gian</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -262,10 +224,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>{t('dashboard.recent_questions')}</CardTitle>
-                <CardDescription>
-                  {t('dashboard.recent_questions_description')}
-                </CardDescription>
+                <CardTitle>Câu Hỏi Gần Đây</CardTitle>
               </div>
             </div>
           </CardHeader>
@@ -273,8 +232,8 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
             {!recentQuestions || recentQuestions.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>{t('dashboard.no_questions_found')}</p>
-                <p className="text-sm">{t('dashboard.no_questions_yet')}</p>
+                <p>Không tìm thấy câu hỏi nào</p>
+                <p className="text-sm">Chưa có câu hỏi nào được đặt</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -288,11 +247,11 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
                         <p className="font-medium">{item.question}</p>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>{t('dashboard.asked_by')} {item.user_name}</span>
+                        <span>Hỏi bởi {item.user_name}</span>
                         {item.timestamp && (
                           <>
                             <span>•</span>
-                            <span>{new Date(item.timestamp).toLocaleDateString()}</span>
+                            <span>{new Date(item.timestamp).toLocaleDateString('vi-VN')}</span>
                           </>
                         )}
                         {item.rating && (

@@ -1,12 +1,15 @@
-import { FileText, Download, Tag } from 'lucide-react';
+import { FileText, Download, Tag, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/system_users/card';
 import { Badge } from '../../ui/system_users/badge';
 import { Button } from '../../ui/system_users/button';
 import { Separator } from '../../ui/system_users/separator';
 import { knowledgeAPI } from '../../../services/fastapi';
 import { toast } from 'react-toastify';
+import { useState } from 'react';
 
 export function DocumentList({ filteredDocuments }) {
+  const [failedDownloads, setFailedDownloads] = useState(new Set());
+  
   const handleDownload = async (doc) => {
     try {
       // Use the proper API call with authentication
@@ -25,21 +28,29 @@ export function DocumentList({ filteredDocuments }) {
       toast.success('Tải tài liệu thành công!');
     } catch (error) {
       console.error('Failed to download document:', error);
-      console.error('Error type:', typeof error);
-      console.error('Error stringified:', JSON.stringify(error, null, 2));
+      
+      // Mark this document as failed
+      setFailedDownloads(prev => new Set([...prev, doc.document_id]));
       
       // Better error message extraction
-      let errorMessage = 'Failed to download document. Please try again.';
+      let errorMessage = 'Không thể tải tài liệu. Vui lòng thử lại.';
       
       if (error instanceof Error) {
-        errorMessage = error.message;
+        // Check for specific error messages
+        if (error.message.includes('File not found')) {
+          errorMessage = 'Tệp không tồn tại trên máy chủ. Tài liệu này có thể đã bị xóa.';
+        } else if (error.message.includes('404')) {
+          errorMessage = 'Tệp không tồn tại. Vui lòng liên hệ quản trị viên.';
+        } else {
+          errorMessage = error.message;
+        }
       } else if (typeof error === 'string') {
         errorMessage = error;
       } else if (error?.detail) {
         errorMessage = error.detail;
       }
       
-      toast.error(`Failed to download: ${errorMessage}`);
+      toast.error(errorMessage);
     }
   };
   if (filteredDocuments.length === 0) {
@@ -92,15 +103,22 @@ export function DocumentList({ filteredDocuments }) {
             <div className="text-xs text-muted-foreground">
               Tải lên: {new Date(doc.uploadedDate).toLocaleDateString('vi-VN')}
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full gap-2"
-              onClick={() => handleDownload(doc)}
-            >
-              <Download className="h-4 w-4" />
-              Tải Xuống
-            </Button>
+            {failedDownloads.has(doc.document_id) ? (
+              <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-2 rounded">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span className="text-xs">Tệp không khả dụng trên máy chủ</span>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full gap-2"
+                onClick={() => handleDownload(doc)}
+              >
+                <Download className="h-4 w-4" />
+                Tải Xuống
+              </Button>
+            )}
           </CardContent>
         </Card>
       ))}

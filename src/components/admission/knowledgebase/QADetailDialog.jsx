@@ -34,25 +34,13 @@ export function QADetailDialog({ isQADialogOpen, setIsQADialogOpen, selectedQA }
                 <Badge variant="secondary">{selectedQA.category}</Badge>
               </div>
               <div>
-                <div className="text-sm text-muted-foreground mb-2">Thẻ</div>
-                <div className="flex flex-wrap gap-2">
-                  {selectedQA.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="gap-1">
-                      <Tag className="h-3 w-3" />
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+                
               </div>
             </div>
             <Separator />
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 gap-4 text-sm">
               <div>
-                <span className="text-muted-foreground">Số lần sử dụng:</span>{' '}
-                <span className="font-medium">{selectedQA.usageCount}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Cập nhật lần cuối:</span>{' '}
+                <span className="text-muted-foreground">Thời gian tạo:</span>{' '}
                 <span className="font-medium">
                   {new Date(selectedQA.lastModified).toLocaleDateString('vi-VN')}
                 </span>

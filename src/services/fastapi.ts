@@ -607,6 +607,27 @@ export const intentAPI = {
   getIntent: (intentId: number) => fastAPIClient.get<Intent>(`/intent/${intentId}`)
 };
 
+// Academic Scores API types
+export interface AcademicScore {
+  score_id: number;
+  customer_id: number;
+  math: number;
+  literature: number;
+  english: number;
+  physics: number;
+  chemistry: number;
+  biology: number;
+  history: number;
+  geography: number;
+}
+
+// Academic Scores API functions
+export const academicScoresAPI = {
+  // Get academic scores for a specific user
+  getUserAcademicScores: (userId: number) => 
+    fastAPIClient.get<AcademicScore>(`/users/${userId}/academic-scores`),
+};
+
 // Template API functions
 export const templateAPI = {
   // Get all templates

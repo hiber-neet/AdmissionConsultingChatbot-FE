@@ -48,6 +48,13 @@ export function StudentList({ onSelectStudent }) {
 
   // Function to transform API student data to component format
   const transformStudentData = (apiStudent) => {
+    // Map role names to Vietnamese
+    const roleNameMap = {
+      'Student': 'Học Sinh',
+      'Parent': 'Phụ Huynh',
+      'Customer': 'Khách Hàng',
+    };
+
     return {
       id: apiStudent.user_id, // Use actual user_id directly
       name: apiStudent.full_name || 'Chưa có tên',
@@ -55,6 +62,7 @@ export function StudentList({ onSelectStudent }) {
       phone: apiStudent.phone_number || 'Chưa có SĐT',
       status: apiStudent.status, // Boolean: true = active, false = inactive
       role_name: apiStudent.role_name || 'Student',
+      role_name_vi: roleNameMap[apiStudent.role_name] || apiStudent.role_name || 'Học Sinh',
     };
   };
 
@@ -94,9 +102,13 @@ export function StudentList({ onSelectStudent }) {
 
       const data = await response.json();
 
-      // Transform API data to component format
+      // Filter and transform API data - only include Student, Parent, and Customer roles
       if (Array.isArray(data)) {
-        const transformedStudents = data.map(transformStudentData);
+        const filteredData = data.filter(user => {
+          const roleName = user.role_name;
+          return roleName === 'Student' || roleName === 'Parent' || roleName === 'Customer';
+        });
+        const transformedStudents = filteredData.map(transformStudentData);
         setStudents(transformedStudents);
       } else {
         setStudents([]);
@@ -273,9 +285,9 @@ export function StudentList({ onSelectStudent }) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium">{student.name}</span>
-                          {student.role_name && (
+                          {student.role_name_vi && (
                             <Badge variant="outline" className="text-xs">
-                              {student.role_name}
+                              {student.role_name_vi}
                             </Badge>
                           )}
                           {getStatusBadge(student.status)}
