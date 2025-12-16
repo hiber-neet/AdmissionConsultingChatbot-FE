@@ -1,23 +1,22 @@
 import { useState } from 'react';
 import { TrendingUp, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/system_users/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/system_users/card';
 import { Button } from '../../ui/system_users/button';
 import { Badge } from '../../ui/system_users/badge';
-import { Progress } from '../../ui/system_users/progress';
-import { TrendingTopic } from '../../../services/fastapi';
+import { Intent } from '../../../utils/fastapi-client';
 
 interface TrendingTopicsSectionProps {
-  trendingTopics: TrendingTopic[];
+  intents: Intent[];
   loading: boolean;
   error: string | null;
 }
 
 export function TrendingTopicsSection({ 
-  trendingTopics, 
+  intents, 
   loading, 
   error 
 }: TrendingTopicsSectionProps) {
-  const [topicsVisibleCount, setTopicsVisibleCount] = useState(3);
+  const [visibleCount, setVisibleCount] = useState(5);
 
   return (
     <Card>
@@ -28,14 +27,7 @@ export function TrendingTopicsSection({
               <TrendingUp className="h-5 w-5 text-[#10B981]" />
               Chủ Đề Mới Đang Thịnh Hành
             </CardTitle>
-            <CardDescription className="mt-2">
-              Các chủ đề câu hỏi mới nổi có thể cần các mục hỏi-đáp mới
-            </CardDescription>
           </div>
-          <Badge className="bg-[#10B981] hover:bg-[#059669] gap-1">
-            <TrendingUp className="h-3 w-3" />
-            Cơ Hội
-          </Badge>
         </div>
       </CardHeader>
       <CardContent>
@@ -56,66 +48,56 @@ export function TrendingTopicsSection({
               Thử Lại
             </Button>
           </div>
-        ) : !trendingTopics || trendingTopics.length === 0 ? (
+        ) : !intents || intents.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <TrendingUp className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p>Không phát hiện chủ đề thịnh hành</p>
-            <p className="text-sm">Hãy quay lại sau để xem các mẫu câu hỏi mới nổi.</p>
+            <p>Không có danh mục nào</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {trendingTopics.slice(0, topicsVisibleCount).map((topic) => (
+            {intents.slice(0, visibleCount).map((intent) => (
               <div
-                key={topic.id}
+                key={intent.intent_id}
                 className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
               >
-                <div className="flex items-start justify-between gap-4 mb-3">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium">{topic.topic}</h4>
-                      <Badge className="bg-[#10B981] hover:bg-[#059669] gap-1">
-                        <TrendingUp className="h-3 w-3" />
-                        +{topic.growthRate}%
-                      </Badge>
+                      <h4 className="font-medium">{intent.intent_name}</h4>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {topic.description}
-                    </p>
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="text-sm text-muted-foreground">Tỷ Lệ Tăng Trưởng:</div>
-                      <Progress value={Math.min(topic.growthRate, 100)} className="flex-1 h-2" />
-                      <div className="text-sm font-semibold text-[#10B981]">
-                        {topic.growthRate}%
-                      </div>
-                    </div>
+                    {intent.description && (
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {intent.description}
+                      </p>
+                    )}
                     <p className="text-sm text-muted-foreground">
-                      <span className="font-semibold">{topic.questionsCount} câu hỏi</span> được hỏi trong {topic.timeframe || "14 ngày qua"}
+                      <span className="font-semibold">0 câu hỏi</span> được hỏi
                     </p>
                   </div>
                 </div>
               </div>
             ))}
             
-            {/* Show More Button for Trending Topics */}
-            {trendingTopics && topicsVisibleCount < trendingTopics.length && (
+            {/* Show More Button */}
+            {intents && visibleCount < intents.length && (
               <div className="flex justify-center pt-4">
                 <Button 
                   variant="outline" 
-                  onClick={() => setTopicsVisibleCount(prev => Math.min(prev + 3, trendingTopics.length))}
+                  onClick={() => setVisibleCount(prev => Math.min(prev + 5, intents.length))}
                   className="flex items-center gap-2"
                 >
-                  Hiển Thị Thêm ({Math.min(3, trendingTopics.length - topicsVisibleCount)} mục khác)
+                  Hiển Thị Thêm ({Math.min(5, intents.length - visibleCount)} mục khác)
                 </Button>
               </div>
             )}
             
-            {/* Show Less Button when showing more than 3 */}
-            {topicsVisibleCount > 3 && (
+            {/* Show Less Button */}
+            {visibleCount > 5 && (
               <div className="flex justify-center pt-2">
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => setTopicsVisibleCount(3)}
+                  onClick={() => setVisibleCount(5)}
                   className="text-muted-foreground"
                 >
                   Ẩn Bớt

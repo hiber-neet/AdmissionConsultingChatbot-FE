@@ -12,6 +12,7 @@ import { MessageInput } from './MessageInput';
 import { EmptyChat } from './EmptyChat';
 import { LoadingView } from './LoadingView';
 import { useWebSocket } from './useWebSocket';
+import { StudentDetailModal } from '../StudentDetailModal';
 
 export function LiveChatView() {
   const location = useLocation();
@@ -29,6 +30,18 @@ export function LiveChatView() {
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [error, setError] = useState('');
   const [customerInfo, setCustomerInfo] = useState(null);
+  
+  // Student detail modal state
+  const [showStudentModal, setShowStudentModal] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+
+  // Handle click on customer name/avatar to show details
+  const handleShowStudentDetail = () => {
+    if (customerInfo?.id) {
+      setSelectedStudentId(customerInfo.id);
+      setShowStudentModal(true);
+    }
+  };
 
   // Handle WebSocket messages
   const handleMessageReceived = (newMessage) => {
@@ -264,6 +277,7 @@ export function LiveChatView() {
             isConnected={isConnected}
             user={user}
             onEndSession={handleEndSession}
+            onShowStudentDetail={handleShowStudentDetail}
           />
 
           <div className="flex-1 flex flex-col min-h-0">
@@ -285,6 +299,13 @@ export function LiveChatView() {
       ) : (
         <EmptyChat onGoToQueue={handleGoToQueue} />
       )}
+      
+      {/* Student Detail Modal */}
+      <StudentDetailModal
+        isOpen={showStudentModal}
+        onClose={() => setShowStudentModal(false)}
+        userId={selectedStudentId}
+      />
     </div>
   );
 }

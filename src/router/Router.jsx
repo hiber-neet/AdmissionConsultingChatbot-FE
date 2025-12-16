@@ -9,6 +9,7 @@ import { ConsulantPage } from "../pages/consulant/ConsulantPage.tsx";
 import { ConsultantOverviewPage } from "../pages/consulant/ConsultantOverviewPage.tsx";
 import { ConsultantAnalyticsPage } from "../pages/consulant/ConsultantAnalyticsPage.tsx";
 import { ConsultantTrainingDataPage } from "../pages/consulant/ConsultantTrainingDataPage.tsx";
+import { ConsultantIntentPage } from "../pages/consulant/ConsultantIntentPage.tsx";
 import { ConsultantLeaderPage } from "../pages/consulant/ConsultantLeaderPage.tsx";
 import { ContentManagerPage } from "../pages/contentManager/ContentManagerPage.tsx";
 import LoginPage from "../pages/loginForAd/LoginPage.tsx";
@@ -82,6 +83,7 @@ export default function Router() {
         <Route path="overview" element={<ConsultantOverviewPage />} />
         <Route path="analytics" element={<ConsultantAnalyticsPage />} />
         <Route path="trainingdata" element={<ConsultantTrainingDataPage />} />
+        <Route path="intents" element={<ConsultantIntentPage />} />
         <Route path="leader" element={<ConsultantLeaderPage />} />
         <Route path="profile" element={<ManagerProfilePage />} />
       </Route>
@@ -142,8 +144,8 @@ export default function Router() {
         <Route path="profile" element={<ManagerProfilePage />} />
       </Route>
 
-      {/* Catch-all route - redirect to home instead of 404 to prevent HMR issues */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Catch-all route */}
+      <Route path="*" element={<Navigate to="/404" replace />} />
     </Routes>
   );
 }

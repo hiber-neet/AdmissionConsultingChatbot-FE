@@ -1,22 +1,16 @@
 import { useState } from 'react';
-import { X, Edit, Trash2, Download, Loader2 } from 'lucide-react';
+import { X, Trash2, Download } from 'lucide-react';
 import { TrainingDocument, Intent } from './types';
-import { Input } from '../../ui/system_users/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/system_users/select';
 import { Button } from '../../ui/system_users/button';
-import { API_CONFIG } from '../../../config/api';
+import { knowledgeAPI } from '../../../services/fastapi';
+import { toast } from 'react-toastify';
 
 interface DocumentDetailModalProps {
   document: TrainingDocument;
   intents: Intent[];
   isLeader: boolean;
   onClose: () => void;
-  onUpdate: (documentId: number, data: { title: string; intent_id?: number; category?: string }) => Promise<void>;
   onDelete: (documentId: number) => Promise<void>;
-  onApprove?: (documentId: number) => Promise<void>;
-  onReject?: (documentId: number) => Promise<void>;
-  isApproving?: boolean;
-  isRejecting?: boolean;
 }
 
 export function DocumentDetailModal({
@@ -24,34 +18,9 @@ export function DocumentDetailModal({
   intents,
   isLeader,
   onClose,
-  onUpdate,
-  onDelete,
-  onApprove,
-  onReject,
-  isApproving = false,
-  isRejecting = false
+  onDelete
 }: DocumentDetailModalProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(document.title);
-  const [editedIntentId, setEditedIntentId] = useState<number | undefined>(document.intent_id);
-  const [editedCategory, setEditedCategory] = useState(document.category || '');
   const [loading, setLoading] = useState(false);
-
-  const handleSave = async () => {
-    try {
-      setLoading(true);
-      await onUpdate(document.document_id, {
-        title: editedTitle,
-        intent_id: editedIntentId,
-        category: editedCategory
-      });
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Failed to update document:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async () => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa tài liệu này?')) return;
@@ -66,33 +35,36 @@ export function DocumentDetailModal({
     }
   };
 
-  const handleApprove = async () => {
-    if (!onApprove) return;
+  const handleDownload = async () => {
     try {
       setLoading(true);
-      await onApprove(document.document_id);
+      
+      // Use the proper API call with authentication (same as admission officer's page)
+      const blob = await knowledgeAPI.downloadDocument(document.document_id);
+      
+      // Create a download link and trigger it
+      const url = window.URL.createObjectURL(blob);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = document.title || `document-${document.document_id}`;
+      window.document.body.appendChild(a);
+      a.click();
+      window.document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Tải tài liệu thành công!');
     } catch (error) {
-      console.error('Failed to approve document:', error);
+      console.error('Failed to download document:', error);
+      
+      let errorMessage = 'Không thể tải xuống tài liệu. Vui lòng thử lại.';
+      if (error instanceof Error && error.message.includes('File not found')) {
+        errorMessage = 'Tệp không tìm thấy trên máy chủ.';
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleReject = async () => {
-    if (!onReject) return;
-    try {
-      setLoading(true);
-      await onReject(document.document_id);
-    } catch (error) {
-      console.error('Failed to reject document:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDownload = () => {
-    const downloadUrl = `${API_CONFIG.BASE_URL}/knowledge/documents/${document.document_id}/download`;
-    window.open(downloadUrl, '_blank');
   };
 
   const formatFileSize = (sizeInBytes: number) => {
@@ -145,63 +117,29 @@ export function DocumentDetailModal({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tiêu Đề
             </label>
-            {isEditing ? (
-              <Input
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                placeholder="Nhập tiêu đề tài liệu..."
-              />
-            ) : (
-              <p className="text-gray-900 bg-gray-50 p-3 rounded-lg font-medium">
-                {document.title}
-              </p>
-            )}
+            <p className="text-gray-900 bg-gray-50 p-3 rounded-lg font-medium">
+              {document.title}
+            </p>
           </div>
 
           {/* Intent Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Intent
+              Danh mục
             </label>
-            {isEditing ? (
-              <Select
-                value={editedIntentId?.toString() || ''}
-                onValueChange={(value) => setEditedIntentId(parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn intent" />
-                </SelectTrigger>
-                <SelectContent>
-                  {intents.map((intent) => (
-                    <SelectItem key={intent.intent_id} value={intent.intent_id.toString()}>
-                      {intent.intent_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                {document.intent_name || 'Chưa chọn intent'}
-              </p>
-            )}
+            <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+              {document.intent_name || 'Chưa chọn danh mục'}
+            </p>
           </div>
 
           {/* Category */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Danh Mục
+              Thể loại
             </label>
-            {isEditing ? (
-              <Input
-                value={editedCategory}
-                onChange={(e) => setEditedCategory(e.target.value)}
-                placeholder="Nhập danh mục..."
-              />
-            ) : (
-              <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                {document.category || 'Chưa có danh mục'}
-              </p>
-            )}
+            <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+              {document.category || 'Chưa có thể loại'}
+            </p>
           </div>
 
           {/* File Information */}
@@ -261,87 +199,15 @@ export function DocumentDetailModal({
               <Download className="h-4 w-4 mr-2" />
               Tải Xuống
             </Button>
-            {!isEditing && (
-              <Button
-                onClick={handleDelete}
-                variant="outline"
-                className="text-red-600 hover:bg-red-50"
-                disabled={loading}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Xóa
-              </Button>
-            )}
-          </div>
-
-          <div className="flex gap-2">
-            {isEditing ? (
-              <>
-                <Button
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditedTitle(document.title);
-                    setEditedIntentId(document.intent_id);
-                    setEditedCategory(document.category || '');
-                  }}
-                  variant="outline"
-                  disabled={loading}
-                >
-                  Hủy
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  className="bg-[#EB5A0D] hover:bg-[#d14f0a]"
-                  disabled={loading}
-                >
-                  {loading ? 'Đang lưu...' : 'Lưu'}
-                </Button>
-              </>
-            ) : (
-              <>
-                {isLeader && document.status === 'draft' && (
-                  <>
-                    <Button
-                      onClick={handleReject}
-                      variant="outline"
-                      className="text-red-600 hover:bg-red-50"
-                      disabled={loading || isApproving || isRejecting}
-                    >
-                      {isRejecting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Đang xử lý...
-                        </>
-                      ) : (
-                        'Từ chối'
-                      )}
-                    </Button>
-                    <Button
-                      onClick={handleApprove}
-                      className="bg-green-600 hover:bg-green-700"
-                      disabled={loading || isApproving || isRejecting}
-                    >
-                      {isApproving ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Đang duyệt...
-                        </>
-                      ) : (
-                        'Duyệt'
-                      )}
-                    </Button>
-                  </>
-                )}
-                <Button
-                  onClick={() => setIsEditing(true)}
-                  className="bg-[#EB5A0D] hover:bg-[#d14f0a]"
-                  disabled={isApproving || isRejecting}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Chỉnh Sửa
-                </Button>
-              </>
-            )}
+            <Button
+              onClick={handleDelete}
+              variant="outline"
+              className="text-red-600 hover:bg-red-50"
+              disabled={loading}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Xóa
+            </Button>
           </div>
         </div>
       </div>
