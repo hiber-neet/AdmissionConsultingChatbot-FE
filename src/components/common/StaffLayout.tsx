@@ -16,7 +16,8 @@ import {
   GraduationCap,
   BookOpen,
   Clock,
-  LogOut
+  LogOut,
+  Tag
 } from 'lucide-react';
 import { useAuth } from '../../contexts/Auth';
 import { canAccessPage } from '../../constants/permissions';
@@ -78,6 +79,7 @@ export function StaffLayout({ roleKey }: StaffLayoutProps) {
       { id: 'overview', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/consultant/overview' },
       { id: 'analytics', label: 'Phân Tích Chatbot', icon: TrendingUp, path: '/consultant/analytics' },
       { id: 'trainingdata', label: 'Dữ Liệu Huấn Luyện', icon: Database, path: '/consultant/trainingdata' },
+      { id: 'intents', label: 'Quản Lý Danh Mục', icon: Tag, path: '/consultant/intents' },
       ...(user?.isLeader ? [
         { id: 'leader', label: 'Duyệt Cơ Sở Tri Thức', icon: Shield, path: '/consultant/leader' }
       ] : []),

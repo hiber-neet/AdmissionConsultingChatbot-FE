@@ -39,9 +39,7 @@ export function TrainingDataManagement() {
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [showUploadDocumentModal, setShowUploadDocumentModal] = useState(false);
 
-  // Loading states for approve/reject operations
-  const [approvingQuestionId, setApprovingQuestionId] = useState<number | null>(null);
-  const [rejectingQuestionId, setRejectingQuestionId] = useState<number | null>(null);
+  // Loading states for approve/reject operations (documents only)
   const [approvingDocumentId, setApprovingDocumentId] = useState<number | null>(null);
   const [rejectingDocumentId, setRejectingDocumentId] = useState<number | null>(null);
 
@@ -106,21 +104,6 @@ export function TrainingDataManagement() {
     setShowQuestionModal(true);
   };
 
-  const handleUpdateQuestion = async (
-    questionId: number,
-    data: { question: string; answer: string; intent_id?: number }
-  ) => {
-    try {
-      // Note: API doesn't have update endpoint yet, this is a placeholder
-      toast.info('Chức năng cập nhật đang được phát triển');
-      throw new Error('Update not implemented');
-    } catch (error) {
-      console.error('Failed to update question:', error);
-      toast.error('Không thể cập nhật câu hỏi');
-      throw error;
-    }
-  };
-
   const handleDeleteQuestion = async (questionId: number) => {
     try {
       await knowledgeAPI.deleteTrainingQuestion(questionId);
@@ -132,44 +115,6 @@ export function TrainingDataManagement() {
       console.error('Failed to delete question:', error);
       toast.error('Không thể xóa câu hỏi');
       throw error;
-    }
-  };
-
-  const handleApproveQuestion = async (questionId: number) => {
-    try {
-      setApprovingQuestionId(questionId);
-      await knowledgeAPI.approveTrainingQuestion(questionId);
-      toast.success('Duyệt câu hỏi thành công');
-      await fetchQuestions();
-      // Refresh the selected question
-      const allQuestions = await knowledgeAPI.getTrainingQuestions();
-      const updated = allQuestions.find(q => q.question_id === questionId);
-      if (updated) setSelectedQuestion(updated);
-    } catch (error) {
-      console.error('Failed to approve question:', error);
-      toast.error('Không thể duyệt câu hỏi');
-      throw error;
-    } finally {
-      setApprovingQuestionId(null);
-    }
-  };
-
-  const handleRejectQuestion = async (questionId: number) => {
-    try {
-      setRejectingQuestionId(questionId);
-      await knowledgeAPI.rejectTrainingQuestion(questionId, 'Từ chối bởi người quản lý');
-      toast.success('Từ chối câu hỏi thành công');
-      await fetchQuestions();
-      // Refresh the selected question
-      const allQuestions = await knowledgeAPI.getTrainingQuestions();
-      const updated = allQuestions.find(q => q.question_id === questionId);
-      if (updated) setSelectedQuestion(updated);
-    } catch (error) {
-      console.error('Failed to reject question:', error);
-      toast.error('Không thể từ chối câu hỏi');
-      throw error;
-    } finally {
-      setRejectingQuestionId(null);
     }
   };
 
@@ -399,12 +344,7 @@ export function TrainingDataManagement() {
             setShowQuestionModal(false);
             setSelectedQuestion(null);
           }}
-          onUpdate={handleUpdateQuestion}
           onDelete={handleDeleteQuestion}
-          onApprove={isLeader ? handleApproveQuestion : undefined}
-          onReject={isLeader ? handleRejectQuestion : undefined}
-          isApproving={approvingQuestionId === selectedQuestion.question_id}
-          isRejecting={rejectingQuestionId === selectedQuestion.question_id}
         />
       )}
 
@@ -417,7 +357,6 @@ export function TrainingDataManagement() {
             setShowDocumentModal(false);
             setSelectedDocument(null);
           }}
-          onUpdate={handleUpdateDocument}
           onDelete={handleDeleteDocument}
           onApprove={isLeader ? handleApproveDocument : undefined}
           onReject={isLeader ? handleRejectDocument : undefined}

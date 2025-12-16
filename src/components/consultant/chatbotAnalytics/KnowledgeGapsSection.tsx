@@ -1,24 +1,22 @@
 import { useState } from 'react';
-import { HelpCircle, Plus, AlertTriangle, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/system_users/card';
+import { HelpCircle, Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/system_users/card';
 import { Button } from '../../ui/system_users/button';
 import { Badge } from '../../ui/system_users/badge';
-import { KnowledgeGap } from '../../../services/fastapi';
+import { UserQuestion } from '../../../services/fastapi';
 
 interface KnowledgeGapsSectionProps {
-  knowledgeGaps: KnowledgeGap[];
+  unansweredQuestions: UserQuestion[];
   loading: boolean;
   error: string | null;
-  onNavigateToKnowledgeBase?: (question: string) => void;
 }
 
 export function KnowledgeGapsSection({ 
-  knowledgeGaps, 
+  unansweredQuestions, 
   loading, 
-  error, 
-  onNavigateToKnowledgeBase 
+  error
 }: KnowledgeGapsSectionProps) {
-  const [gapsVisibleCount, setGapsVisibleCount] = useState(3);
+  const [visibleCount, setVisibleCount] = useState(10);
 
   return (
     <Card>
@@ -27,23 +25,16 @@ export function KnowledgeGapsSection({
           <div>
             <CardTitle className="flex items-center gap-2">
               <HelpCircle className="h-5 w-5 text-[#EF4444]" />
-              Khoảng Trống Trong Cơ Sở Tri Thức
+              Những Câu Hỏi Chưa Trả Lời
             </CardTitle>
-            <CardDescription className="mt-2">
-              Các câu hỏi thường xuyên được hỏi nhưng không có câu trả lời - ưu tiên thêm những câu này
-            </CardDescription>
           </div>
-          <Badge variant="destructive" className="gap-1">
-            <AlertTriangle className="h-3 w-3" />
-            Cần Hành Động
-          </Badge>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            <span>Đang tải khoảng trống tri thức...</span>
+            <span>Đang tải câu hỏi chưa trả lời...</span>
           </div>
         ) : error ? (
           <div className="text-center py-8 text-red-600">
@@ -57,65 +48,61 @@ export function KnowledgeGapsSection({
               Thử Lại
             </Button>
           </div>
-        ) : !knowledgeGaps || knowledgeGaps.length === 0 ? (
+        ) : !unansweredQuestions || unansweredQuestions.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <HelpCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p>Không có khoảng trống tri thức nào được xác định tại thời điểm này</p>
-            <p className="text-sm">Cơ sở tri thức của bạn có vẻ đã toàn diện!</p>
+            <p>Không có câu hỏi chưa trả lời nào</p>
+            <p className="text-sm">Tất cả câu hỏi đã được trả lời!</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {knowledgeGaps.slice(0, gapsVisibleCount).map((gap) => (
+            {unansweredQuestions.slice(0, visibleCount).map((question) => (
               <div
-                key={gap.id}
+                key={question.id}
                 className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
               >
-                <div className="flex items-start justify-between gap-4 mb-3">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium">{gap.question}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {gap.intent_name}
-                      </Badge>
+                      <h4 className="font-medium">{question.question}</h4>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Đã hỏi <span className="font-semibold">{gap.frequency} lần</span> trong 30 ngày qua
-                    </p>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <Badge variant="outline" className="text-xs">
+                        {question.category}
+                      </Badge>
+                      <span>
+                        {new Date(question.timestamp).toLocaleDateString('vi-VN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    className="bg-[#3B82F6] hover:bg-[#2563EB]"
-                    onClick={() => onNavigateToKnowledgeBase?.(gap.question)}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Thêm vào Cơ Sở Tri Thức
-                  </Button>
                 </div>
               </div>
             ))}
             
-            {/* Show More Button for Knowledge Gaps */}
-            {knowledgeGaps && gapsVisibleCount < knowledgeGaps.length && (
+            {/* Show More Button */}
+            {unansweredQuestions && visibleCount < unansweredQuestions.length && (
               <div className="flex justify-center pt-4">
                 <Button 
                   variant="outline" 
-                  onClick={() => setGapsVisibleCount(prev => Math.min(prev + 3, knowledgeGaps.length))}
+                  onClick={() => setVisibleCount(prev => Math.min(prev + 10, unansweredQuestions.length))}
                   className="flex items-center gap-2"
                 >
-                  Hiển Thị Thêm ({Math.min(3, knowledgeGaps.length - gapsVisibleCount)} mục khác)
+                  Hiển Thị Thêm ({Math.min(10, unansweredQuestions.length - visibleCount)} mục khác)
                 </Button>
               </div>
             )}
             
-            {/* Show Less Button when showing more than 3 */}
-            {gapsVisibleCount > 3 && (
+            {/* Show Less Button */}
+            {visibleCount > 10 && (
               <div className="flex justify-center pt-2">
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => setGapsVisibleCount(3)}
+                  onClick={() => setVisibleCount(10)}
                   className="text-muted-foreground"
                 >
                   Ẩn Bớt

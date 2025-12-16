@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ScrollArea } from '../../ui/system_users/scroll-area';
-import { consultantAnalyticsAPI, CategoryStatistic, KnowledgeGap, TrendingTopic } from '../../../services/fastapi';
+import { consultantAnalyticsAPI, UserQuestion, intentAPI } from '../../../services/fastapi';
+import { Intent } from '../../../utils/fastapi-client';
 import { CategoryInterestSection } from './CategoryInterestSection';
 import { KnowledgeGapsSection } from './KnowledgeGapsSection';
 import { TrendingTopicsSection } from './TrendingTopicsSection';
@@ -10,74 +11,61 @@ interface AnalyticsStatisticsProps {
 }
 
 export function AnalyticsStatistics({ onNavigateToKnowledgeBase }: AnalyticsStatisticsProps = {}) {
-  // API state for category stats
-  const [categoryStats, setCategoryStats] = useState<CategoryStatistic[]>([]);
-  const [categoryLoading, setCategoryLoading] = useState(false);
-  const [categoryError, setCategoryError] = useState<string | null>(null);
+  // Intent state
+  const [intents, setIntents] = useState<Intent[]>([]);
+  const [intentsLoading, setIntentsLoading] = useState(false);
+  const [intentsError, setIntentsError] = useState<string | null>(null);
 
-  // API state for knowledge gaps and trending topics
-  const [knowledgeGaps, setKnowledgeGaps] = useState<KnowledgeGap[]>([]);
-  const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
-  const [gapsLoading, setGapsLoading] = useState(false);
-  const [topicsLoading, setTopicsLoading] = useState(false);
-  const [gapsError, setGapsError] = useState<string | null>(null);
-  const [topicsError, setTopicsError] = useState<string | null>(null);
+  // Unanswered questions state
+  const [unansweredQuestions, setUnansweredQuestions] = useState<UserQuestion[]>([]);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [questionsError, setQuestionsError] = useState<string | null>(null);
 
-  // Fetch category statistics (not affected by date range filter)
+  // Fetch all intents
   useEffect(() => {
-    const fetchCategoryStats = async () => {
+    const fetchIntents = async () => {
       try {
-        setCategoryLoading(true);
-        setCategoryError(null);
-        const response = await consultantAnalyticsAPI.getCategoryStatistics(30); // Always 30 days for categories
-        setCategoryStats(Array.isArray(response) ? response : response?.data || []);
+        setIntentsLoading(true);
+        setIntentsError(null);
+        const response = await intentAPI.getIntents();
+        setIntents(Array.isArray(response) ? response : []);
       } catch (err: any) {
-        console.error('Error fetching category statistics:', err);
-        setCategoryError(err.response?.data?.detail || 'Failed to fetch category statistics');
+        console.error('Error fetching intents:', err);
+        setIntentsError(err.response?.data?.detail || 'Failed to fetch intents');
       } finally {
-        setCategoryLoading(false);
+        setIntentsLoading(false);
       }
     };
 
-    fetchCategoryStats();
+    fetchIntents();
   }, []);
 
-  // Fetch knowledge gaps
+  // Fetch unanswered questions (status='unanswered')
   useEffect(() => {
-    const fetchKnowledgeGaps = async () => {
+    const fetchUnansweredQuestions = async () => {
       try {
-        setGapsLoading(true);
-        setGapsError(null);
-        const response = await consultantAnalyticsAPI.getKnowledgeGaps();
-        setKnowledgeGaps(Array.isArray(response) ? response : response?.data || []);
+        setQuestionsLoading(true);
+        setQuestionsError(null);
+        // Get all questions from the last 30 days with large page size
+        const response = await consultantAnalyticsAPI.getUserQuestions(30, 1, 100);
+        
+        // Filter to only unanswered questions and sort by most recent
+        const unanswered = (response?.data || [])
+          .filter((q: UserQuestion) => q.status === 'unanswered')
+          .sort((a: UserQuestion, b: UserQuestion) => {
+            return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+          });
+        
+        setUnansweredQuestions(unanswered);
       } catch (err: any) {
-        console.error('Error fetching knowledge gaps:', err);
-        setGapsError(err.response?.data?.detail || 'Failed to fetch knowledge gaps');
+        console.error('Error fetching unanswered questions:', err);
+        setQuestionsError(err.response?.data?.detail || 'Failed to fetch unanswered questions');
       } finally {
-        setGapsLoading(false);
+        setQuestionsLoading(false);
       }
     };
 
-    fetchKnowledgeGaps();
-  }, []);
-
-  // Fetch trending topics
-  useEffect(() => {
-    const fetchTrendingTopics = async () => {
-      try {
-        setTopicsLoading(true);
-        setTopicsError(null);
-        const response = await consultantAnalyticsAPI.getTrendingTopics();
-        setTrendingTopics(Array.isArray(response) ? response : response?.data || []);
-      } catch (err: any) {
-        console.error('Error fetching trending topics:', err);
-        setTopicsError(err.response?.data?.detail || 'Failed to fetch trending topics');
-      } finally {
-        setTopicsLoading(false);
-      }
-    };
-
-    fetchTrendingTopics();
+    fetchUnansweredQuestions();
   }, []);
 
   return (
@@ -88,26 +76,25 @@ export function AnalyticsStatistics({ onNavigateToKnowledgeBase }: AnalyticsStat
           <h1 className="text-3xl font-bold tracking-tight">Phân Tích Chatbot</h1>
         </div>
 
-        {/* Category Interest Section */}
+        {/* Category Section (displays all intents) */}
         <CategoryInterestSection 
-          categoryStats={categoryStats}
-          loading={categoryLoading}
-          error={categoryError}
+          intents={intents}
+          loading={intentsLoading}
+          error={intentsError}
         />
 
-        {/* Knowledge Gaps */}
+        {/* Unanswered Questions */}
         <KnowledgeGapsSection 
-          knowledgeGaps={knowledgeGaps}
-          loading={gapsLoading}
-          error={gapsError}
-          onNavigateToKnowledgeBase={onNavigateToKnowledgeBase}
+          unansweredQuestions={unansweredQuestions}
+          loading={questionsLoading}
+          error={questionsError}
         />
 
-        {/* Trending Topics */}
+        {/* Trending Topics (displays all intents with description) */}
         <TrendingTopicsSection 
-          trendingTopics={trendingTopics}
-          loading={topicsLoading}
-          error={topicsError}
+          intents={intents}
+          loading={intentsLoading}
+          error={intentsError}
         />
       </div>
     </ScrollArea>

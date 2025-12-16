@@ -604,7 +604,19 @@ export const intentAPI = {
   getIntents: () => fastAPIClient.get<Intent[]>('/intent'),
 
   // Get specific intent
-  getIntent: (intentId: number) => fastAPIClient.get<Intent>(`/intent/${intentId}`)
+  getIntent: (intentId: number) => fastAPIClient.get<Intent>(`/intent/${intentId}`),
+
+  // Create new intent
+  createIntent: (data: { intent_name: string; description?: string }) =>
+    fastAPIClient.post<Intent>('/intent', data),
+
+  // Update intent
+  updateIntent: (intentId: number, data: { intent_name: string; description?: string }) =>
+    fastAPIClient.put<Intent>(`/intent/${intentId}`, data),
+
+  // Delete intent
+  deleteIntent: (intentId: number) =>
+    fastAPIClient.delete(`/intent/${intentId}`)
 };
 
 // Academic Scores API types
