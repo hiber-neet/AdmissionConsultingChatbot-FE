@@ -124,7 +124,6 @@ export function KnowledgeBaseManagement() {
 
   const handleSave = () => {
     // Save logic would go here
-    console.log('Saving:', { editedQuestion, editedAnswer, editedCategory });
     setIsEditing(false);
   };
 

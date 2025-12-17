@@ -27,7 +27,6 @@ export function DocumentList({ filteredDocuments }) {
       
       toast.success('Tải tài liệu thành công!');
     } catch (error) {
-      console.error('Failed to download document:', error);
       
       // Mark this document as failed
       setFailedDownloads(prev => new Set([...prev, doc.document_id]));

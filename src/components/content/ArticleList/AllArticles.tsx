@@ -45,11 +45,9 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         
         if (isAdmin || isLeader) {
           // Admin or Content Manager Leader: Get all articles
-          console.log('Fetching all articles (Admin or Content Manager Leader)');
           data = await fastAPIArticles.getAll();
         } else if (hasPermission("Content Manager") && user?.id) {
           // Regular Content Manager: Get only their own articles
-          console.log('Fetching articles by user ID:', user.id);
           data = await fastAPIArticles.getByUserId(parseInt(user.id));
         } else {
           // No permission
@@ -60,7 +58,6 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         setArticles(data);
       } catch (err) {
         setError('Failed to load articles. Please try again.');
-        console.error('Error fetching articles:', err);
       } finally {
         setLoading(false);
       }
@@ -79,7 +76,6 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         const data = await majorsAPI.getAll();
         setMajors(data);
       } catch (err) {
-        console.error('Error fetching majors:', err);
         // Don't set error state for majors, just log it
       } finally {
         setMajorsLoading(false);
@@ -105,18 +101,15 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
 
   // Fetch detailed article information
   const fetchArticleDetails = async (articleId: number) => {
-    console.log('🔍 Fetching article details for ID:', articleId);
     setArticleDetailsLoading(true);
     setArticleDetailsError(null);
     
     try {
       // Use the FastAPI client which automatically includes Bearer token
       const articleDetails = await fastAPIArticles.getById(articleId);
-      console.log('✅ Article details fetched successfully:', articleDetails);
       
       setSelectedArticle(articleDetails);
     } catch (err) {
-      console.error('💥 Error fetching article details:', err);
       setArticleDetailsError(err instanceof Error ? err.message : 'Failed to load article details');
     } finally {
       setArticleDetailsLoading(false);
@@ -275,7 +268,6 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
               await refreshArticles();
               setEditingArticle(null);
             } catch (err) {
-              console.error('Error updating article:', err);
               alert('Failed to update article. Please try again.');
             }
           }}
@@ -293,7 +285,6 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
               await refreshArticles();
               setDeleteConfirmArticle(null);
             } catch (err) {
-              console.error('Error deleting article:', err);
               alert('Failed to delete article. Please try again.');
             }
           }}

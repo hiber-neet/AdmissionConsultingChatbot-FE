@@ -70,13 +70,11 @@ const [sessionId] = useState(() => {
 useEffect(() => {
   // Tự đổi http -> ws, https -> wss
   const wsUrl = API_BASE_URL.replace(/^http/, "ws") + "/chat/ws/chat";
-  console.log("Guest WS URL:", wsUrl);
 
   const ws = new WebSocket(wsUrl);
   wsRef.current = ws;
 
   ws.onopen = () => {
-    console.log("Guest WS connected");
     setWsReady(true);
     ws.send(
       JSON.stringify({
@@ -86,13 +84,11 @@ useEffect(() => {
   };
 
     ws.onmessage = (e) => {
-      console.log("📩 WS message:", e.data);
       try {
         const data = JSON.parse(e.data);
 
         switch (data.event) {
           case "session_created":
-            console.log("🆕 Session created for guest:", data);
             break;
 
           case "chunk":
@@ -117,13 +113,11 @@ const finalText = (partialRef.current || "").trim();
 }
 
           case "error":
-            console.error("⚠️ WS error:", data.message);
             setIsLoading(false);
             break;
 
           default:
             // Một số log hệ thống khác không theo format event/chunk/done
-            console.warn("⚠️ Unknown WS event:", data);
         }
       } catch {
         // ignore log không phải JSON
@@ -131,7 +125,6 @@ const finalText = (partialRef.current || "").trim();
     };
 
     ws.onclose = () => {
-      console.log("🔒 WS closed");
       setWsReady(false);
     };
 
@@ -153,7 +146,6 @@ const finalText = (partialRef.current || "").trim();
         // legacy: { text: "..." }
         if (parsed && typeof parsed === "object" && "text" in parsed) {
           initial = parsed.text;
-          console.log("Prefill TEXT cho chatbot:", parsed.text);
         }
         // RIASEC JSON: { student_id, answers: {R,I,A,S,E,C} }
         else if (
@@ -163,7 +155,6 @@ const finalText = (partialRef.current || "").trim();
           "answers" in parsed
         ) {
           initial = JSON.stringify(parsed);
-          console.log("Prefill RIASEC JSON cho chatbot:", parsed);
         } else {
           // fallback: stringify
           initial = JSON.stringify(parsed);

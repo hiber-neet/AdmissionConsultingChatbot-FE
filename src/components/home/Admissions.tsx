@@ -84,7 +84,6 @@ navigate('/loginprivate');
     });
 
   } catch (err: any) {
-    console.error('Register error:', err);
     alert(err?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
   }
 };

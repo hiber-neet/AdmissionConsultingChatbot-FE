@@ -36,7 +36,6 @@ export function StudentList({ onSelectStudent }) {
 
   // Handle student selection
   const handleStudentClick = (studentId) => {
-    console.log('Selected student:', studentId);
     setSelectedStudentId(studentId); // Use actual user_id
     setIsDetailDialogOpen(true);
     
@@ -68,7 +67,6 @@ export function StudentList({ onSelectStudent }) {
 
   // Fetch students from API
   const fetchStudents = async () => {
-    console.log('Fetching students from API...');
     setLoading(true);
     
     try {
@@ -114,7 +112,6 @@ export function StudentList({ onSelectStudent }) {
         setStudents([]);
       }
     } catch (error) {
-      console.error('Fetch error:', error);
       toast.error(`Failed to load students: ${error.message}`);
       setStudents([]);
     } finally {

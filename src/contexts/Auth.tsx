@@ -60,7 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Function to logout user
   const performLogout = () => {
-    console.log('🚪 Logging out user - clearing session');
     setUser(null);
     setActiveRole(null);
     localStorage.removeItem("access_token");
@@ -78,13 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = localStorage.getItem("access_token");
       
       if (!token) {
-        console.log('⚠️ Token missing - logging out');
         performLogout();
         return;
       }
 
       if (isTokenExpired(token)) {
-        console.log('⏰ Token expired - logging out');
         performLogout();
         return;
       }
@@ -106,23 +103,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = localStorage.getItem("access_token");
       
       if (!token) {
-        console.log('🔓 No token found in localStorage - user not logged in');
         setIsLoading(false);
         return;
       }
 
-      console.log('🔄 Restoring user session from localStorage...');
 
       try {
         // Decode token to get user information
         const payload = JSON.parse(atob(token.split(".")[1]));
-        console.log('🔍 JWT Payload decoded:', payload);
         
         const userId = payload.user_id;
         const userEmail = payload.sub;
         
         if (!userId || !userEmail) {
-          console.error('❌ Invalid token in localStorage - clearing session');
           localStorage.removeItem("access_token");
           localStorage.removeItem("token_type");
           setIsLoading(false);
@@ -131,14 +124,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Check if token is expired
         if (payload.exp && payload.exp * 1000 < Date.now()) {
-          console.log('⏰ Token expired - clearing session');
           localStorage.removeItem("access_token");
           localStorage.removeItem("token_type");
           setIsLoading(false);
           return;
         }
 
-        console.log('👤 Restoring user info from token:', { userId, userEmail });
         
         // Fetch user profile to restore full user data
         try {
@@ -151,7 +142,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           if (profileResponse.ok) {
             const profileData = await profileResponse.json();
-            console.log('✅ Profile restored:', profileData);
             
             // Map backend permissions to frontend permissions
             const mapBackendPermissionToFrontend = (backendPermission: string): Permission[] => {
@@ -212,21 +202,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             setUser(userData);
             setActiveRole(userData.role);
-            console.log('✅ Session restored successfully!');
             
           } else {
-            console.log('❌ Profile API failed during restore - token may be invalid');
             localStorage.removeItem("access_token");
             localStorage.removeItem("token_type");
           }
         } catch (error) {
-          console.error('❌ Error restoring session:', error);
           // Keep user logged out on error
           localStorage.removeItem("access_token");
           localStorage.removeItem("token_type");
         }
       } catch (error) {
-        console.error('❌ Error decoding token:', error);
         localStorage.removeItem("access_token");
         localStorage.removeItem("token_type");
       } finally {
@@ -239,8 +225,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('🔐 Attempting login with FastAPI...');
-      console.log('📧 Email:', email.trim());
       
       // Call FastAPI login endpoint
       const response = await authAPI.login({ 
@@ -248,44 +232,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password 
       });
 
-      console.log('✅ Login response received:', response);
       
       // Extract token from response
       const { access_token, token_type } = response as any;
       
       if (!access_token) {
-        console.error('❌ No access token in response');
         return { ok: false, message: "No access token received" };
       }
-
-      console.log('🎫 Token received:', {
-        token_preview: access_token.substring(0, 20) + '...',
-        token_type: token_type || 'bearer'
-      });
 
       // Store token in localStorage
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("token_type", token_type || "bearer");
       
-      console.log('💾 Token stored in localStorage');
 
       // Decode token to get user information
       try {
         const payload = JSON.parse(atob(access_token.split(".")[1]));
-        console.log('🔍 JWT Payload decoded:', payload);
         
         const userId = payload.user_id;
         const userEmail = payload.sub;
         
         if (!userId || !userEmail) {
-          console.error('❌ Invalid token payload - missing user_id or email');
           return { ok: false, message: "Invalid token format" };
         }
-        
-        console.log('👤 User info from token:', {
-          userId,
-          userEmail
-        });
         
         // Temporary: Map email patterns to roles until backend profile endpoint is fixed
         let appRole: Role = "Student"; // default fallback
@@ -310,7 +279,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userId) {
           // Fetch user profile to get dynamic permissions
           try {
-            console.log('🔍 Fetching user profile for dynamic permissions...');
             const profileResponse = await fetch(`${API_CONFIG.FASTAPI_BASE_URL}/profile/${userId}`, {
               headers: {
                 'Authorization': `Bearer ${access_token}`,
@@ -320,7 +288,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             if (profileResponse.ok) {
               const profileData = await profileResponse.json();
-              console.log('✅ Profile data received:', profileData);
               
               // Map backend permissions to frontend permissions
               const mapBackendPermissionToFrontend = (backendPermission: string): Permission[] => {
@@ -345,7 +312,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 userPermissions = Array.from(new Set(userPermissions));
               }
               
-              console.log('🔑 Mapped permissions:', userPermissions);
               
               // Determine role from permissions (highest permission becomes primary role)
               if (userPermissions.includes('Admin')) {
@@ -385,23 +351,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setUser(userData);
               setActiveRole(userData.role); // Set active role to primary role
 
-              console.log("LOGIN SUCCESS with dynamic permissions!");
-              console.log("User Info:", {
-                name: userData.name,
-                role: userData.role,
-                email: userData.email,
-                isLeader: userData.isLeader,
-                permissions: userData.permissions
-              });
-
               return { ok: true, token: access_token, role: userData.role };
               
             } else {
-              console.log('Profile API failed, using email-based role mapping');
               throw new Error('Profile API failed');
             }
           } catch (profileError) {
-            console.log('Profile fetch failed, falling back to email-based role mapping:', profileError);
             
             // Create fallback permissions based on role
             const getFallbackPermissions = (role: Role): Permission[] => {
@@ -435,32 +390,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(userData);
             setActiveRole(userData.role); // Set active role to primary role
 
-            console.log("⚠️ LOGIN SUCCESS with fallback permissions!");
             return { ok: true, token: access_token, role: userData.role };
           }
         }
       } catch (tokenError) {
-        console.error('Error decoding token:', tokenError);
+        // Fallback if profile fetch fails - use basic info from token
+        const userData: User = {
+          id: email, 
+          name: email.split('@')[0],
+          role: "Student", // Safe default
+          email: email,
+          isLeader: false,
+          permissions: ["Student"] // Safe fallback
+        };
+
+        setUser(userData);
+        setActiveRole(userData.role); // Set active role to primary role
+
+        return { ok: true, token: access_token, role: userData.role };
       }
 
-      // Fallback if profile fetch fails - use basic info from token
-      const userData: User = {
-        id: email, 
-        name: email.split('@')[0],
-        role: "Student", // Safe default
-        email: email,
-        isLeader: false,
-        permissions: ["Student"] // Safe fallback
-      };
-
-      setUser(userData);
-      setActiveRole(userData.role); // Set active role to primary role
-
-      console.log("⚠️ LOGIN SUCCESS (with fallback role)");
-return { ok: true, token: access_token, role: userData.role };
-
     } catch (error: any) {
-      console.error('Login error:', error);
       
       // Handle FastAPI error responses
       let errorMessage = "Login failed. Please check your credentials.";
@@ -510,13 +460,11 @@ return { ok: true, token: access_token, role: userData.role };
   };
 
   const logout = () => {
-    console.log('🚪 Logging out user...');
     
     // Optional: Notify backend of logout (best practice)
     const token = localStorage.getItem("access_token");
     if (token) {
       authAPI.logout().catch(err => {
-        console.warn('Backend logout failed (proceeding anyway):', err);
       });
     }
     
@@ -552,7 +500,7 @@ return { ok: true, token: access_token, role: userData.role };
             caches.delete(cacheName);
           }
         });
-      }).catch(err => console.warn('Cache cleanup failed:', err));
+      });
     }
 
     // Determine redirect URL based on user role
@@ -565,7 +513,6 @@ return { ok: true, token: access_token, role: userData.role };
       window.location.href = redirectUrl;
     }, 100);
     
-    console.log('Logout complete - all user data cleared');
   };
 
   // Check if current user has a permission
@@ -604,9 +551,7 @@ return { ok: true, token: access_token, role: userData.role };
     const accessibleRoles = getAccessibleRoles();
     if (accessibleRoles.includes(role)) {
       setActiveRole(role);
-      console.log('Switched active role to:', role);
     } else {
-      console.warn('User does not have permission for role:', role);
     }
   };
 

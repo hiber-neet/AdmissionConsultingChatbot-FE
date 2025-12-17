@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ScrollArea } from '../../ui/system_users/scroll-area';
-import { consultantAnalyticsAPI, UserQuestion, intentAPI } from '../../../services/fastapi';
-import { Intent } from '../../../utils/fastapi-client';
+import { consultantAnalyticsAPI, UserQuestion, IntentAskedStatistic } from '../../../services/fastapi';
 import { CategoryInterestSection } from './CategoryInterestSection';
 import { KnowledgeGapsSection } from './KnowledgeGapsSection';
 import { TrendingTopicsSection } from './TrendingTopicsSection';
@@ -11,33 +10,32 @@ interface AnalyticsStatisticsProps {
 }
 
 export function AnalyticsStatistics({ onNavigateToKnowledgeBase }: AnalyticsStatisticsProps = {}) {
-  // Intent state
-  const [intents, setIntents] = useState<Intent[]>([]);
-  const [intentsLoading, setIntentsLoading] = useState(false);
-  const [intentsError, setIntentsError] = useState<string | null>(null);
+  // Intent statistics state
+  const [intentStats, setIntentStats] = useState<IntentAskedStatistic[]>([]);
+  const [intentStatsLoading, setIntentStatsLoading] = useState(false);
+  const [intentStatsError, setIntentStatsError] = useState<string | null>(null);
 
   // Unanswered questions state
   const [unansweredQuestions, setUnansweredQuestions] = useState<UserQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [questionsError, setQuestionsError] = useState<string | null>(null);
 
-  // Fetch all intents
+  // Fetch intent asked statistics
   useEffect(() => {
-    const fetchIntents = async () => {
+    const fetchIntentStats = async () => {
       try {
-        setIntentsLoading(true);
-        setIntentsError(null);
-        const response = await intentAPI.getIntents();
-        setIntents(Array.isArray(response) ? response : []);
+        setIntentStatsLoading(true);
+        setIntentStatsError(null);
+        const response = await consultantAnalyticsAPI.getIntentAskedStatistics();
+        setIntentStats(response?.data || []);
       } catch (err: any) {
-        console.error('Error fetching intents:', err);
-        setIntentsError(err.response?.data?.detail || 'Failed to fetch intents');
+        setIntentStatsError(err.response?.data?.detail || 'Failed to fetch intent statistics');
       } finally {
-        setIntentsLoading(false);
+        setIntentStatsLoading(false);
       }
     };
 
-    fetchIntents();
+    fetchIntentStats();
   }, []);
 
   // Fetch unanswered questions (status='unanswered')
@@ -58,7 +56,6 @@ export function AnalyticsStatistics({ onNavigateToKnowledgeBase }: AnalyticsStat
         
         setUnansweredQuestions(unanswered);
       } catch (err: any) {
-        console.error('Error fetching unanswered questions:', err);
         setQuestionsError(err.response?.data?.detail || 'Failed to fetch unanswered questions');
       } finally {
         setQuestionsLoading(false);
@@ -76,11 +73,11 @@ export function AnalyticsStatistics({ onNavigateToKnowledgeBase }: AnalyticsStat
           <h1 className="text-3xl font-bold tracking-tight">Phân Tích Chatbot</h1>
         </div>
 
-        {/* Category Section (displays all intents) */}
+        {/* Category Section (displays intent asked statistics) */}
         <CategoryInterestSection 
-          intents={intents}
-          loading={intentsLoading}
-          error={intentsError}
+          intentStats={intentStats}
+          loading={intentStatsLoading}
+          error={intentStatsError}
         />
 
         {/* Unanswered Questions */}
@@ -90,11 +87,11 @@ export function AnalyticsStatistics({ onNavigateToKnowledgeBase }: AnalyticsStat
           error={questionsError}
         />
 
-        {/* Trending Topics (displays all intents with description) */}
+        {/* Trending Topics (displays intent statistics with description) */}
         <TrendingTopicsSection 
-          intents={intents}
-          loading={intentsLoading}
-          error={intentsError}
+          intentStats={intentStats}
+          loading={intentStatsLoading}
+          error={intentStatsError}
         />
       </div>
     </ScrollArea>

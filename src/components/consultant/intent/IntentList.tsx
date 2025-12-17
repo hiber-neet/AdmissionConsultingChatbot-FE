@@ -1,4 +1,4 @@
-import { Edit, Trash2, Tag } from 'lucide-react';
+import { Trash2, Tag, Ban } from 'lucide-react';
 import { Button } from '../../ui/system_users/button';
 import { Card } from '../../ui/system_users/card';
 import { Intent } from '../../../utils/fastapi-client';
@@ -7,53 +7,59 @@ interface IntentListProps {
   intents: Intent[];
   onEdit: (intent: Intent) => void;
   onDelete: (intent: Intent) => void;
+  onClick: (intent: Intent) => void;
   isLeader: boolean;
 }
 
-export function IntentList({ intents, onEdit, onDelete, isLeader }: IntentListProps) {
+export function IntentList({ intents, onEdit, onDelete, onClick, isLeader }: IntentListProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {intents.map((intent) => (
-        <Card key={intent.intent_id} className="p-4 hover:shadow-md transition-shadow">
+        <Card 
+          key={intent.intent_id} 
+          className="p-4 hover:shadow-md transition-shadow cursor-pointer relative"
+          onClick={() => onClick(intent)}
+        >
           <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <Tag className="h-4 w-4 text-[#EB5A0D]" />
+            <div className="flex items-center gap-2 flex-1">
+              <div className={`p-2 rounded-lg ${intent.is_deleted ? 'bg-gray-100' : 'bg-orange-50'}`}>
+                <Tag className={`h-4 w-4 ${intent.is_deleted ? 'text-gray-400' : 'text-[#EB5A0D]'}`} />
               </div>
-              <h3 className="font-semibold text-gray-900">{intent.intent_name}</h3>
+              <h3 className={`font-semibold ${intent.is_deleted ? 'text-gray-400' : 'text-gray-900'}`}>
+                {intent.intent_name}
+              </h3>
             </div>
-            <div className="flex items-center gap-1">
+            {isLeader && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onEdit(intent)}
-                className="h-8 w-8 p-0"
-                title="Chỉnh sửa"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(intent);
+                }}
+                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                title="Xóa"
               >
-                <Edit className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" />
               </Button>
-              {isLeader && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDelete(intent)}
-                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  title="Xóa"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+            )}
           </div>
 
           {intent.description && (
-            <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+            <p className={`text-sm mb-3 line-clamp-2 ${intent.is_deleted ? 'text-gray-400' : 'text-gray-600'}`}>
               {intent.description}
             </p>
           )}
 
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center justify-between text-xs text-gray-500">
             <span>ID: {intent.intent_id}</span>
+            {/* Deleted Badge - Bottom Right */}
+            {intent.is_deleted && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded font-medium">
+                <Ban className="h-3 w-3" />
+                Vô Hiệu Hóa
+              </div>
+            )}
           </div>
         </Card>
       ))}

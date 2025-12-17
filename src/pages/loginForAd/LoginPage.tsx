@@ -31,7 +31,6 @@ export default function LoginPage() {
   const role: Role = (res.role as Role) ?? "Student";
 
   const defaultRoute = getDefaultRoute(role);
-  console.log(`Redirecting ${role} to ${defaultRoute}`);
   navigate(defaultRoute, { replace: true });
 };
 

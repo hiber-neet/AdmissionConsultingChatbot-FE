@@ -35,7 +35,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
   const fetchStudentDetail = async (id) => {
     if (!id) return;
     
-    console.log('👤 Fetching student details for ID:', id);
     setLoading(true);
     setError(null);
     setStudent(null);
@@ -55,7 +54,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
         numericId = idString;
       }
       
-      console.log('🔢 Converted numeric ID:', numericId);
       
       const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
       const url = `${baseUrl}/users/${numericId}`;
@@ -70,16 +68,9 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
 
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('❌ API Error:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorData,
-          url: url
-        });
         
         // If 404, try alternative approaches
         if (response.status === 404) {
-          console.log('🔄 User not found, checking available endpoints...');
           
           // Try fetching all students first to see what IDs exist
           const studentsUrl = `${baseUrl}/users/students`;
@@ -92,7 +83,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
           
           if (studentsResponse.ok) {
             const studentsData = await studentsResponse.json();
-            console.log('📊 Available students:', studentsData);
             
             // Try to find the student in the list
             const foundStudent = studentsData.find(s => 
@@ -101,7 +91,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
             );
             
             if (foundStudent) {
-              console.log('✅ Found student in students list:', foundStudent);
               setStudent(foundStudent);
               return;
             }
@@ -120,11 +109,9 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
       }
 
       const data = await response.json();
-      console.log('✅ Student detail received:', data);
       setStudent(data);
 
     } catch (err) {
-      console.error('💥 Fetch error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -135,7 +122,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
   const fetchRiasecResults = async (id) => {
     if (!id) return;
     
-    console.log('🧠 Fetching RIASEC results for user ID:', id);
     setRiasecLoading(true);
     setRiasecError(null);
     setRiasecResults([]);
@@ -150,36 +136,25 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
         numericId = parseInt(idString);
       }
       
-      console.log('🔢 Fetching RIASEC for numeric ID:', numericId);
-      console.log('📞 Calling riasecAPI.getUserResults with ID:', numericId);
       
       const response = await riasecAPI.getUserResults(numericId);
-      console.log('✅ RIASEC results received:', response);
-      console.log('📦 Response type:', typeof response);
-      console.log('📊 Response is array?:', Array.isArray(response));
-      console.log('📏 Response length:', response?.length);
       
       setRiasecResults(response || []);
 
     } catch (err) {
-      console.error('💥 RIASEC fetch error:', err);
       
       // Check different types of errors
       if (err.response?.status === 404) {
-        console.log('ℹ️ No RIASEC results found for user - this is normal if they haven\'t taken the test');
         setRiasecResults([]);  // Empty array for no results
         setRiasecError(null);  // Clear error since 404 is expected
       } else if (err.response?.status === 500) {
         // Server error - usually means backend issue
-        console.error('🔥 RIASEC API server error (500):', err.response?.data);
         setRiasecError('Lỗi máy chủ khi tải kết quả RIASEC. Vui lòng thử lại sau.');
       } else if (err.message === 'Internal Server Error') {
         // Generic server error without response object
-        console.error('🔥 RIASEC API internal server error:', err.message);
         setRiasecError('Lỗi máy chủ nội bộ khi tải kết quả RIASEC. Vui lòng thử lại sau.');
       } else {
         // Other errors (network, etc.)
-        console.error('💥 Real RIASEC API error:', err.response?.data || err.message);
         setRiasecError(err.response?.data?.detail || err.message || 'Không thể tải kết quả RIASEC');
       }
     } finally {
@@ -198,7 +173,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
         if (student && !error) {
           fetchRiasecResults(userId);
         } else {
-          console.log('ℹ️ Skipping RIASEC fetch - student not found or error occurred');
           setRiasecResults([]);
           setRiasecError(null);
           setRiasecLoading(false);

@@ -11,7 +11,6 @@ let currentLocale = (typeof window !== 'undefined' && window.__LOCALE__) || (typ
 
 export function setLocale(loc) {
   if (!messages[loc]) {
-    console.warn(`Locale '${loc}' not found, falling back to 'vi'`);
     currentLocale = 'vi';
     return;
   }

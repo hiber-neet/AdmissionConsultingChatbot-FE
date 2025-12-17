@@ -34,7 +34,6 @@ export function AddQuestionModal({ intents, onClose, onSubmit }: AddQuestionModa
         const data = await templateAPI.getTemplates();
         setTemplates(data);
       } catch (error) {
-        console.error('Failed to fetch templates:', error);
         toast.error('Không thể tải danh sách mẫu');
       } finally {
         setTemplatesLoading(false);
@@ -96,7 +95,6 @@ export function AddQuestionModal({ intents, onClose, onSubmit }: AddQuestionModa
       await onSubmit({ question, answer, intent_id: intentId });
       onClose();
     } catch (error) {
-      console.error('Failed to create question:', error);
     } finally {
       setLoading(false);
     }

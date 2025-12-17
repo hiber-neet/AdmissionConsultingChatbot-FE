@@ -4,7 +4,6 @@ import { Article, Major, Specialization } from '../../utils/fastapi-client';
 import { Upload, X } from 'lucide-react';
 
 export default function ArticleEditor({ initialData }: { initialData?: { title: string } }) {
-  console.log('ArticleEditor mounted with initialData:', initialData);
   
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState("");
@@ -29,16 +28,13 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
     const fetchMajors = async () => {
       try {
         setLoading(true);
-        console.log('Fetching majors from API...');
         
         // Fetch majors from the real API
         const majorsData = await fastAPIMajors.getAll();
-        console.log('Majors data received:', majorsData);
         
         setMajors(majorsData);
         
       } catch (error) {
-        console.error('Error fetching majors:', error);
         setMessage({ type: 'error', text: 'Không thể tải dữ liệu ngành. Sử dụng dữ liệu dự phòng.' });
         
         // Fallback to mock data if API fails
@@ -68,11 +64,9 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
 
       try {
         setLoadingSpecializations(true);
-        console.log('Fetching specializations for majorId:', majorId);
         
         // Fetch specializations for the selected major
         const specializationsData = await fastAPISpecializations.getByMajor(majorId);
-        console.log('Specializations data received:', specializationsData);
         
         setFilteredSpecializations(specializationsData);
         
@@ -82,7 +76,6 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
         }
         
       } catch (error) {
-        console.error('Error fetching specializations:', error);
         setMessage({ type: 'error', text: `Không thể tải chuyên ngành cho ngành đã chọn.` });
         
         // Fallback to mock data filtered by major
@@ -195,18 +188,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
         formData.append('specialization_id', String(specializationId));
       }
 
-      console.log('Sending POST request to /articles with FormData:', {
-        title: title.trim(),
-        description: description.trim(),
-        url: url.trim(),
-        image: imageFile?.name,
-        major_id: majorId === 0 ? null : majorId,
-        specialization_id: specializationId
-      });
-
       const response = await fastAPIArticles.create(formData);
-      
-      console.log('Received response:', response);
       
       setMessage({ type: 'success', text: `Bài viết "${response.title}" đã được thêm thành công!` });
       setCreatedArticle(response);
@@ -221,7 +203,6 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
       setSpecializationId(0);
       
     } catch (error: any) {
-      console.error('Error adding article:', error);
       const errorMessage = error.message || 'Không thể thêm bài viết';
       setMessage({ type: 'error', text: errorMessage });
       setCreatedArticle(null);
@@ -338,7 +319,6 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
             <select 
               value={majorId} 
               onChange={(e) => {
-                console.log('Major changed to:', e.target.value);
                 setMajorId(Number(e.target.value));
               }}
               className="w-full border rounded-md px-2 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -364,7 +344,6 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
             <select 
               value={specializationId} 
               onChange={(e) => {
-                console.log('Specialization changed to:', e.target.value);
                 setSpecializationId(Number(e.target.value));
               }}
               className="w-full border rounded-md px-2 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"

@@ -53,7 +53,6 @@ export function RequestQueuePage() {
       const transformedData = transformQueueData(apiData);
       setQueueItems(transformedData);
     } catch (err) {
-      console.error('Error fetching queue data:', err);
       setError('Failed to load queue data. Please try again.');
     } finally {
       setLoading(false);
@@ -72,7 +71,6 @@ export function RequestQueuePage() {
   // Listen for SSE queue updates
   useEffect(() => {
     const handleQueueUpdate = (event) => {
-      console.log('📢 Received queue update event:', event.detail);
       // Refresh the queue data when we receive an SSE notification
       fetchQueueData();
     };
@@ -86,17 +84,14 @@ export function RequestQueuePage() {
   }, []);
 
   const handleTakeRequest = async (requestId) => {
-    console.log('🔥 handleTakeRequest called with:', requestId);
     
     // Set loading state for this specific request
     setAcceptingRequestId(requestId);
     setError(null);
     
     try {
-      console.log('🎯 Taking request:', requestId);
       
       if (!user?.id) {
-        console.error('❌ No user ID available');
         toast.error('User not authenticated. Please login again.');
         return;
       }
@@ -105,10 +100,8 @@ export function RequestQueuePage() {
       const queueId = parseInt(requestId);
       const officialId = parseInt(user.id);
       
-      console.log('📞 Calling acceptRequest API with:', { officialId, queueId });
       
       const response = await fastAPILiveChat.acceptRequest(officialId, queueId);
-      console.log('✅ Accept response:', response);
       
       // Handle different response types
       if (response && response.error) {
@@ -134,9 +127,6 @@ export function RequestQueuePage() {
       // Success case - handle ChatSession object response
       if (response && response.chat_session_id) {
         // New response format: ChatSession object with chat_session_id
-        console.log('🎉 [OFFICER] Got chat_session_id from API:', response.chat_session_id);
-        console.log('🎉 [OFFICER] Full response object:', response);
-        console.log('🎉 [OFFICER] Navigating to consultation with sessionId:', response.chat_session_id);
         toast.success('✅ Request accepted successfully! Redirecting to consultation...');
         
         // Navigate to consultation page with session info
@@ -149,7 +139,6 @@ export function RequestQueuePage() {
         });
       } else if (response && response.session_id) {
         // Legacy response format: { session_id: number }
-        console.log('🎉 [OFFICER] Got session_id (legacy format):', response.session_id);
         toast.success('✅ Request accepted successfully! Redirecting to consultation...');
         
         // Navigate to consultation page with session info
@@ -166,14 +155,12 @@ export function RequestQueuePage() {
         await fetchQueueData();
         navigate('/admission/consultation');
       } else {
-        console.log('⚠️ Unexpected response format:', response);
         toast.warning('⚠️ Request might have been accepted, but received unexpected response. Please check your active sessions.');
         // Fallback: refresh queue and navigate
         await fetchQueueData();
         navigate('/admission/consultation');
       }
     } catch (err) {
-      console.error('❌ Error accepting request:', err);
       
       // Handle different types of errors
       if (err.response && err.response.status === 500) {

@@ -31,11 +31,7 @@ export async function loadPermissions(): Promise<PermissionData[]> {
     // Check if user is logged in (has token)
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
     
-    // Only log error if user is logged in (API should work)
-    if (token) {
-      console.error('Failed to load permissions from API:', error);
-    }
-    // Silent fail if not logged in - this is expected
+    // Silent fail - fallback to hardcoded permissions if API fails
     
     // Fallback to hardcoded permissions if API fails
     const fallbackPermissions: PermissionData[] = [
@@ -123,7 +119,7 @@ export type PagePermission =
   // Admission Officer pages  
   | "admissions" | "content" | "consultation" | "insights"
   // Consultant pages
-  | "overview" | "analytics" | "knowledge"
+  | "overview" | "analytics" | "knowledge" | "optimization"
   // Content Manager pages
   | "dashboardcontent" | "articles" | "review" | "editor"
   // Shared/Student pages
@@ -147,6 +143,7 @@ let PAGE_PERMISSIONS: Record<PagePermission, Permission> = {
   "overview": "Consultant",
   "analytics": "Consultant",
   "knowledge": "Consultant", 
+  "optimization": "Consultant",
   
   // Content Manager pages
   "dashboardcontent": "Content Manager",

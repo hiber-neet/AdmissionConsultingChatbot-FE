@@ -34,9 +34,7 @@ export function KnowledgeBaseViewer() {
         setLoading(true);
         
         // Fetch intents first
-        console.log('🎯 Fetching intents...');
         const intentsResponse = await intentAPI.getIntents();
-        console.log('🎯 Intents response:', intentsResponse);
         const intentsData = intentsResponse.data || intentsResponse || [];
         
         // Create intent map for quick lookup
@@ -44,17 +42,13 @@ export function KnowledgeBaseViewer() {
         intentsData.forEach(intent => {
           intentMap[intent.intent_id] = intent.intent_name;
         });
-        console.log('🎯 Intent map:', intentMap);
         setIntents(intentsData);
         
         // Fetch training questions
-        console.log('📚 Fetching training questions...');
         const trainingResponse = await knowledgeAPI.getTrainingQuestions();
-        console.log('📚 Training response:', trainingResponse);
         
         // Handle different response structures
         const trainingData = trainingResponse.data || trainingResponse || [];
-        console.log('📚 Training data:', trainingData);
         
         const transformedQuestions = Array.isArray(trainingData) 
           ? trainingData.map((question, index) => ({
@@ -68,13 +62,10 @@ export function KnowledgeBaseViewer() {
           : [];
 
         // Fetch documents
-        console.log('📄 Fetching documents...');
         const documentsResponse = await knowledgeAPI.getDocuments();
-        console.log('📄 Documents response:', documentsResponse);
         
         // Handle different response structures
         const documentsData = documentsResponse.data || documentsResponse || [];
-        console.log('📄 Documents data:', documentsData);
         
         const transformedDocuments = Array.isArray(documentsData)
           ? documentsData.map((doc, index) => ({
@@ -91,14 +82,10 @@ export function KnowledgeBaseViewer() {
             }))
           : [];
 
-        console.log('✅ Transformed questions:', transformedQuestions.length);
-        console.log('✅ Transformed documents:', transformedDocuments.length);
 
         setTrainingQuestions(transformedQuestions);
         setDocuments(transformedDocuments);
       } catch (error) {
-        console.error('❌ Error fetching knowledge base data:', error);
-        console.error('❌ Error details:', error.response || error.message);
         
         // Set empty arrays on error to prevent crashes
         setTrainingQuestions([]);
@@ -106,11 +93,8 @@ export function KnowledgeBaseViewer() {
         
         // Show user-friendly error message
         if (error.response?.status === 403) {
-          console.error('🔒 Access denied - insufficient permissions');
         } else if (error.response?.status === 401) {
-          console.error('🔐 Authentication required');
         } else {
-          console.error('🔥 Network or server error');
         }
       } finally {
         setLoading(false);

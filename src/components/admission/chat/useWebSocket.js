@@ -7,7 +7,6 @@ export function useWebSocket(selectedSessionId, onMessageReceived) {
 
   const connectWebSocket = () => {
     if (!selectedSessionId) {
-      console.error('[OFFICER WS] ❌ No session ID available for WebSocket connection');
       setIsConnected(false);
       return;
     }
@@ -16,18 +15,14 @@ export function useWebSocket(selectedSessionId, onMessageReceived) {
       // Convert http/https URL to ws/wss
       const wsBaseUrl = API_CONFIG.FASTAPI_BASE_URL.replace(/^http/, 'ws');
       const wsUrl = `${wsBaseUrl}/live_chat/livechat/chat/${selectedSessionId}`;
-      console.log('[OFFICER WS] 🔌 Connecting to WebSocket:', wsUrl);
-      console.log('[OFFICER WS] 🔌 Session ID:', selectedSessionId);
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
-        console.log('[OFFICER WS] ✅ WebSocket connected for session', selectedSessionId);
         setIsConnected(true);
       };
 
       wsRef.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        console.log('[OFFICER WS] 📨 Received message:', data);
         
         if (data.event === 'message') {
           const newMessage = {
@@ -44,16 +39,13 @@ export function useWebSocket(selectedSessionId, onMessageReceived) {
       };
 
       wsRef.current.onclose = () => {
-        console.log('WebSocket disconnected');
         setIsConnected(false);
       };
 
       wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
         setIsConnected(false);
       };
     } catch (err) {
-      console.error('Error creating WebSocket:', err);
       setIsConnected(false);
     }
   };
@@ -68,10 +60,8 @@ export function useWebSocket(selectedSessionId, onMessageReceived) {
 
     try {
       wsRef.current.send(JSON.stringify(messageData));
-      console.log('Sent message:', messageData);
       return true;
     } catch (err) {
-      console.error('Error sending message:', err);
       return false;
     }
   };

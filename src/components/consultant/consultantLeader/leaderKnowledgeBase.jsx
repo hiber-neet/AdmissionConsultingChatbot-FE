@@ -35,7 +35,6 @@ export function LeaderKnowledgeBase() {
       setTrainingQuestions(questionsData || []);
       setDocuments(documentsData || []);
     } catch (error) {
-      console.error('Không thể tải danh sách chờ duyệt:', error);
       toast.error('Không thể tải danh sách chờ duyệt');
     } finally {
       setLoading(false);
@@ -55,7 +54,6 @@ export function LeaderKnowledgeBase() {
       // Refresh the lists
       await fetchPendingItems();
     } catch (error) {
-      console.error('Không thể duyệt:', error);
       toast.error('Không thể duyệt. Vui lòng thử lại.');
     } finally {
       setApprovingId(null); // Clear loading state
@@ -93,7 +91,6 @@ export function LeaderKnowledgeBase() {
       setSelectedItem(null);
       setSelectedItemType(null);
     } catch (error) {
-      console.error('Không thể từ chối:', error);
       toast.error('Không thể từ chối. Vui lòng thử lại.');
     } finally {
       setRejectingId(null); // Clear loading state

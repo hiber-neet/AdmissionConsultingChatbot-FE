@@ -79,7 +79,6 @@ export function DocumentManagement() {
         setSelectedDoc(null);
       }
     } catch (error) {
-      console.error('Failed to fetch documents:', error);
       toast.error('Không thể tải tài liệu. Vui lòng thử lại.');
     } finally {
       setLoading(false);
@@ -91,7 +90,6 @@ export function DocumentManagement() {
       const details = await knowledgeAPI.getDocumentById(documentId);
       setSelectedDoc(details);
     } catch (error) {
-      console.error('Failed to fetch document details:', error);
       toast.error('Không thể tải chi tiết tài liệu. Vui lòng thử lại.');
     }
   };
@@ -101,7 +99,6 @@ export function DocumentManagement() {
       const data = await intentAPI.getIntents();
       setIntents(data);
     } catch (error) {
-      console.error('Failed to fetch intents:', error);
       toast.error('Không thể tải danh mục. Vui lòng thử lại.');
     }
   };
@@ -121,15 +118,6 @@ export function DocumentManagement() {
       formData.append('category', documentCategory || 'general');
       formData.append('current_user_id', user.id.toString());
 
-      // Debug logging
-      console.log('Upload data:', {
-        intend_id: selectedIntent,
-        file: uploadedFile.name,
-        title: documentTitle || uploadedFile.name.split('.')[0],
-        category: documentCategory || 'general',
-        current_user_id: user.id.toString()
-      });
-
       await knowledgeAPI.uploadDocument(formData, parseInt(selectedIntent));
 
       // Reset form and close dialog
@@ -144,7 +132,6 @@ export function DocumentManagement() {
       
       toast.success('Tải lên tài liệu thành công!');
     } catch (error) {
-      console.error('Failed to upload document:', error);
       toast.error(`Không thể tải lên tài liệu: ${error.message}`);
     } finally {
       setUploading(false);
@@ -167,7 +154,6 @@ export function DocumentManagement() {
       
       toast.success('Xóa tài liệu thành công!');
     } catch (error) {
-      console.error('Failed to delete document:', error);
       toast.error('Không thể xóa tài liệu. Vui lòng thử lại.');
     } finally {
       setDeleting(false);
@@ -190,7 +176,6 @@ export function DocumentManagement() {
       
       toast.success('Tải tài liệu thành công!');
     } catch (error: any) {
-      console.error('Failed to download document:', error);
       const errorMessage = error?.message || 'Không thể tải xuống tài liệu. Vui lòng thử lại.';
       toast.error(errorMessage);
     }

@@ -39,7 +39,6 @@ export const articlesApi = {
       const data = await response.json();
       return data as Article[];
     } catch (error) {
-      console.error('Error fetching articles:', error);
       throw error;
     }
   },
@@ -61,7 +60,6 @@ export const articlesApi = {
       const data = await response.json();
       return data as Article;
     } catch (error) {
-      console.error('Error fetching article:', error);
       throw error;
     }
   },
@@ -84,7 +82,6 @@ export const articlesApi = {
       const data = await response.json();
       return data as Article;
     } catch (error) {
-      console.error('Error creating article:', error);
       throw error;
     }
   },
@@ -107,7 +104,6 @@ export const articlesApi = {
       const data = await response.json();
       return data as Article;
     } catch (error) {
-      console.error('Error updating article:', error);
       throw error;
     }
   },
@@ -125,7 +121,6 @@ export const articlesApi = {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (error) {
-      console.error('Error deleting article:', error);
       throw error;
     }
   },

@@ -11,6 +11,10 @@ interface DocumentDetailModalProps {
   isLeader: boolean;
   onClose: () => void;
   onDelete: (documentId: number) => Promise<void>;
+  onApprove?: (documentId: number) => Promise<void>;
+  onReject?: (documentId: number) => Promise<void>;
+  isApproving?: boolean;
+  isRejecting?: boolean;
 }
 
 export function DocumentDetailModal({
@@ -18,7 +22,11 @@ export function DocumentDetailModal({
   intents,
   isLeader,
   onClose,
-  onDelete
+  onDelete,
+  onApprove,
+  onReject,
+  isApproving,
+  isRejecting
 }: DocumentDetailModalProps) {
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +37,6 @@ export function DocumentDetailModal({
       await onDelete(document.document_id);
       onClose();
     } catch (error) {
-      console.error('Failed to delete document:', error);
     } finally {
       setLoading(false);
     }
@@ -54,7 +61,6 @@ export function DocumentDetailModal({
       
       toast.success('Tải tài liệu thành công!');
     } catch (error) {
-      console.error('Failed to download document:', error);
       
       let errorMessage = 'Không thể tải xuống tài liệu. Vui lòng thử lại.';
       if (error instanceof Error && error.message.includes('File not found')) {
@@ -162,6 +168,20 @@ export function DocumentDetailModal({
                 <p className="text-sm text-gray-900 whitespace-pre-wrap">
                   {document.content.substring(0, 2000)}
                   {document.content.length > 2000 && '...'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Rejection Reason */}
+          {document.status === 'rejected' && document.reject_reason && (
+            <div>
+              <label className="block text-sm font-medium text-red-700 mb-2">
+                Lý Do Từ Chối
+              </label>
+              <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                <p className="text-sm text-red-900 whitespace-pre-wrap">
+                  {document.reject_reason}
                 </p>
               </div>
             </div>

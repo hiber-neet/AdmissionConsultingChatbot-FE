@@ -10,15 +10,15 @@ import {
   TableHeader,
   TableRow,
 } from '../../ui/system_users/table';
-import { Intent } from '../../../utils/fastapi-client';
+import { IntentAskedStatistic } from '../../../services/fastapi';
 
 interface CategoryInterestSectionProps {
-  intents: Intent[];
+  intentStats: IntentAskedStatistic[];
   loading: boolean;
   error: string | null;
 }
 
-export function CategoryInterestSection({ intents, loading, error }: CategoryInterestSectionProps) {
+export function CategoryInterestSection({ intentStats, loading, error }: CategoryInterestSectionProps) {
   return (
     <Card>
       <CardHeader>
@@ -42,7 +42,7 @@ export function CategoryInterestSection({ intents, loading, error }: CategoryInt
               Thử Lại
             </Button>
           </div>
-        ) : intents.length === 0 ? (
+        ) : intentStats.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <p>Không có danh mục nào.</p>
           </div>
@@ -59,13 +59,13 @@ export function CategoryInterestSection({ intents, loading, error }: CategoryInt
               </TableRow>
             </TableHeader>
             <TableBody>
-              {intents.map((intent) => (
-                <TableRow key={intent.intent_id} className="h-14">
+              {intentStats.map((stat) => (
+                <TableRow key={stat.intent_id} className="h-14">
                   <TableCell className="py-3">
-                    <Badge variant="outline" className="text-sm px-2.5 py-1">{intent.intent_name}</Badge>
+                    <Badge variant="outline" className="text-sm px-2.5 py-1">{stat.intent_name}</Badge>
                   </TableCell>
                   <TableCell className="text-right py-3 text-base font-medium">
-                    0
+                    {stat.question_count}
                   </TableCell>
                 </TableRow>
               ))}

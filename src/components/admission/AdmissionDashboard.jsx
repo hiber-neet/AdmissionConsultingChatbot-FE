@@ -20,7 +20,6 @@ import { toast } from 'react-toastify';
 
 export function AdmissionDashboard() {
   const [loading, setLoading] = useState(true);
-  const [chartDays, setChartDays] = useState(7); // State for chart interval
   const [stats, setStats] = useState({
     chatbot_interactions: 0,
     published_articles: 0,
@@ -35,10 +34,8 @@ export function AdmissionDashboard() {
     try {
       setLoading(true);
       const response = await dashboardAnalyticsAPI.getAdmissionStats(30);
-      console.log('Admission dashboard data:', response);
       setStats(response);
     } catch (error) {
-      console.error('Error fetching admission dashboard data:', error);
       toast.error('Không thể tải dữ liệu dashboard');
     } finally {
       setLoading(false);
@@ -137,46 +134,12 @@ export function AdmissionDashboard() {
           {/* Weekly Articles Chart */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Thống Kê Bài Viết Trong Tuần</CardTitle>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setChartDays(7)}
-                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                      chartDays === 7
-                        ? 'bg-[#EB5A0D] text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    7 Ngày
-                  </button>
-                  <button
-                    onClick={() => setChartDays(14)}
-                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                      chartDays === 14
-                        ? 'bg-[#EB5A0D] text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    14 Ngày
-                  </button>
-                  <button
-                    onClick={() => setChartDays(30)}
-                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                      chartDays === 30
-                        ? 'bg-[#EB5A0D] text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    30 Ngày
-                  </button>
-                </div>
-              </div>
+              <CardTitle>Thống Kê Bài Viết Trong Tuần</CardTitle>
             </CardHeader>
             <CardContent>
               {stats.weekly_articles.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={stats.weekly_articles.slice(-chartDays)}>
+                  <BarChart data={stats.weekly_articles}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis
                       dataKey="date"

@@ -37,7 +37,6 @@ export default function EditArticleModal({
           const specs = await fastAPISpecializations.getByMajor(formData.major_id);
           setSpecializations(specs);
         } catch (err) {
-          console.error('Error fetching specializations:', err);
         }
       } else {
         setSpecializations([]);
