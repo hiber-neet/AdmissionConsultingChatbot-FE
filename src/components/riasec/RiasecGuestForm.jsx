@@ -139,7 +139,6 @@ export default function RiasecGuestForm() {
         );
       }
     } catch (err) {
-      console.error("Load RIASEC history error", err);
     }
   };
 
@@ -232,7 +231,6 @@ export default function RiasecGuestForm() {
           },
         }
       );
-      console.log("RIASEC submit result:", res.data);
 
       const summaryFromServer =
         res.data.summary ?? res.data.result ?? null;
@@ -253,7 +251,6 @@ export default function RiasecGuestForm() {
       setSubmitted(true);
       return res.data;
     } catch (err) {
-      console.error("Submit RIASEC error", err);
       alert("Có lỗi khi gửi kết quả RIASEC. Thử lại sau nhé.");
       return null;
     } finally {
@@ -272,7 +269,6 @@ export default function RiasecGuestForm() {
 
     const json = buildRiasecJson();
     localStorage.setItem(CHATBOT_PREFILL_KEY, JSON.stringify(json));
-    console.log("RIASEC JSON gửi chatbot:", json);
 
     if (user) {
       navigate("/profile?tab=chatbot");

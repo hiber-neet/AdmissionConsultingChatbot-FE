@@ -3,16 +3,16 @@ import { TrendingUp, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/system_users/card';
 import { Button } from '../../ui/system_users/button';
 import { Badge } from '../../ui/system_users/badge';
-import { Intent } from '../../../utils/fastapi-client';
+import { IntentAskedStatistic } from '../../../services/fastapi';
 
 interface TrendingTopicsSectionProps {
-  intents: Intent[];
+  intentStats: IntentAskedStatistic[];
   loading: boolean;
   error: string | null;
 }
 
 export function TrendingTopicsSection({ 
-  intents, 
+  intentStats, 
   loading, 
   error 
 }: TrendingTopicsSectionProps) {
@@ -48,30 +48,30 @@ export function TrendingTopicsSection({
               Thử Lại
             </Button>
           </div>
-        ) : !intents || intents.length === 0 ? (
+        ) : !intentStats || intentStats.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <TrendingUp className="h-12 w-12 mx-auto mb-2 opacity-50" />
             <p>Không có danh mục nào</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {intents.slice(0, visibleCount).map((intent) => (
+            {intentStats.slice(0, visibleCount).map((stat) => (
               <div
-                key={intent.intent_id}
+                key={stat.intent_id}
                 className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium">{intent.intent_name}</h4>
+                      <h4 className="font-medium">{stat.intent_name}</h4>
                     </div>
-                    {intent.description && (
+                    {stat.description && (
                       <p className="text-sm text-muted-foreground mb-2">
-                        {intent.description}
+                        {stat.description}
                       </p>
                     )}
                     <p className="text-sm text-muted-foreground">
-                      <span className="font-semibold">0 câu hỏi</span> được hỏi
+                      <span className="font-semibold">{stat.question_count} câu hỏi</span> được hỏi
                     </p>
                   </div>
                 </div>
@@ -79,14 +79,14 @@ export function TrendingTopicsSection({
             ))}
             
             {/* Show More Button */}
-            {intents && visibleCount < intents.length && (
+            {intentStats && visibleCount < intentStats.length && (
               <div className="flex justify-center pt-4">
                 <Button 
                   variant="outline" 
-                  onClick={() => setVisibleCount(prev => Math.min(prev + 5, intents.length))}
+                  onClick={() => setVisibleCount(prev => Math.min(prev + 5, intentStats.length))}
                   className="flex items-center gap-2"
                 >
-                  Hiển Thị Thêm ({Math.min(5, intents.length - visibleCount)} mục khác)
+                  Hiển Thị Thêm ({Math.min(5, intentStats.length - visibleCount)} mục khác)
                 </Button>
               </div>
             )}

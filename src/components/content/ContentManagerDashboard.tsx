@@ -65,10 +65,8 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
     try {
       setLoading(true);
       setError(null);
-      console.log('🔄 Fetching content statistics...');
       
       const response = await fastAPIContentAnalytics.getStatistics();
-      console.log('✅ Content statistics received:', response);
       
       if (response.success) {
         setContentData(response.data);
@@ -77,7 +75,6 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
         throw new Error('API returned success: false');
       }
     } catch (err: any) {
-      console.error('❌ Error fetching content statistics:', err);
       setError(err.message || 'Failed to fetch content statistics');
       
       // Set fallback data in case of error

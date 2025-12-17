@@ -22,7 +22,6 @@ export default function ReviewQueue() {
       const data = await articlesAPI.getReviewQueue();
       setArticles(data);
     } catch (error) {
-      console.error('Failed to fetch review queue:', error);
       toast.error('Không thể tải bài viết cần duyệt. Vui lòng thử lại.');
     } finally {
       setLoading(false);
@@ -40,7 +39,6 @@ export default function ReviewQueue() {
       toast.success(`Bài viết "${article.title}" đã được phê duyệt và xuất bản!`);
       await fetchReviewQueue(); // Refresh the list
     } catch (error) {
-      console.error('Failed to approve article:', error);
       toast.error('Không thể phê duyệt bài viết. Vui lòng thử lại.');
     } finally {
       setActionLoading(false);
@@ -73,7 +71,6 @@ export default function ReviewQueue() {
       setOpenFor(null);
       await fetchReviewQueue(); // Refresh the list
     } catch (error) {
-      console.error('Failed to reject article:', error);
       toast.error('Không thể từ chối bài viết. Vui lòng thử lại.');
     } finally {
       setActionLoading(false);

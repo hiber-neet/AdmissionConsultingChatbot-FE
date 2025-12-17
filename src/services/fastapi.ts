@@ -484,6 +484,13 @@ export interface PaginatedResponse<T> {
   message: string;
 }
 
+export interface IntentAskedStatistic {
+  intent_id: number;
+  intent_name: string;
+  description?: string;
+  question_count: number;
+}
+
 // Consultant Analytics API
 export const consultantAnalyticsAPI = {
   getStatistics: () =>
@@ -503,7 +510,9 @@ export const consultantAnalyticsAPI = {
   getUserQuestions: (days?: number, page?: number, pageSize?: number, search?: string) =>
     fastAPIClient.get<PaginatedResponse<UserQuestion>>(
       `/analytics/user-questions?days=${days || 30}&page=${page || 1}&page_size=${pageSize || 10}${search ? `&search=${encodeURIComponent(search)}` : ''}`
-    )
+    ),
+  getIntentAskedStatistics: () =>
+    fastAPIClient.get<{ status: string; data: IntentAskedStatistic[]; message: string }>('/analytics/intent-asked-statistics')
 };
 
 // Dashboard Analytics API

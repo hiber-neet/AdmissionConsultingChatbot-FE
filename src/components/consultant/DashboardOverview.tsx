@@ -61,7 +61,6 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
         const questionsData = Array.isArray(questionsResponse) ? questionsResponse : questionsResponse?.data || [];
         setRecentQuestions(questionsData);
       } catch (err: any) {
-        console.error('Error fetching dashboard data:', err);
         setError(err.response?.data?.detail || 'Failed to fetch dashboard data');
       } finally {
         setLoading(false);

@@ -49,8 +49,6 @@ import { Separator } from '../ui/system_users/separator';
 // }
 
 export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
-  console.log('🎯 RequestQueue received requests:', requests);
-  console.log('🎯 RequestQueue requests length:', requests?.length);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -68,8 +66,6 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
     return matchesSearch && matchesType && matchesPriority;
   });
 
-  console.log('🔍 Filtered requests length:', filteredRequests.length);
-  console.log('🔍 Filter states - search:', searchQuery, 'type:', filterType, 'priority:', filterPriority);
 
   const getPriorityConfig = (priority) => {
     const configs = {

@@ -56,10 +56,8 @@ export function ManagerProfile() {
         setLoading(true);
         setError(null);
         const response = await fastAPIProfile.getUserById(parseInt(user.id));
-        console.log('Profile data fetched:', response);
         setProfileData(response as UserProfile);
       } catch (err) {
-        console.error('Error fetching profile:', err);
         setError('Không thể tải dữ liệu hồ sơ');
       } finally {
         setLoading(false);

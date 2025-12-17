@@ -56,6 +56,14 @@ export function QuestionList({ questions, selectedQuestion, onSelectQuestion }: 
             {question.answer}
           </p>
           
+          {question.status === 'rejected' && question.reject_reason && (
+            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+              <p className="text-xs text-red-700">
+                <span className="font-semibold">Lý do từ chối:</span> {question.reject_reason}
+              </p>
+            </div>
+          )}
+          
           {question.created_at && (
             <p className="text-xs text-gray-400 mt-2">
               {new Date(question.created_at).toLocaleDateString('vi-VN')}

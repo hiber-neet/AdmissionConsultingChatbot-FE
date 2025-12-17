@@ -143,7 +143,6 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
         setSelectedQuestion(null);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
       toast.error('Không thể tải câu hỏi huấn luyện hoặc danh mục');
     } finally {
       setLoading(false);
@@ -161,7 +160,6 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
         const data = await templateAPI.getTemplates();
         setTemplates(data);
       } catch (error) {
-        console.error('Error fetching templates:', error);
         toast.error('Không thể tải mẫu');
       } finally {
         setTemplatesLoading(false);
@@ -256,7 +254,6 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
       setIsEditing(false);
       toast.success('Cập nhật câu hỏi huấn luyện thành công!');
     } catch (error) {
-      console.error('Error updating training question:', error);
       toast.error('Không thể cập nhật câu hỏi huấn luyện. Vui lòng thử lại.');
     }
   };
@@ -279,7 +276,6 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
       setShowDeleteDialog(false);
       toast.success('Xóa câu hỏi huấn luyện thành công!');
     } catch (error) {
-      console.error('Error deleting training question:', error);
       toast.error('Không thể xóa câu hỏi huấn luyện. Vui lòng thử lại.');
     }
   };
@@ -349,7 +345,6 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
         toast.info('Câu hỏi của bạn đã được gửi để xét duyệt.');
       }
     } catch (error) {
-      console.error('Error creating training question:', error);
       toast.error('Không thể tạo câu hỏi huấn luyện. Vui lòng thử lại.');
     } finally {
       setCreating(false);

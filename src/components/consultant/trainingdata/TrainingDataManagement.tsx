@@ -58,7 +58,6 @@ export function TrainingDataManagement() {
       const data = await intentAPI.getIntents();
       setIntents(data.map(intent => ({ ...intent, description: intent.description || '' })));
     } catch (error) {
-      console.error('Failed to fetch intents:', error);
       toast.error('Không thể tải danh sách danh mục');
     }
   };
@@ -71,7 +70,6 @@ export function TrainingDataManagement() {
       );
       setQuestions(data);
     } catch (error) {
-      console.error('Failed to fetch questions:', error);
       toast.error('Không thể tải câu hỏi huấn luyện');
     } finally {
       setLoading(false);
@@ -84,14 +82,14 @@ export function TrainingDataManagement() {
       const data = await knowledgeAPI.getDocuments(
         statusFilter !== 'all' ? statusFilter : undefined
       );
-      // Add missing properties with safe defaults
+      // Add missing properties with safe defaults, keep reject_reason from API
       setDocuments(data.map(doc => ({ 
         ...doc, 
         file_size: 0, 
-        file_type: doc.file_path.split('.').pop() || 'unknown' 
+        file_type: doc.file_path.split('.').pop() || 'unknown',
+        reject_reason: doc.reject_reason || undefined
       })));
     } catch (error) {
-      console.error('Failed to fetch documents:', error);
       toast.error('Không thể tải tài liệu');
     } finally {
       setLoading(false);
@@ -112,7 +110,6 @@ export function TrainingDataManagement() {
       setShowQuestionModal(false);
       setSelectedQuestion(null);
     } catch (error) {
-      console.error('Failed to delete question:', error);
       toast.error('Không thể xóa câu hỏi');
       throw error;
     }
@@ -126,11 +123,11 @@ export function TrainingDataManagement() {
       setSelectedDocument({ 
         ...fullDoc, 
         file_size: 0, 
-        file_type: fullDoc.file_path.split('.').pop() || 'unknown' 
+        file_type: fullDoc.file_path.split('.').pop() || 'unknown',
+        reject_reason: fullDoc.reject_reason || undefined
       });
       setShowDocumentModal(true);
     } catch (error) {
-      console.error('Failed to fetch document details:', error);
       toast.error('Không thể tải chi tiết tài liệu');
     }
   };
@@ -144,7 +141,6 @@ export function TrainingDataManagement() {
       toast.info('Chức năng cập nhật đang được phát triển');
       throw new Error('Update not implemented');
     } catch (error) {
-      console.error('Failed to update document:', error);
       toast.error('Không thể cập nhật tài liệu');
       throw error;
     }
@@ -158,7 +154,6 @@ export function TrainingDataManagement() {
       setShowDocumentModal(false);
       setSelectedDocument(null);
     } catch (error) {
-      console.error('Failed to delete document:', error);
       toast.error('Không thể xóa tài liệu');
       throw error;
     }
@@ -175,10 +170,10 @@ export function TrainingDataManagement() {
       setSelectedDocument({ 
         ...fullDoc, 
         file_size: 0, 
-        file_type: fullDoc.file_path.split('.').pop() || 'unknown' 
+        file_type: fullDoc.file_path.split('.').pop() || 'unknown',
+        reject_reason: fullDoc.reject_reason || undefined
       });
     } catch (error) {
-      console.error('Failed to approve document:', error);
       toast.error('Không thể duyệt tài liệu');
       throw error;
     } finally {
@@ -197,10 +192,10 @@ export function TrainingDataManagement() {
       setSelectedDocument({ 
         ...fullDoc, 
         file_size: 0, 
-        file_type: fullDoc.file_path.split('.').pop() || 'unknown' 
+        file_type: fullDoc.file_path.split('.').pop() || 'unknown',
+        reject_reason: fullDoc.reject_reason || undefined
       });
     } catch (error) {
-      console.error('Failed to reject document:', error);
       toast.error('Không thể từ chối tài liệu');
       throw error;
     } finally {
@@ -215,7 +210,6 @@ export function TrainingDataManagement() {
       toast.success('Tạo câu hỏi thành công! Đang chờ duyệt.');
       await fetchQuestions();
     } catch (error) {
-      console.error('Failed to create question:', error);
       toast.error('Không thể tạo câu hỏi');
       throw error;
     }
@@ -228,7 +222,6 @@ export function TrainingDataManagement() {
       toast.success('Tải lên tài liệu thành công! Đang chờ duyệt.');
       await fetchDocuments();
     } catch (error) {
-      console.error('Failed to upload document:', error);
       toast.error('Không thể tải lên tài liệu');
       throw error;
     }

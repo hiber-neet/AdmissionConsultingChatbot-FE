@@ -57,14 +57,11 @@ export function LiveChatView() {
     
     setSessionsLoading(true);
     try {
-      console.log('Loading active sessions for official:', user.id);
       
       const response = await liveChatAPI.getActiveSessions(parseInt(user.id));
-      console.log('Active sessions response:', response);
       
       if (response && Array.isArray(response)) {
         setActiveSessions(response);
-        console.log(`Loaded ${response.length} active sessions`);
         
         // If no specific session was passed, auto-select the first active session
         if (!initialSessionId && response.length > 0) {
@@ -72,10 +69,8 @@ export function LiveChatView() {
         }
       } else {
         setActiveSessions([]);
-        console.log('No active sessions found');
       }
     } catch (err) {
-      console.error('Error loading active sessions:', err);
       setActiveSessions([]);
       
       // Only show error if it's not a 404 (which means no active sessions)
@@ -92,13 +87,10 @@ export function LiveChatView() {
     if (!selectedSessionId) return;
     
     try {
-      console.log(`Loading messages for session ${selectedSessionId}`);
       const response = await liveChatAPI.getSessionMessages(selectedSessionId);
-      console.log('Messages response:', response);
       
       if (response && Array.isArray(response)) {
         setMessages(response);
-        console.log(`Loaded ${response.length} messages`);
         
         // Get customer info from first message if available
         const customerMessage = response.find(msg => msg.sender_id !== parseInt(user.id));
@@ -111,10 +103,8 @@ export function LiveChatView() {
         }
       } else {
         setMessages([]);
-        console.log('No messages found for session');
       }
     } catch (err) {
-      console.error('Error loading messages:', err);
       setError('Failed to load message history');
       setMessages([]);
     }
@@ -170,7 +160,6 @@ export function LiveChatView() {
         setCustomerInfo(null);
       }
     } catch (err) {
-      console.error('Error ending session:', err);
       toast.error('Failed to end session');
     }
   };
@@ -196,7 +185,6 @@ export function LiveChatView() {
         return;
       }
 
-      console.log('Initializing LiveChatView');
       await loadActiveSessions();
       setLoading(false);
     };
@@ -207,7 +195,6 @@ export function LiveChatView() {
   // Refresh sessions when a new session is accepted
   useEffect(() => {
     if (initialSessionId && user?.id) {
-      console.log('New session detected, refreshing active sessions...');
       loadActiveSessions();
     }
   }, [initialSessionId, user?.id]);
@@ -221,8 +208,6 @@ export function LiveChatView() {
         return;
       }
 
-      console.log('[OFFICER] 🎯 Setting up session:', selectedSessionId);
-      console.log('[OFFICER] 🎯 This is the session_id I will connect WebSocket to');
       await loadSessionData();
     };
 
@@ -232,7 +217,6 @@ export function LiveChatView() {
   // Listen for SSE queue updates to refresh active sessions
   useEffect(() => {
     const handleQueueUpdate = (event) => {
-      console.log('📢 LiveChatView received queue update event:', event.detail);
       loadActiveSessions();
     };
 

@@ -23,7 +23,6 @@ export default function CustomerLiveChatPage() {
 
   // Handle WebSocket messages - SAME AS ADMISSION OFFICER
   const handleMessageReceived = (newMsg) => {
-    console.log('[Customer] 📨 Received new message via WebSocket:', newMsg);
     setMessages(prev => [...prev, newMsg]);
   };
 
@@ -39,9 +38,7 @@ export default function CustomerLiveChatPage() {
 
     setLoading(true);
     try {
-      console.log('[Customer] 🎯 Joining queue for customer_id:', user.id);
       const response = await liveChatAPI.joinQueue(parseInt(user.id));
-      console.log('[Customer] ✅ Join queue response:', response);
 
       if (response.error) {
         let errorMsg = 'Cannot join queue';
@@ -56,10 +53,8 @@ export default function CustomerLiveChatPage() {
 
       setQueueInfo(response);
       setQueueStatus('in_queue');
-      console.log('[Customer] 📋 Set status to in_queue, queue_id:', response.queue_id);
       toast.success('Joined queue successfully! Waiting for admission officer...');
     } catch (err) {
-      console.error('[Customer] ❌ Join queue error:', err);
       toast.error('Failed to join queue. Please try again.');
     } finally {
       setLoading(false);
@@ -71,7 +66,6 @@ export default function CustomerLiveChatPage() {
     if (!user) return;
 
     try {
-      console.log('[Customer] Canceling queue request for customer_id:', user.id);
       const response = await liveChatAPI.cancelQueueRequest(parseInt(user.id));
       
       if (response.error) {
@@ -81,10 +75,8 @@ export default function CustomerLiveChatPage() {
 
       setQueueStatus('idle');
       setQueueInfo(null);
-      console.log('[Customer] Queue request canceled');
       toast.info('Queue request canceled');
     } catch (err) {
-      console.error('[Customer] Cancel queue error:', err);
       toast.error('Failed to cancel request');
     }
   };
@@ -94,17 +86,14 @@ export default function CustomerLiveChatPage() {
     if (!sessionId || !user) return;
 
     try {
-      console.log('[Customer] Ending session:', sessionId);
       await liveChatAPI.endSession(sessionId, parseInt(user.id));
       
       disconnect();
       setQueueStatus('ended');
       setSessionId(null);
       setMessages([]);
-      console.log('[Customer] Session ended');
       toast.success('Chat session ended');
     } catch (err) {
-      console.error('[Customer] End session error:', err);
       toast.error('Failed to end session');
     }
   };
@@ -125,16 +114,12 @@ export default function CustomerLiveChatPage() {
     if (!sessionId) return;
 
     try {
-      console.log('[Customer] 📥 Loading messages for session:', sessionId);
       const response = await liveChatAPI.getSessionMessages(sessionId);
-      console.log('[Customer] ✅ Loaded messages:', response);
 
       if (response && Array.isArray(response)) {
         setMessages(response);
-        console.log(`[Customer] Loaded ${response.length} messages`);
       }
     } catch (err) {
-      console.error('[Customer] Error loading messages:', err);
     }
   };
 
@@ -145,40 +130,31 @@ export default function CustomerLiveChatPage() {
     const token = localStorage.getItem('access_token') || '';
     const sseUrl = `${API_CONFIG.FASTAPI_BASE_URL}/live_chat/livechat/sse/customer/${user.id}?token=${encodeURIComponent(token)}`;
 
-    console.log('[Customer SSE] 🔌 Connecting to SSE:', sseUrl);
     const eventSource = new EventSource(sseUrl);
 
     eventSource.onopen = () => {
-      console.log('[Customer SSE] ✅ Connected');
     };
 
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('[Customer SSE] 📨 Received event:', data);
 
         const eventType = data.event || data.data?.event;
 
         if (eventType === 'accepted') {
           const newSessionId = data.session_id || data.data?.session_id;
-          console.log('[Customer SSE] 🎉 ACCEPTED! Session ID:', newSessionId);
-          console.log('[Customer SSE] Full data:', JSON.stringify(data, null, 2));
           
           if (newSessionId && typeof newSessionId === 'number') {
-            console.log('[Customer SSE] ✅ Valid session ID, setting up chat...');
             setSessionId(newSessionId);
             setQueueStatus('chatting');
             toast.success('Your request has been accepted! Starting chat...');
           } else {
-            console.error('[Customer SSE] ❌ Invalid session ID:', newSessionId);
             toast.error('Failed to start chat session - invalid session ID');
           }
         } else if (eventType === 'queue_canceled') {
-          console.log('[Customer SSE] Queue request was canceled');
           setQueueStatus('idle');
           setQueueInfo(null);
         } else if (eventType === 'chat_ended') {
-          console.log('[Customer SSE] Chat session ended');
           disconnect();
           setQueueStatus('ended');
           setSessionId(null);
@@ -186,16 +162,13 @@ export default function CustomerLiveChatPage() {
           toast.info('Chat session has ended');
         }
       } catch (err) {
-        console.warn('[Customer SSE] Parse error:', err);
       }
     };
 
     eventSource.onerror = (err) => {
-      console.error('[Customer SSE] ❌ Error:', err);
     };
 
     return () => {
-      console.log('[Customer SSE] Closing connection');
       eventSource.close();
     };
   }, [user, queueStatus]);
@@ -203,7 +176,6 @@ export default function CustomerLiveChatPage() {
   // Load messages when session becomes active
   useEffect(() => {
     if (sessionId && queueStatus === 'chatting') {
-      console.log('[Customer] Session became active, loading messages...');
       // Add small delay to ensure WebSocket connects first
       const timer = setTimeout(() => {
         loadMessages();

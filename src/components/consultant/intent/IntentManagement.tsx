@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Tag, Trash2, Edit } from 'lucide-react';
+import { Search, Plus, Tag } from 'lucide-react';
 import { ScrollArea } from '../../ui/system_users/scroll-area';
 import { Input } from '../../ui/system_users/input';
 import { Button } from '../../ui/system_users/button';
@@ -12,11 +12,14 @@ import { AddIntentModal } from './AddIntentModal';
 import { EditIntentModal } from './EditIntentModal';
 import { DeleteIntentDialog } from './DeleteIntentDialog';
 
+type FilterType = 'all' | 'active';
+
 export function IntentManagement() {
   const { hasPermission, user, isConsultantLeader } = useAuth();
   const [intents, setIntents] = useState<Intent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'active' | 'deleted'>('all');
   const [selectedIntent, setSelectedIntent] = useState<Intent | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -37,7 +40,6 @@ export function IntentManagement() {
       const intentList = Array.isArray(response) ? response : [];
       setIntents(intentList);
     } catch (error) {
-      console.error('Error fetching intents:', error);
       toast.error('Không thể tải danh sách danh mục');
     } finally {
       setLoading(false);
@@ -51,7 +53,6 @@ export function IntentManagement() {
       await fetchIntents();
       setShowAddDialog(false);
     } catch (error: any) {
-      console.error('Error creating intent:', error);
       toast.error(error.response?.data?.detail || 'Không thể tạo danh mục');
       throw error;
     }
@@ -60,17 +61,24 @@ export function IntentManagement() {
   const handleEditIntent = async (intentName: string, description: string) => {
     if (!selectedIntent) return;
     
+    const wasDeleted = selectedIntent.is_deleted === true;
+    
     try {
       await intentAPI.updateIntent(selectedIntent.intent_id, { 
         intent_name: intentName, 
         description 
       });
-      toast.success('Cập nhật danh mục thành công');
+      
+      if (wasDeleted) {
+        toast.success('Cập nhật danh mục thành công và khôi phục thành công');
+      } else {
+        toast.success('Cập nhật danh mục thành công');
+      }
+      
       await fetchIntents();
       setShowEditDialog(false);
       setSelectedIntent(null);
     } catch (error: any) {
-      console.error('Error updating intent:', error);
       toast.error(error.response?.data?.detail || 'Không thể cập nhật danh mục');
       throw error;
     }
@@ -86,7 +94,6 @@ export function IntentManagement() {
       setShowDeleteDialog(false);
       setSelectedIntent(null);
     } catch (error: any) {
-      console.error('Error deleting intent:', error);
       toast.error(error.response?.data?.detail || 'Không thể xóa danh mục');
     }
   };
@@ -101,11 +108,20 @@ export function IntentManagement() {
     setShowDeleteDialog(true);
   };
 
-  // Filter intents based on search query
+  // Filter intents based on search query and filter type
   const filteredIntents = intents.filter(intent => {
     const matchesSearch = intent.intent_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (intent.description && intent.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesSearch;
+    
+    let matchesFilter = true;
+    if (filterType === 'active') {
+      matchesFilter = !intent.is_deleted;
+    } else if (filterType === 'deleted') {
+      matchesFilter = intent.is_deleted === true;
+    }
+    // filterType === 'all' shows everything
+    
+    return matchesSearch && matchesFilter;
   });
 
   return (
@@ -136,6 +152,31 @@ export function IntentManagement() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
+          </div>
+          
+          {/* Filter Buttons */}
+          <div className="flex gap-2">
+            <Button
+              variant={filterType === 'all' ? 'default' : 'outline'}
+              onClick={() => setFilterType('all')}
+              className={filterType === 'all' ? 'bg-[#EB5A0D] hover:bg-[#d64f0a]' : ''}
+            >
+              Tất Cả
+            </Button>
+            <Button
+              variant={filterType === 'active' ? 'default' : 'outline'}
+              onClick={() => setFilterType('active')}
+              className={filterType === 'active' ? 'bg-[#EB5A0D] hover:bg-[#d64f0a]' : ''}
+            >
+              Đang Sử Dụng
+            </Button>
+            <Button
+              variant={filterType === 'deleted' ? 'default' : 'outline'}
+              onClick={() => setFilterType('deleted')}
+              className={filterType === 'deleted' ? 'bg-[#EB5A0D] hover:bg-[#d64f0a]' : ''}
+            >
+              Vô Hiệu Hóa
+            </Button>
           </div>
         </div>
 
@@ -186,6 +227,7 @@ export function IntentManagement() {
                 intents={filteredIntents}
                 onEdit={openEditDialog}
                 onDelete={openDeleteDialog}
+                onClick={openEditDialog}
                 isLeader={isLeader}
               />
             )}

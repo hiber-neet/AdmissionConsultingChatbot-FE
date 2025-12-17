@@ -55,7 +55,6 @@ export function UploadDocumentModal({ intents, onClose, onSubmit }: UploadDocume
       await onSubmit(formData, intentId);
       onClose();
     } catch (error) {
-      console.error('Failed to upload document:', error);
     } finally {
       setLoading(false);
     }

@@ -29,13 +29,11 @@ const handleLogin = async (event) => {
     setSubmitting(true);
 
     const result = await login(email, password);
-    console.log("Login result:", result);
 
     if (result?.ok) {
       const { token } = result;
 
       const role = getRoleFromToken(token || "");
-      console.log("Role from token:", role);
 
       let appRole = null;
       if (role === "admin") appRole = "SYSTEM_ADMIN";
@@ -69,7 +67,6 @@ const handleLogin = async (event) => {
       });
     }
   } catch (error) {
-    console.error("Login failed:", error);
     
     // Check if account is banned/deactivated
     if (error.response?.status === 403 || 

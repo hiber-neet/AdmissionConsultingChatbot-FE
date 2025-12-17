@@ -37,7 +37,6 @@ class FastAPIClient {
 
       // Handle 401 Unauthorized - token is invalid or expired
       if (response.status === 401) {
-        console.log('🚫 401 Unauthorized - clearing session and redirecting to login');
         localStorage.removeItem("access_token");
         localStorage.removeItem("token_type");
         
@@ -233,6 +232,7 @@ export interface KnowledgeDocument {
   status?: string; // draft, approved, rejected, deleted
   reviewed_by?: number;
   reviewed_at?: string;
+  reject_reason?: string;
 }
 
 export interface TrainingQuestion {
@@ -245,6 +245,7 @@ export interface TrainingQuestion {
   created_by?: number;
   approved_by?: number;
   status?: string; // draft, approved, rejected, deleted
+  reject_reason?: string;
 }
 
 // Intent types
@@ -252,4 +253,5 @@ export interface Intent {
   intent_id: number;
   intent_name: string;
   description?: string;
+  is_deleted?: boolean;
 }

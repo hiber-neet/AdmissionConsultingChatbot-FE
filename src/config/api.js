@@ -11,11 +11,4 @@ export const API_CONFIG = {
   RETRY_ATTEMPTS: 3,
 };
 
-// Log current configuration (helpful for debugging)
-console.log('🔧 API Configuration:', {
-  baseUrl: API_CONFIG.FASTAPI_BASE_URL,
-  environment: API_CONFIG.ENVIRONMENT,
-  mode: import.meta.env.MODE
-});
-
 export default API_CONFIG;

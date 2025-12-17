@@ -69,6 +69,14 @@ export function DocumentList({ documents, selectedDocument, onSelectDocument }: 
                 )}
               </div>
               
+              {doc.status === 'rejected' && doc.reject_reason && (
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+                  <p className="text-xs text-red-700 line-clamp-2">
+                    <span className="font-semibold">Lý do từ chối:</span> {doc.reject_reason}
+                  </p>
+                </div>
+              )}
+              
               {doc.created_at && (
                 <p className="text-xs text-gray-400 mt-1">
                   {new Date(doc.created_at).toLocaleDateString('vi-VN')}

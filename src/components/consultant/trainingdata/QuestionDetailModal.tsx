@@ -27,7 +27,6 @@ export function QuestionDetailModal({
       await onDelete(question.question_id);
       onClose();
     } catch (error) {
-      console.error('Failed to delete question:', error);
     } finally {
       setLoading(false);
     }
@@ -101,6 +100,20 @@ export function QuestionDetailModal({
               {question.answer}
             </p>
           </div>
+
+          {/* Rejection Reason */}
+          {question.status === 'rejected' && question.reject_reason && (
+            <div>
+              <label className="block text-sm font-medium text-red-700 mb-2">
+                Lý Do Từ Chối
+              </label>
+              <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                <p className="text-sm text-red-900 whitespace-pre-wrap">
+                  {question.reject_reason}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Metadata */}
           <div className="grid grid-cols-2 gap-4 pt-4 border-t">

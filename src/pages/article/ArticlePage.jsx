@@ -52,7 +52,6 @@ export default function ArticlePage() {
         setArticles(normalized);
       } catch (err) {
         if (err.name !== "AbortError") {
-          console.error(err);
           setError(err.message || "Đã xảy ra lỗi khi tải bài viết");
         }
       } finally {

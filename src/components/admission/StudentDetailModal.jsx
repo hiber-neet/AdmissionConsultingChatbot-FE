@@ -76,7 +76,6 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
 
     } catch (err) {
       if (err.response?.status !== 404) {
-        console.error('RIASEC fetch error:', err);
       }
     } finally {
       setRiasecLoading(false);
@@ -103,7 +102,6 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
 
     } catch (err) {
       if (err.response?.status !== 404) {
-        console.error('Academic scores fetch error:', err);
       }
       setAcademicScores(null);
     } finally {

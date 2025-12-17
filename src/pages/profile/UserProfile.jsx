@@ -77,7 +77,6 @@ const loadStoredConvs = () => {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : null;
   } catch (e) {
-    console.warn("Cannot parse stored conversations", e);
     return null;
   }
 };
@@ -110,7 +109,6 @@ useEffect(() => {
   try {
     localStorage.setItem(CHAT_RATING_KEY, JSON.stringify(sessionRatings));
   } catch (e) {
-    console.warn("Không thể lưu rating vào localStorage", e);
   }
 }, [sessionRatings]);
 
@@ -166,7 +164,6 @@ useEffect(() => {
       setFiles([]);
       alert("Tải lên học bạ thành công!");
     } catch (e) {
-      console.error(e);
       alert("Tải lên thất bại, thử lại sau.");
     } finally {
       setUploading(false);
@@ -231,11 +228,8 @@ const saveAcademicScores = async (e) => {
       }
     );
 
-    console.log("Uploaded OK:", res.data);
     alert("Lưu học bạ thành công!");
   } catch (err) {
-    console.error("Upload error:", err);
-    console.error("Server message:", err?.response?.data);
     alert("Lưu thất bại, vui lòng kiểm tra lại.");
   } finally {
     setUploading(false);
@@ -268,22 +262,13 @@ Object.entries(SUBJECT_API_FIELDS).forEach(([label, apiField]) => {
   }
 });
 
-setScores(next);
-
         setScores(next);
       } catch (err) {
         const status = err?.response?.status;
 
         if (status === 404 || status === 500) {
-          console.log(
-            "Không load được học bạ (chưa có hoặc BE trả lỗi).",
-            status,
-            err?.response?.data
-          );
           return;
         }
-
-        console.error("fetch academic scores", err);
       }
     };
 
@@ -373,11 +358,9 @@ title:
           setActiveId(newId);
           setChatSessionId(newId);
         } catch (e) {
-          console.error("Không tạo được session mặc định", e);
         }
       }
     } catch (err) {
-      console.error("Lỗi load danh sách session", err);
     }
   };
 
@@ -400,7 +383,6 @@ const [showLiveRatingModal, setShowLiveRatingModal] = useState(false);
 const [liveRating, setLiveRating] = useState(0);
 
 const handleMessageReceived = (newMsg) => {
-  console.log('[UserProfile Consultant] 📨 WS message:', newMsg);
   if (newMsg.event === "chat_ended") {
     disconnect();
     setQueueStatus("ended");
@@ -495,7 +477,6 @@ const createConversation = async () => {
     setChatSessionId(newId);
     setMessages([]);
   } catch (err) {
-    console.error("Không tạo được phiên chat mới", err);
     alert("Không tạo được phiên chat mới, thử lại sau.");
   }
 };
@@ -524,7 +505,6 @@ useEffect(() => {
       }));
       setMessages(mapped);
     } catch (err) {
-      console.error("Lỗi load lịch sử chat", err);
       setMessages([]);
     }
   };
@@ -558,7 +538,6 @@ const deleteConversation = async (id) => {
       return next;
     });
   } catch (err) {
-    console.error("Xoá session trên server lỗi:", err);
     alert("Không xoá được session, vui lòng thử lại.");
   }
 };
@@ -583,7 +562,6 @@ const deleteConversation = async (id) => {
     setQueueStatus("in_queue");
     toast.success("Joined queue successfully!");
   } catch (err) {
-    console.error("Join queue error:", err);
     toast.error("Failed to join queue.");
   } finally {
     setLoading(false);
@@ -628,7 +606,6 @@ const handleReconnectAfterTimeout = async () => {
     try {
       await liveChatAPI.endSession(sessionId, parseInt(user.id));
     } catch (err) {
-      console.warn("End session after timeout failed:", err);
     } finally {
       disconnect();
       setSessionId(null);
@@ -688,16 +665,13 @@ useEffect(() => {
   const sseUrl = `${API_BASE_URL}/live_chat/livechat/sse/customer/${user.id}?token=${encodeURIComponent(token)}`;
   const eventSource = new EventSource(sseUrl);
 
-  console.log("[Consultant SSE] Open:", sseUrl);
 
   // Hàm xử lý chung cho mọi event SSE
   const handleSseData = (rawData, sseType) => {
-    console.log("[Consultant SSE] recv:", sseType, rawData);
     let data;
     try {
       data = JSON.parse(rawData);
     } catch (err) {
-      console.warn("[Consultant SSE] JSON parse error:", err);
       return;
     }
 
@@ -733,10 +707,8 @@ useEffect(() => {
     handleSseData(event.data, "chat_ended")
   );
 
-  eventSource.onerror = (err) => console.error("[Consultant SSE] error:", err);
 
   return () => {
-    console.log("[Consultant SSE] closed");
     eventSource.close();
   };
 }, [user, queueStatus, disconnect]);
@@ -750,14 +722,12 @@ useEffect(() => {
     }
 
     queueTimeoutRef.current = setTimeout(async () => {
-      console.log("[LiveChat] Queue timeout 3 minutes, auto cancel");
 
       try {
         if (user) {
           await liveChatAPI.cancelQueueRequest(parseInt(user.id));
         }
       } catch (err) {
-        console.warn("Auto cancel queue failed:", err);
       }
 
       setQueueStatus("timeout");
@@ -802,7 +772,6 @@ useEffect(() => {
       try {
         const token = localStorage.getItem("access_token");
         if (!token) {
-          console.warn("No access_token in localStorage");
           return;
         }
 
@@ -838,7 +807,6 @@ setForm({
   riasecCode,
 });
       } catch (error) {
-        console.error("Failed to fetch profile:", error);
       }
     };
 
@@ -866,7 +834,6 @@ setForm({
   wsRef.current = ws;
 
   ws.onopen = () => {
-    console.log("✅ Connected to WebSocket chatbot, session:", chatSessionIdRef.current);
     ws.send(
       JSON.stringify({
         user_id: user.id,
@@ -877,13 +844,11 @@ setForm({
   };
 
     ws.onmessage = (event) => {
-      console.log("📩 WS chatbot:", event.data);
 
       let data;
       try {
         data = JSON.parse(event.data);
       } catch (err) {
-        console.error("❌ Không parse được JSON:", event.data);
         return;
       }
 
@@ -892,7 +857,6 @@ setForm({
       switch (ev) {
         case "session_created": {
           if (data.session_id) {
-            console.log("🆕 Chat session created:", data.session_id);
             setChatSessionId(data.session_id);
           }
           break;
@@ -924,7 +888,6 @@ case "done": {
 }
 
         case "error": {
-          console.error("⚠️ WS error:", data.message || data);
           const errText =
             data.message ||
             "Xin lỗi, đã có lỗi xảy ra trong quá trình xử lý câu hỏi. Bạn hãy thử lại sau hoặc thử một câu hỏi khác nhé.";
@@ -936,12 +899,10 @@ case "done": {
         }
 
         default:
-          console.warn("⚠️ Sự kiện không xác định:", data);
       }
     };
 
     ws.onclose = () => {
-    console.log("🔒 WebSocket chatbot closed");
     setWsReady(false);
     setIsLoading(false);
     setPartialResponse("");
@@ -1070,7 +1031,6 @@ wsRef.current.send(
       setEditing(false);
     } catch (error) {
       alert("Cập nhật thất bại!");
-      console.error(error);
     }
   };
 
