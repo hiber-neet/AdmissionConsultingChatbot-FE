@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Clock,
   User,
@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from '../ui/system_users/select';
 import { Separator } from '../ui/system_users/separator';
+import { Pagination } from '../common/Pagination';
 
 // QueueRequest object structure (data available from backend):
 // {
@@ -53,6 +54,8 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const filteredRequests = requests.filter((request) => {
     const matchesSearch =
@@ -65,6 +68,18 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
       filterPriority === 'all' || request.priority === filterPriority;
     return matchesSearch && matchesType && matchesPriority;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
+  const paginatedRequests = filteredRequests.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType, filterPriority]);
 
 
   const getPriorityConfig = (priority) => {
@@ -165,7 +180,8 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
               </CardContent>
             </Card>
           ) : (
-            filteredRequests.map((request) => {
+            <>
+              {paginatedRequests.map((request) => {
               const priorityConfig = getPriorityConfig(request.priority);
               const waitTimeColor = getWaitTimeColor(request.waitTime);
 
@@ -272,7 +288,13 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
                   </CardHeader>
                 </Card>
               );
-            })
+            })}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+            </>
           )}
         </div>
       </div>

@@ -92,7 +92,10 @@ export function UserManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterRole, setFilterRole] = useState('all');
+  const [sectionFilter, setSectionFilter] = useState('all'); // 'all', 'admin', 'staff', 'customer'
+  const [adminPage, setAdminPage] = useState(1);
+  const [staffPage, setStaffPage] = useState(1);
+  const [customerPage, setCustomerPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({
@@ -107,6 +110,8 @@ export function UserManagement() {
     consultant_is_leader: false,
     content_manager_is_leader: false,
   });
+
+  const ITEMS_PER_PAGE = 10;
 
   // Load permissions and roles from API on component mount
   useEffect(() => {
@@ -438,8 +443,7 @@ export function UserManagement() {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = filterRole === 'all' || user.role === filterRole;
-    return matchesSearch && matchesRole;
+    return matchesSearch;
   });
 
   // Admin users (System Administrators) - show separately above staff
@@ -456,6 +460,33 @@ export function UserManagement() {
   const customerUsers = filteredUsers.filter(user => 
     !user.permissions || user.permissions.length === 0
   );
+
+  // Pagination calculations
+  const totalAdminPages = Math.ceil(adminUsers.length / ITEMS_PER_PAGE);
+  const totalStaffPages = Math.ceil(staffUsers.length / ITEMS_PER_PAGE);
+  const totalCustomerPages = Math.ceil(customerUsers.length / ITEMS_PER_PAGE);
+
+  const paginatedAdminUsers = adminUsers.slice(
+    (adminPage - 1) * ITEMS_PER_PAGE,
+    adminPage * ITEMS_PER_PAGE
+  );
+
+  const paginatedStaffUsers = staffUsers.slice(
+    (staffPage - 1) * ITEMS_PER_PAGE,
+    staffPage * ITEMS_PER_PAGE
+  );
+
+  const paginatedCustomerUsers = customerUsers.slice(
+    (customerPage - 1) * ITEMS_PER_PAGE,
+    customerPage * ITEMS_PER_PAGE
+  );
+
+  // Reset page numbers when filters change
+  useEffect(() => {
+    setAdminPage(1);
+    setStaffPage(1);
+    setCustomerPage(1);
+  }, [searchQuery, sectionFilter]);
 
   const handleAddUser = () => {
     setEditingUser(null);
@@ -774,6 +805,50 @@ export function UserManagement() {
     }
   };
 
+  // Pagination component
+  const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+    if (totalPages <= 1) return null;
+
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+
+    return (
+      <div className="flex items-center justify-center gap-2 mt-4">
+        <button
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className="px-3 py-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+        >
+          Trước
+        </button>
+        
+        {pages.map(page => (
+          <button
+            key={page}
+            onClick={() => onPageChange(page)}
+            className={`px-3 py-1 rounded border ${
+              currentPage === page
+                ? 'bg-orange-500 text-white border-orange-500'
+                : 'border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+        
+        <button
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+        >
+          Sau
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -784,9 +859,51 @@ export function UserManagement() {
         <UserFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          filterRole={filterRole}
-          onFilterRoleChange={setFilterRole}
         />
+
+        {/* Section Filters */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSectionFilter('all')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              sectionFilter === 'all'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Tất Cả
+          </button>
+          <button
+            onClick={() => setSectionFilter('admin')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              sectionFilter === 'admin'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Quản Trị Viên
+          </button>
+          <button
+            onClick={() => setSectionFilter('staff')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              sectionFilter === 'staff'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Nhân Viên
+          </button>
+          <button
+            onClick={() => setSectionFilter('customer')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              sectionFilter === 'customer'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Phụ Huynh & Học Sinh
+          </button>
+        </div>
 
         {/* Loading state */}
         {loading && (
@@ -804,49 +921,74 @@ export function UserManagement() {
       <ScrollArea className="flex-1">
         <div className="p-6 pb-8 space-y-8">
           {/* Admin Section (read-only actions) */}
-          {adminUsers.length > 0 && (
+          {(sectionFilter === 'all' || sectionFilter === 'admin') && adminUsers.length > 0 && (
             <div>
               <div className="mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">Quản Trị Viên</h2>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Quản Trị Viên ({adminUsers.length})
+                </h2>
               </div>
               <UserTable
-                users={adminUsers}
+                users={paginatedAdminUsers}
                 onEdit={null}
                 onBanUser={null}
                 loading={loading}
                 isCustomerSection={false}
                 showActions={false}
               />
+              <Pagination
+                currentPage={adminPage}
+                totalPages={totalAdminPages}
+                onPageChange={setAdminPage}
+              />
             </div>
           )}
 
           {/* Staff Section */}
-          <div>
-            <div className="mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Nhân Viên</h2>
+          {(sectionFilter === 'all' || sectionFilter === 'staff') && (
+            <div>
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Nhân Viên ({staffUsers.length})
+                </h2>
+              </div>
+              <UserTable
+                users={paginatedStaffUsers}
+                onEdit={handleEdit}
+                onBanUser={handleBanUser}
+                loading={loading}
+                isCustomerSection={false}
+              />
+              <Pagination
+                currentPage={staffPage}
+                totalPages={totalStaffPages}
+                onPageChange={setStaffPage}
+              />
             </div>
-            <UserTable
-              users={staffUsers}
-              onEdit={handleEdit}
-              onBanUser={handleBanUser}
-              loading={loading}
-              isCustomerSection={false}
-            />
-          </div>
+          )}
 
           {/* Customer Section */}
-          <div>
-            <div className="mb-4 border-t pt-6">
-              <h2 className="text-xl font-semibold text-gray-900">Học Sinh & Phụ Huynh</h2>
+          {(sectionFilter === 'all' || sectionFilter === 'customer') && (
+            <div>
+              <div className="mb-4 border-t pt-6">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Học Sinh & Phụ Huynh ({customerUsers.length})
+                </h2>
+              </div>
+              <UserTable
+                users={paginatedCustomerUsers}
+                onEdit={null}
+                onBanUser={handleBanUser}
+                loading={loading}
+                isCustomerSection={true}
+              />
+              <Pagination
+                currentPage={customerPage}
+                totalPages={totalCustomerPages}
+                onPageChange={setCustomerPage}
+              />
             </div>
-            <UserTable
-              users={customerUsers}
-              onEdit={null}
-              onBanUser={handleBanUser}
-              loading={loading}
-              isCustomerSection={true}
-            />
-          </div>
+          )}
         </div>
       </ScrollArea>
 

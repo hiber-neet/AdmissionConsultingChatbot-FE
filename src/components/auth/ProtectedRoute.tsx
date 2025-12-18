@@ -1,10 +1,18 @@
 // src/components/auth/ProtectedRoute.tsx
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/Auth";
+import { useEffect } from "react";
 
 export default function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, checkTokenValidity } = useAuth();
   const location = useLocation();
+
+  // Check token validity on every page access
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      checkTokenValidity();
+    }
+  }, [location.pathname, isLoading, isAuthenticated, checkTokenValidity]);
 
   // Show loading state while checking authentication
   if (isLoading) {

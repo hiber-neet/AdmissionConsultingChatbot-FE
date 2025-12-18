@@ -2,6 +2,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/Auth";
 import { Permission, canAccessPage, hasPermission, PagePermission, type Role } from "@/constants/permissions";
+import { useEffect } from "react";
 
 interface PermissionGuardProps {
   children: JSX.Element;
@@ -16,8 +17,15 @@ export default function PermissionGuard({
   requiredPageAccess,
   fallbackRoute = "/" 
 }: PermissionGuardProps) {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user, isLoading, checkTokenValidity } = useAuth();
   const location = useLocation();
+
+  // Check token validity on every page access
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      checkTokenValidity();
+    }
+  }, [location.pathname, isLoading, isAuthenticated, checkTokenValidity]);
 
   // Show loading state while checking authentication
   if (isLoading) {

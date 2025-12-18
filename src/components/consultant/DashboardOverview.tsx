@@ -29,6 +29,7 @@ import {
   Legend,
 } from 'recharts';
 import { consultantAnalyticsAPI, ConsultantStatistics, RecentQuestion } from '../../services/fastapi';
+import { Pagination } from '../common/Pagination';
 
 interface DashboardOverviewProps {
   onNavigateToTemplates?: (question: string, action: 'add') => void;
@@ -42,6 +43,8 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
   const [recentQuestions, setRecentQuestions] = useState<RecentQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Fetch dashboard statistics and recent questions
   useEffect(() => {
@@ -85,6 +88,13 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
       return `${diffInDays} ngày trước`;
     }
   };
+
+  // Pagination for recent questions
+  const totalPages = Math.ceil(recentQuestions.length / ITEMS_PER_PAGE);
+  const paginatedQuestions = recentQuestions.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   // Show loading state
   if (loading) {
@@ -236,7 +246,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
               </div>
             ) : (
               <div className="space-y-3">
-                {recentQuestions.map((item) => (
+                {paginatedQuestions.map((item) => (
                   <div
                     key={item.id}
                     className="flex items-start justify-between gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
@@ -267,6 +277,13 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
                   </div>
                 ))}
               </div>
+            )}
+            {recentQuestions.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             )}
           </CardContent>
         </Card>

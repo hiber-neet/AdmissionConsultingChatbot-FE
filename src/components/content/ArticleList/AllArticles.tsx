@@ -7,6 +7,7 @@ import ArticleTable from './ArticleTable';
 import ArticleDetailsModal from './ArticleDetailsModal';
 import EditArticleModal from './EditArticleModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import { Pagination } from '../../common/Pagination';
 
 export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateToEditorWithData }: { 
   onCreate?: () => void; 
@@ -29,6 +30,8 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   const [majorsLoading, setMajorsLoading] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [deleteConfirmArticle, setDeleteConfirmArticle] = useState<Article | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Fetch articles from FastAPI based on permissions
   useEffect(() => {
@@ -98,6 +101,18 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
     }),
     [articles, q, statusFilter, categoryFilter]
   );
+
+  // Pagination
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedArticles = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filtered, currentPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q, statusFilter, categoryFilter]);
 
   // Fetch detailed article information
   const fetchArticleDetails = async (articleId: number) => {
@@ -237,7 +252,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
 
       {/* Table */}
       <ArticleTable
-        articles={filtered}
+        articles={paginatedArticles}
         loading={loading}
         error={error}
         canEdit={hasPermission("Admin") || isContentManagerLeader()}
@@ -245,6 +260,13 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         onView={(article) => fetchArticleDetails(article.article_id)}
         onEdit={setEditingArticle}
         onDelete={setDeleteConfirmArticle}
+      />
+
+      {/* Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
       />
 
       {/* Article Details Modal */}

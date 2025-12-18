@@ -3,6 +3,7 @@ import { Check, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { articlesAPI } from "../../services/fastapi";
 import { ReviewArticle } from "../../types/review.types";
+import { Pagination } from "../common/Pagination";
 
 export default function ReviewQueue() {
   const [articles, setArticles] = useState<ReviewArticle[]>([]);
@@ -10,6 +11,8 @@ export default function ReviewQueue() {
   const [openFor, setOpenFor] = useState<ReviewArticle | null>(null);
   const [feedback, setFeedback] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Fetch articles for review on component mount
   useEffect(() => {
@@ -96,6 +99,13 @@ export default function ReviewQueue() {
     );
   }
 
+  // Pagination
+  const totalPages = Math.ceil(articles.length / ITEMS_PER_PAGE);
+  const paginatedArticles = articles.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   if (articles.length === 0) {
     return (
       <div className="p-6">
@@ -118,7 +128,7 @@ export default function ReviewQueue() {
       </div>
 
       <div className="space-y-6">
-        {articles.map((article) => (
+        {paginatedArticles.map((article) => (
           <div key={article.article_id} className="bg-white border rounded-2xl p-5 shadow-sm/5">
             {/* Title + badge */}
             <div className="flex items-start justify-between">
@@ -203,6 +213,13 @@ export default function ReviewQueue() {
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
 
       {/* Rejection Reason Modal */}
       {openFor && (

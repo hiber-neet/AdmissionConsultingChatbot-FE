@@ -24,6 +24,7 @@ import {
 import { toast } from 'react-toastify';
 import { StudentDetailModal } from './StudentDetailModal';
 import { API_CONFIG } from '../../config/api.js';
+import { Pagination } from '../common/Pagination';
 
 // Props: { onSelectStudent: (studentId: string) => void }
 export function StudentList({ onSelectStudent }) {
@@ -33,6 +34,8 @@ export function StudentList({ onSelectStudent }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Handle student selection
   const handleStudentClick = (studentId) => {
@@ -160,6 +163,18 @@ export function StudentList({ onSelectStudent }) {
     return matchesSearch && matchesStatus;
   });
 
+  // Pagination
+  const totalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE);
+  const paginatedStudents = filteredStudents.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
   // Calculate statistics
   const stats = {
     total: students.length,
@@ -266,7 +281,8 @@ export function StudentList({ onSelectStudent }) {
                   Không tìm thấy học sinh nào
                 </div>
               ) : (
-                filteredStudents.map((student) => (
+                <>
+                  {paginatedStudents.map((student) => (
                   <button
                     key={student.id}
                     onClick={() => handleStudentClick(student.id)}
@@ -305,7 +321,13 @@ export function StudentList({ onSelectStudent }) {
                       <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     </div>
                   </button>
-                ))
+                ))}
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+                </>
               )}
             </div>
           </CardContent>

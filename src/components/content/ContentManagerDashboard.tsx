@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/system_users/button";
 import { fastAPIContentAnalytics, type ContentStatistics } from "@/services/fastapi";
 import { useAuth } from "@/contexts/Auth";
 import { STAFF_COLORS } from "@/constants/staffColors";
+import { Pagination } from "../common/Pagination";
 
 type Props = {
   onCreate?: () => void;    
@@ -59,6 +60,8 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [activitiesPage, setActivitiesPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Fetch content statistics from backend
   const fetchContentStatistics = async () => {
@@ -136,6 +139,13 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
       status: article.status as "draft" | "review" | "published",
       badgeColor: getStatusBadgeColor(article.status),
     })) : [];
+
+  // Pagination for activities
+  const totalActivitiesPages = Math.ceil(activities.length / ITEMS_PER_PAGE);
+  const paginatedActivities = activities.slice(
+    (activitiesPage - 1) * ITEMS_PER_PAGE,
+    activitiesPage * ITEMS_PER_PAGE
+  );
 
     const handleCreate = () => {
     if (onCreate) onCreate();
@@ -256,29 +266,36 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
           </div>
 
           {activities.length > 0 ? (
-            <ul className="divide-y divide-gray-100">
-              {activities.map((a, idx) => (
-                <li key={idx} className="flex items-center justify-between p-4">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <span
-                      className={`mt-1 h-2.5 w-2.5 rounded-full ${a.badgeColor}`}
-                    />
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-gray-900">
-                        {a.title}
-                      </div>
-                      <div className="mt-1 text-xs text-gray-500">
-                        {a.author} • {a.updatedAt}
+            <>
+              <ul className="divide-y divide-gray-100">
+                {paginatedActivities.map((a, idx) => (
+                  <li key={idx} className="flex items-center justify-between p-4">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span
+                        className={`mt-1 h-2.5 w-2.5 rounded-full ${a.badgeColor}`}
+                      />
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium text-gray-900">
+                          {a.title}
+                        </div>
+                        <div className="mt-1 text-xs text-gray-500">
+                          {a.author} • {a.updatedAt}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-2">
-                    <StatusPill status={a.status} />
-                  </div>
-                </li>
-              ))}
-            </ul>
+                    <div className="flex items-center gap-2">
+                      <StatusPill status={a.status} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <Pagination
+                currentPage={activitiesPage}
+                totalPages={totalActivitiesPages}
+                onPageChange={setActivitiesPage}
+              />
+            </>
           ) : (
             <div className="p-8 text-center text-gray-500">
               <p className="text-sm">Không tìm thấy bài viết gần đây</p>

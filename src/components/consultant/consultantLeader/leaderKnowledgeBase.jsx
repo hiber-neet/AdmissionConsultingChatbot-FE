@@ -8,6 +8,7 @@ import { MessageCircle, FileText, Check, X, Loader2 } from 'lucide-react';
 import { knowledgeAPI } from '../../../services/fastapi';
 import { toast } from 'react-toastify';
 import { t } from '../../../utils/i18n';
+import { Pagination } from '../../common/Pagination';
 
 export function LeaderKnowledgeBase() {
   const [activeTab, setActiveTab] = useState('qa');
@@ -20,6 +21,9 @@ export function LeaderKnowledgeBase() {
   const [selectedItemType, setSelectedItemType] = useState(null);
   const [approvingId, setApprovingId] = useState(null); // Track which item is being approved
   const [rejectingId, setRejectingId] = useState(null); // Track which item is being rejected
+  const [questionsPage, setQuestionsPage] = useState(1);
+  const [documentsPage, setDocumentsPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   
   useEffect(() => {
     fetchPendingItems();
@@ -263,6 +267,26 @@ export function LeaderKnowledgeBase() {
     );
   };
 
+  // Pagination for training questions
+  const totalQuestionsPages = Math.ceil(trainingQuestions.length / ITEMS_PER_PAGE);
+  const paginatedQuestions = trainingQuestions.slice(
+    (questionsPage - 1) * ITEMS_PER_PAGE,
+    questionsPage * ITEMS_PER_PAGE
+  );
+
+  // Pagination for documents
+  const totalDocumentsPages = Math.ceil(documents.length / ITEMS_PER_PAGE);
+  const paginatedDocuments = documents.slice(
+    (documentsPage - 1) * ITEMS_PER_PAGE,
+    documentsPage * ITEMS_PER_PAGE
+  );
+
+  // Reset pages when tab changes
+  useEffect(() => {
+    setQuestionsPage(1);
+    setDocumentsPage(1);
+  }, [activeTab]);
+
   return (
     <div className="min-h-screen h-full p-6 bg-[#F8FAFC]">
       <div className="mb-6">
@@ -302,9 +326,16 @@ export function LeaderKnowledgeBase() {
               </div>
             ) : (
               <div className="space-y-4">
-                {trainingQuestions.map(question => (
+                {paginatedQuestions.map(question => (
                   <TrainingQuestionCard key={question.question_id} question={question} />
                 ))}
+                {trainingQuestions.length > 0 && (
+                  <Pagination
+                    currentPage={questionsPage}
+                    totalPages={totalQuestionsPages}
+                    onPageChange={setQuestionsPage}
+                  />
+                )}
               </div>
             )}
           </ScrollArea>
@@ -324,9 +355,16 @@ export function LeaderKnowledgeBase() {
               </div>
             ) : (
               <div className="space-y-4">
-                {documents.map(document => (
+                {paginatedDocuments.map(document => (
                   <DocumentCard key={document.document_id} document={document} />
                 ))}
+                {documents.length > 0 && (
+                  <Pagination
+                    currentPage={documentsPage}
+                    totalPages={totalDocumentsPages}
+                    onPageChange={setDocumentsPage}
+                  />
+                )}
               </div>
             )}
           </ScrollArea>

@@ -11,6 +11,7 @@ import { IntentList } from './IntentList';
 import { AddIntentModal } from './AddIntentModal';
 import { EditIntentModal } from './EditIntentModal';
 import { DeleteIntentDialog } from './DeleteIntentDialog';
+import { Pagination } from '../../common/Pagination';
 
 type FilterType = 'all' | 'active';
 
@@ -24,6 +25,8 @@ export function IntentManagement() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Check if user is leader (Admin or Consultant with leader flag)
   const isLeader = isConsultantLeader();
@@ -124,6 +127,18 @@ export function IntentManagement() {
     return matchesSearch && matchesFilter;
   });
 
+  // Pagination
+  const totalPages = Math.ceil(filteredIntents.length / ITEMS_PER_PAGE);
+  const paginatedIntents = filteredIntents.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType]);
+
   return (
     <div className="h-full flex flex-col bg-gray-50">
       {/* Header */}
@@ -223,13 +238,22 @@ export function IntentManagement() {
                 </p>
               </div>
             ) : (
-              <IntentList
-                intents={filteredIntents}
-                onEdit={openEditDialog}
-                onDelete={openDeleteDialog}
-                onClick={openEditDialog}
-                isLeader={isLeader}
-              />
+              <>
+                <IntentList
+                  intents={paginatedIntents}
+                  onEdit={openEditDialog}
+                  onDelete={openDeleteDialog}
+                  onClick={openEditDialog}
+                  isLeader={isLeader}
+                />
+                {filteredIntents.length > 0 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </>
             )}
           </div>
         </ScrollArea>

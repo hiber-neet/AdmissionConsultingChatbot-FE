@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { templateAPI } from '../../services/fastapi';
+import { Pagination } from '../common/Pagination';
 
 const QATemplateManagerNew = () => {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Form state with Q&A pairs structure
   const [formData, setFormData] = useState({
@@ -143,6 +146,18 @@ const QATemplateManagerNew = () => {
     template.template_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredTemplates.length / ITEMS_PER_PAGE);
+  const paginatedTemplates = filteredTemplates.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -174,8 +189,9 @@ const QATemplateManagerNew = () => {
       {loading ? (
         <div className="text-center py-8">Đang tải mẫu...</div>
       ) : (
-        <div className="grid gap-4">
-          {filteredTemplates.map((template) => (
+        <>
+          <div className="grid gap-4">
+            {paginatedTemplates.map((template) => (
             <div key={template.template_id} className="bg-white p-4 rounded-lg border shadow-sm">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
@@ -214,12 +230,20 @@ const QATemplateManagerNew = () => {
             </div>
           ))}
           
-          {filteredTemplates.length === 0 && (
+          {paginatedTemplates.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               Không tìm thấy mẫu nào
             </div>
           )}
-        </div>
+          </div>
+
+          {/* Pagination */}
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </>
       )}
 
       {/* Create/Edit Dialog */}

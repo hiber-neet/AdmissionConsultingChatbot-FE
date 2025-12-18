@@ -4,8 +4,19 @@ import { Badge } from '../../ui/system_users/badge';
 import { Button } from '../../ui/system_users/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/system_users/tabs';
 import DocumentList from './DocumentList';
+import { Pagination } from '../../common/Pagination';
 
-export function QATemplateList({ filteredQATemplates, filteredDocuments, handleViewQA }) {
+export function QATemplateList({ 
+  filteredQATemplates, 
+  filteredDocuments, 
+  handleViewQA,
+  totalQuestionsPages,
+  questionsPage,
+  setQuestionsPage,
+  totalDocumentsPages,
+  documentsPage,
+  setDocumentsPage
+}) {
   return (
     <Tabs defaultValue="qa" className="space-y-4">
       <TabsList>
@@ -67,6 +78,13 @@ export function QATemplateList({ filteredQATemplates, filteredDocuments, handleV
             </Card>
           ))
         )}
+        {filteredQATemplates.length > 0 && (
+          <Pagination
+            currentPage={questionsPage}
+            totalPages={totalQuestionsPages}
+            onPageChange={setQuestionsPage}
+          />
+        )}
       </TabsContent>
 
       <TabsContent value="docs" className="space-y-4">
@@ -81,7 +99,14 @@ export function QATemplateList({ filteredQATemplates, filteredDocuments, handleV
             </CardContent>
           </Card>
         ) : (
-          <DocumentList filteredDocuments={filteredDocuments} />
+          <>
+            <DocumentList filteredDocuments={filteredDocuments} />
+            <Pagination
+              currentPage={documentsPage}
+              totalPages={totalDocumentsPages}
+              onPageChange={setDocumentsPage}
+            />
+          </>
         )}
       </TabsContent>
     </Tabs>

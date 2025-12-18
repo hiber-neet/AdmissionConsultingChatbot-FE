@@ -470,6 +470,15 @@ export interface UserQuestion {
   status: 'answered' | 'unanswered';
 }
 
+export interface UnansweredQuestion {
+  session_id: string;
+  question_id: number;
+  question_text: string;
+  bot_response: string;
+  timestamp: string;
+  fail_reason: string;
+}
+
 export interface PaginatedResponse<T> {
   status: string;
   data: T[];
@@ -495,8 +504,10 @@ export interface IntentAskedStatistic {
 export const consultantAnalyticsAPI = {
   getStatistics: () =>
     fastAPIClient.get<{ status: string; data: ConsultantStatistics; message: string }>('/analytics/consultant-statistics'),
-  getUnansweredQuestions: (days: number = 7, limit: number = 5) =>
-    fastAPIClient.get<{ status: string; data: UnansweredQuestion[]; message: string }>(`/analytics/knowledge-gaps?days=${days}&min_frequency=3`),
+  getUnansweredQuestions: (limit?: number) =>
+    fastAPIClient.get<{ total_failed: number; data: UnansweredQuestion[] }>(
+      `/analytics/unanswered-questions?limit=${limit || 100}`
+    ),
   getRecentQuestions: (limit: number = 5) =>
     fastAPIClient.get<{ status: string; data: RecentQuestion[]; message: string }>(`/analytics/recent-questions?limit=${limit}`),
   getKnowledgeGaps: (days?: number, minFrequency?: number) =>
