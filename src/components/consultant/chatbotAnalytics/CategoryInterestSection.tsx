@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/system_users/card';
 import { Button } from '../../ui/system_users/button';
@@ -19,6 +20,7 @@ interface CategoryInterestSectionProps {
 }
 
 export function CategoryInterestSection({ intentStats, loading, error }: CategoryInterestSectionProps) {
+  const [visibleCount, setVisibleCount] = useState(10);
   return (
     <Card>
       <CardHeader>
@@ -47,30 +49,60 @@ export function CategoryInterestSection({ intentStats, loading, error }: Categor
             <p>Không có danh mục nào.</p>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="h-12">
-                <TableHead className="py-3 font-medium">
-                  Danh Mục
-                </TableHead>
-                <TableHead className="text-right py-3 font-medium">
-                  Số Lần Được Hỏi
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {intentStats.map((stat) => (
-                <TableRow key={stat.intent_id} className="h-14">
-                  <TableCell className="py-3">
-                    <Badge variant="outline" className="text-sm px-2.5 py-1">{stat.intent_name}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right py-3 text-base font-medium">
-                    {stat.question_count}
-                  </TableCell>
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow className="h-12">
+                  <TableHead className="py-3 font-medium">
+                    Danh Mục
+                  </TableHead>
+                  <TableHead className="text-right py-3 font-medium">
+                    Số Lần Được Hỏi
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {intentStats.slice(0, visibleCount).map((stat) => (
+                  <TableRow key={stat.intent_id} className="h-14">
+                    <TableCell className="py-3">
+                      <Badge variant="outline" className="text-sm px-2.5 py-1">{stat.intent_name}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right py-3 text-base font-medium">
+                      {stat.question_count}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            
+            {/* Show More/Less Buttons */}
+            <div className="p-4 border-t">
+              {intentStats && visibleCount < intentStats.length && (
+                <div className="flex justify-center">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setVisibleCount(prev => Math.min(prev + 10, intentStats.length))}
+                    className="flex items-center gap-2"
+                  >
+                    Hiển Thị Thêm ({Math.min(10, intentStats.length - visibleCount)} mục khác)
+                  </Button>
+                </div>
+              )}
+              
+              {visibleCount > 10 && (
+                <div className="flex justify-center mt-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setVisibleCount(10)}
+                    className="text-muted-foreground"
+                  >
+                    Ẩn Bớt
+                  </Button>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

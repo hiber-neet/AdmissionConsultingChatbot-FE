@@ -30,6 +30,7 @@ type AuthCtx = {
     password: string
   ) => Promise<{ ok: boolean; message?: string; token?: string; role?: Role }>;
   logout: () => void;
+  checkTokenValidity: () => boolean;
   hasPermission: (permission: Permission) => boolean;
   isContentManagerLeader: () => boolean;
   isConsultantLeader: () => boolean;
@@ -69,33 +70,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/login';
   };
 
-  // Active token validation - check every minute
-  useEffect(() => {
-    if (!user) return; // Don't check if user isn't logged in
+  // Function to check token validity (called on demand, not on interval)
+  const checkTokenValidity = (): boolean => {
+    const token = localStorage.getItem("access_token");
+    
+    if (!token) {
+      return false;
+    }
 
-    const checkTokenValidity = () => {
-      const token = localStorage.getItem("access_token");
-      
-      if (!token) {
-        performLogout();
-        return;
-      }
+    if (isTokenExpired(token)) {
+      performLogout();
+      return false;
+    }
 
-      if (isTokenExpired(token)) {
-        performLogout();
-        return;
-      }
-    };
-
-    // Check immediately
-    checkTokenValidity();
-
-    // Set up interval to check every minute (60000ms)
-    const intervalId = setInterval(checkTokenValidity, 60000);
-
-    // Cleanup interval on unmount
-    return () => clearInterval(intervalId);
-  }, [user]);
+    return true;
+  };
 
   // Restore user session from localStorage on mount
   useEffect(() => {
@@ -579,7 +568,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading, // Expose loading state
       activeRole,
       login, 
-      logout, 
+      logout,
+      checkTokenValidity,
       hasPermission: checkUserPermission,
       isContentManagerLeader,
       isConsultantLeader,

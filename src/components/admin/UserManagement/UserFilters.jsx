@@ -1,13 +1,10 @@
 import { Search } from 'lucide-react';
 import { Input } from '../../ui/system_users/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/system_users/select';
 import PropTypes from 'prop-types';
 
 export function UserFilters({ 
   searchQuery, 
-  onSearchChange, 
-  filterRole, 
-  onFilterRoleChange 
+  onSearchChange
 }) {
   return (
     <div className="flex gap-2">
@@ -20,18 +17,6 @@ export function UserFilters({
           className="pl-10"
         />
       </div>
-      <Select value={filterRole} onValueChange={onFilterRoleChange}>
-        <SelectTrigger className="w-48">
-          <SelectValue placeholder="Tất Cả Vai Trò" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Tất Cả Vai Trò</SelectItem>
-          <SelectItem value="SYSTEM_ADMIN">Quản Trị Viên</SelectItem>
-          <SelectItem value="CONTENT_MANAGER">Quản Lý Nội Dung</SelectItem>
-          <SelectItem value="ADMISSION_OFFICER">Nhân Viên Tuyển Sinh</SelectItem>
-          <SelectItem value="CONSULTANT">Tư Vấn Viên</SelectItem>
-        </SelectContent>
-      </Select>
     </div>
   );
 }
@@ -39,6 +24,4 @@ export function UserFilters({
 UserFilters.propTypes = {
   searchQuery: PropTypes.string.isRequired,
   onSearchChange: PropTypes.func.isRequired,
-  filterRole: PropTypes.string.isRequired,
-  onFilterRoleChange: PropTypes.func.isRequired,
 };

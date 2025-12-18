@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ScrollArea } from '../../ui/system_users/scroll-area';
-import { consultantAnalyticsAPI, UserQuestion, IntentAskedStatistic } from '../../../services/fastapi';
+import { consultantAnalyticsAPI, UnansweredQuestion, IntentAskedStatistic } from '../../../services/fastapi';
 import { CategoryInterestSection } from './CategoryInterestSection';
 import { KnowledgeGapsSection } from './KnowledgeGapsSection';
-import { TrendingTopicsSection } from './TrendingTopicsSection';
 
 interface AnalyticsStatisticsProps {
   onNavigateToKnowledgeBase?: (question: string) => void;
@@ -16,7 +15,7 @@ export function AnalyticsStatistics({ onNavigateToKnowledgeBase }: AnalyticsStat
   const [intentStatsError, setIntentStatsError] = useState<string | null>(null);
 
   // Unanswered questions state
-  const [unansweredQuestions, setUnansweredQuestions] = useState<UserQuestion[]>([]);
+  const [unansweredQuestions, setUnansweredQuestions] = useState<UnansweredQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [questionsError, setQuestionsError] = useState<string | null>(null);
 
@@ -38,23 +37,16 @@ export function AnalyticsStatistics({ onNavigateToKnowledgeBase }: AnalyticsStat
     fetchIntentStats();
   }, []);
 
-  // Fetch unanswered questions (status='unanswered')
+  // Fetch unanswered questions (from new endpoint)
   useEffect(() => {
     const fetchUnansweredQuestions = async () => {
       try {
         setQuestionsLoading(true);
         setQuestionsError(null);
-        // Get all questions from the last 30 days with large page size
-        const response = await consultantAnalyticsAPI.getUserQuestions(30, 1, 100);
+        // Call the new unanswered-questions endpoint
+        const response = await consultantAnalyticsAPI.getUnansweredQuestions(100);
         
-        // Filter to only unanswered questions and sort by most recent
-        const unanswered = (response?.data || [])
-          .filter((q: UserQuestion) => q.status === 'unanswered')
-          .sort((a: UserQuestion, b: UserQuestion) => {
-            return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-          });
-        
-        setUnansweredQuestions(unanswered);
+        setUnansweredQuestions(response?.data || []);
       } catch (err: any) {
         setQuestionsError(err.response?.data?.detail || 'Failed to fetch unanswered questions');
       } finally {
@@ -85,13 +77,6 @@ export function AnalyticsStatistics({ onNavigateToKnowledgeBase }: AnalyticsStat
           unansweredQuestions={unansweredQuestions}
           loading={questionsLoading}
           error={questionsError}
-        />
-
-        {/* Trending Topics (displays intent statistics with description) */}
-        <TrendingTopicsSection 
-          intentStats={intentStats}
-          loading={intentStatsLoading}
-          error={intentStatsError}
         />
       </div>
     </ScrollArea>

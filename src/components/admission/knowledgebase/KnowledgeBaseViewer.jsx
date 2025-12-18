@@ -6,6 +6,7 @@ import QATemplateList from './QATemplateList';
 import DocumentList from './DocumentList';
 import QADetailDialog from './QADetailDialog';
 import { knowledgeAPI, intentAPI } from '../../../services/fastapi';
+import { Pagination } from '../../common/Pagination';
 
 export function KnowledgeBaseViewer() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,6 +17,9 @@ export function KnowledgeBaseViewer() {
   const [documents, setDocuments] = useState([]);
   const [intents, setIntents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [questionsPage, setQuestionsPage] = useState(1);
+  const [documentsPage, setDocumentsPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Static categories for filtering
   const categories = [
@@ -129,6 +133,26 @@ export function KnowledgeBaseViewer() {
     return matchesSearch && matchesCategory;
   });
 
+  // Pagination for questions
+  const totalQuestionsPages = Math.ceil(filteredQATemplates.length / ITEMS_PER_PAGE);
+  const paginatedQuestions = filteredQATemplates.slice(
+    (questionsPage - 1) * ITEMS_PER_PAGE,
+    questionsPage * ITEMS_PER_PAGE
+  );
+
+  // Pagination for documents
+  const totalDocumentsPages = Math.ceil(filteredDocuments.length / ITEMS_PER_PAGE);
+  const paginatedDocuments = filteredDocuments.slice(
+    (documentsPage - 1) * ITEMS_PER_PAGE,
+    documentsPage * ITEMS_PER_PAGE
+  );
+
+  // Reset pages when filters change
+  useEffect(() => {
+    setQuestionsPage(1);
+    setDocumentsPage(1);
+  }, [searchQuery, selectedCategory]);
+
   const handleViewQA = (template) => {
     setSelectedQA(template);
     setIsQADialogOpen(true);
@@ -183,9 +207,15 @@ export function KnowledgeBaseViewer() {
 
         {/* Q&A Templates and Documents Lists */}
         <QATemplateList
-          filteredQATemplates={filteredQATemplates}
-          filteredDocuments={filteredDocuments}
+          filteredQATemplates={paginatedQuestions}
+          filteredDocuments={paginatedDocuments}
           handleViewQA={handleViewQA}
+          totalQuestionsPages={totalQuestionsPages}
+          questionsPage={questionsPage}
+          setQuestionsPage={setQuestionsPage}
+          totalDocumentsPages={totalDocumentsPages}
+          documentsPage={documentsPage}
+          setDocumentsPage={setDocumentsPage}
         />
 
         {/* Q&A Detail Dialog */}

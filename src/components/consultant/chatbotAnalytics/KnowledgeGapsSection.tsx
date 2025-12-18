@@ -3,10 +3,10 @@ import { HelpCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/system_users/card';
 import { Button } from '../../ui/system_users/button';
 import { Badge } from '../../ui/system_users/badge';
-import { UserQuestion } from '../../../services/fastapi';
+import { UnansweredQuestion } from '../../../services/fastapi';
 
 interface KnowledgeGapsSectionProps {
-  unansweredQuestions: UserQuestion[];
+  unansweredQuestions: UnansweredQuestion[];
   loading: boolean;
   error: string | null;
 }
@@ -16,7 +16,7 @@ export function KnowledgeGapsSection({
   loading, 
   error
 }: KnowledgeGapsSectionProps) {
-  const [visibleCount, setVisibleCount] = useState(10);
+  const [visibleCount, setVisibleCount] = useState(5);
 
   return (
     <Card>
@@ -58,26 +58,34 @@ export function KnowledgeGapsSection({
           <div className="space-y-4">
             {unansweredQuestions.slice(0, visibleCount).map((question) => (
               <div
-                key={question.id}
+                key={question.question_id}
                 className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium">{question.question}</h4>
+                      <h4 className="font-medium">{question.question_text}</h4>
                     </div>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <Badge variant="outline" className="text-xs">
-                        {question.category}
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
+                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                        {question.fail_reason}
                       </Badge>
                       <span>
                         {new Date(question.timestamp).toLocaleDateString('vi-VN', {
                           year: 'numeric',
                           month: 'long',
-                          day: 'numeric'
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
                         })}
                       </span>
                     </div>
+                    {question.bot_response && (
+                      <div className="mt-2 p-2 bg-muted/50 rounded text-sm">
+                        <span className="font-medium">Phản hồi bot: </span>
+                        <span className="text-muted-foreground">{question.bot_response}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -88,21 +96,21 @@ export function KnowledgeGapsSection({
               <div className="flex justify-center pt-4">
                 <Button 
                   variant="outline" 
-                  onClick={() => setVisibleCount(prev => Math.min(prev + 10, unansweredQuestions.length))}
+                  onClick={() => setVisibleCount(prev => Math.min(prev + 5, unansweredQuestions.length))}
                   className="flex items-center gap-2"
                 >
-                  Hiển Thị Thêm ({Math.min(10, unansweredQuestions.length - visibleCount)} mục khác)
+                  Hiển Thị Thêm ({Math.min(5, unansweredQuestions.length - visibleCount)} mục khác)
                 </Button>
               </div>
             )}
             
             {/* Show Less Button */}
-            {visibleCount > 10 && (
+            {visibleCount > 5 && (
               <div className="flex justify-center pt-2">
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => setVisibleCount(10)}
+                  onClick={() => setVisibleCount(5)}
                   className="text-muted-foreground"
                 >
                   Ẩn Bớt

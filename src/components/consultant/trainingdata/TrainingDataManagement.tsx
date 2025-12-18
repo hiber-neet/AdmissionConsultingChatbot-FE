@@ -13,6 +13,7 @@ import { AddQuestionModal } from './AddQuestionModal';
 import { UploadDocumentModal } from './UploadDocumentModal';
 import { TabType, TrainingQuestion, TrainingDocument, Intent } from './types';
 import { Button } from '../../ui/system_users/button';
+import { Pagination } from '../../common/Pagination';
 
 export function TrainingDataManagement() {
   const { user, isConsultantLeader } = useAuth();
@@ -42,6 +43,11 @@ export function TrainingDataManagement() {
   // Loading states for approve/reject operations (documents only)
   const [approvingDocumentId, setApprovingDocumentId] = useState<number | null>(null);
   const [rejectingDocumentId, setRejectingDocumentId] = useState<number | null>(null);
+
+  // Pagination state
+  const [questionsPage, setQuestionsPage] = useState(1);
+  const [documentsPage, setDocumentsPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Fetch data on mount
   useEffect(() => {
@@ -270,6 +276,26 @@ export function TrainingDataManagement() {
     )
   );
 
+  // Pagination for questions
+  const totalQuestionsPages = Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
+  const paginatedQuestions = filteredQuestions.slice(
+    (questionsPage - 1) * ITEMS_PER_PAGE,
+    questionsPage * ITEMS_PER_PAGE
+  );
+
+  // Pagination for documents
+  const totalDocumentsPages = Math.ceil(filteredDocuments.length / ITEMS_PER_PAGE);
+  const paginatedDocuments = filteredDocuments.slice(
+    (documentsPage - 1) * ITEMS_PER_PAGE,
+    documentsPage * ITEMS_PER_PAGE
+  );
+
+  // Reset pages when filters or tab change
+  useEffect(() => {
+    setQuestionsPage(1);
+    setDocumentsPage(1);
+  }, [searchQuery, statusFilter, activeTab]);
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -313,17 +339,35 @@ export function TrainingDataManagement() {
             <p>Đang tải dữ liệu...</p>
           </div>
         ) : activeTab === 'questions' ? (
-          <QuestionList
-            questions={filteredQuestions}
-            selectedQuestion={selectedQuestion}
-            onSelectQuestion={handleSelectQuestion}
-          />
+          <>
+            <QuestionList
+              questions={paginatedQuestions}
+              selectedQuestion={selectedQuestion}
+              onSelectQuestion={handleSelectQuestion}
+            />
+            {filteredQuestions.length > 0 && (
+              <Pagination
+                currentPage={questionsPage}
+                totalPages={totalQuestionsPages}
+                onPageChange={setQuestionsPage}
+              />
+            )}
+          </>
         ) : (
-          <DocumentList
-            documents={filteredDocuments}
-            selectedDocument={selectedDocument}
-            onSelectDocument={handleSelectDocument}
-          />
+          <>
+            <DocumentList
+              documents={paginatedDocuments}
+              selectedDocument={selectedDocument}
+              onSelectDocument={handleSelectDocument}
+            />
+            {filteredDocuments.length > 0 && (
+              <Pagination
+                currentPage={documentsPage}
+                totalPages={totalDocumentsPages}
+                onPageChange={setDocumentsPage}
+              />
+            )}
+          </>
         )}
       </div>
 
