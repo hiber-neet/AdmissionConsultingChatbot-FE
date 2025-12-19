@@ -1,27 +1,26 @@
 import { useState, useEffect } from "react";
 import { fastAPIArticles, fastAPIMajors, fastAPISpecializations } from '../../services/fastapi';
-import { Article, Major, Specialization } from '../../utils/fastapi-client';
 import { Upload, X } from 'lucide-react';
 
-export default function ArticleEditor({ initialData }: { initialData?: { title: string } }) {
+export default function ArticleEditor({ initialData }) {
   
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [majorId, setMajorId] = useState<number>(0);
-  const [specializationId, setSpecializationId] = useState<number>(0);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [majorId, setMajorId] = useState(0);
+  const [specializationId, setSpecializationId] = useState(0);
   
-  const [majors, setMajors] = useState<Major[]>([]);
-  const [specializations, setSpecializations] = useState<Specialization[]>([]);
-  const [filteredSpecializations, setFilteredSpecializations] = useState<Specialization[]>([]);
+  const [majors, setMajors] = useState([]);
+  const [specializations, setSpecializations] = useState([]);
+  const [filteredSpecializations, setFilteredSpecializations] = useState([]);
   
   const [loading, setLoading] = useState(false);
   const [loadingSpecializations, setLoadingSpecializations] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [createdArticle, setCreatedArticle] = useState<any>(null);
+  const [message, setMessage] = useState(null);
+  const [createdArticle, setCreatedArticle] = useState(null);
 
   // Fetch majors on component mount
   useEffect(() => {
@@ -38,7 +37,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
         setMessage({ type: 'error', text: 'Không thể tải dữ liệu ngành. Sử dụng dữ liệu dự phòng.' });
         
         // Fallback to mock data if API fails
-        const mockMajors: Major[] = [
+        const mockMajors = [
           { major_id: 1, major_name: "Computer Science" },
           { major_id: 2, major_name: "Business Administration" },
           { major_id: 3, major_name: "Engineering" },
@@ -79,7 +78,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
         setMessage({ type: 'error', text: `Không thể tải chuyên ngành cho ngành đã chọn.` });
         
         // Fallback to mock data filtered by major
-        const mockSpecializations: Specialization[] = [
+        const mockSpecializations = [
           { specialization_id: 1, specialization_name: "Software Engineering", major_id: 1 },
           { specialization_id: 2, specialization_name: "Information Technology", major_id: 1 },
           { specialization_id: 3, specialization_name: "Data Science", major_id: 1 },
@@ -107,7 +106,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
   }, [message]);
 
   // Handle image file selection
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       // Validate file type
@@ -127,7 +126,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -202,7 +201,7 @@ export default function ArticleEditor({ initialData }: { initialData?: { title: 
       setMajorId(0);
       setSpecializationId(0);
       
-    } catch (error: any) {
+    } catch (error) {
       const errorMessage = error.message || 'Không thể thêm bài viết';
       setMessage({ type: 'error', text: errorMessage });
       setCreatedArticle(null);

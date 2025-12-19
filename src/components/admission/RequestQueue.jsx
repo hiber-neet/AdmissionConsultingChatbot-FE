@@ -279,7 +279,7 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
                             <Calendar className="h-3 w-3" />
                             <span>
                               Yêu cầu lúc:{' '}
-                              {new Date(request.requestedAt).toLocaleString('vi-VN')}
+                              {new Date(request.requestedAt).toLocaleDateString('vi-VN')}
                             </span>
                           </div>
                         </div>

@@ -1,10 +1,9 @@
 import { X, ExternalLink, Calendar, User, BookOpen, Tag, Eye } from "lucide-react";
-import { Article } from '../../../utils/fastapi-client';
 import { useState } from 'react';
 
 // Helper function to map status to Vietnamese
-const getStatusLabel = (status: string): string => {
-  const statusMap: Record<string, string> = {
+const getStatusLabel = (status) => {
+  const statusMap = {
     'draft': 'Nháp',
     'approved': 'Đã Duyệt',
     'rejected': 'Từ Chối',
@@ -16,20 +15,13 @@ const getStatusLabel = (status: string): string => {
 };
 
 // Helper function to format date
-const formatDate = (dateStr: string): string => {
+const formatDate = (dateStr) => {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return dateStr;
   return d.toLocaleDateString("vi-VN");
 };
 
-interface ArticleDetailsModalProps {
-  article: Article | null;
-  loading: boolean;
-  error: string | null;
-  onClose: () => void;
-  onRetry: () => void;
-}
 
 export default function ArticleDetailsModal({ 
   article, 
@@ -37,7 +29,7 @@ export default function ArticleDetailsModal({
   error, 
   onClose, 
   onRetry 
-}: ArticleDetailsModalProps) {
+}) {
   const [previewMode, setPreviewMode] = useState(false);
   // Normalize image URL: if user stored a URL without protocol, assume https
   const safeImageUrl = article?.link_image
@@ -108,7 +100,7 @@ export default function ArticleDetailsModal({
                       className="w-full h-64 object-cover rounded-lg"
                       onError={(e) => {
                         // hide broken image but keep the link visible in details view
-                        (e.target as HTMLImageElement).style.display = 'none';
+                        (e.target).style.display = 'none';
                       }}
                     />
                   )}
@@ -256,7 +248,7 @@ export default function ArticleDetailsModal({
                         alt={article.title}
                         className="max-w-full h-auto rounded-lg border border-gray-200"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
+                          (e.target).style.display = 'none';
                         }}
                       />
                     </div>

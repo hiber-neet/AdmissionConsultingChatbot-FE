@@ -1500,7 +1500,7 @@ if (isAuthenticated && user && !isStudent) {
                 </div>
               </div>
               <div className="text-xs text-gray-400 mt-1">
-                {new Date(c.updatedAt).toLocaleString()}
+                {new Date(c.updatedAt).toLocaleDateString('vi-VN')}
               </div>
             </li>
           ))}

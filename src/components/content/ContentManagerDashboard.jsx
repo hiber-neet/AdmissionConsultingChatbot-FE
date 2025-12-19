@@ -4,35 +4,16 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/system_users/button";
-import { fastAPIContentAnalytics, type ContentStatistics } from "@/services/fastapi";
+import { fastAPIContentAnalytics } from "@/services/fastapi";
 import { useAuth } from "@/contexts/Auth";
 import { STAFF_COLORS } from "@/constants/staffColors";
 import { Pagination } from "../common/Pagination";
 
-type Props = {
-  onCreate?: () => void;    
-  onNavigateToEditor?: () => void;
-  onNavigateToArticles?: () => void;
-};
 
-type Stat = {
-  label: string;
-  value: number | string;
-  sublabel?: string;
-  icon?: React.ReactNode;
-  isLoading?: boolean;
-};
 
-type Activity = {
-  title: string;
-  author: string;
-  updatedAt: string;
-  status: "draft" | "review" | "published";
-  badgeColor?: string; // màu chấm tròn ở đầu dòng
-};
 
 // Helper function to get status badge color
-const getStatusBadgeColor = (status: string): string => {
+const getStatusBadgeColor = (status) => {
   switch (status) {
     case 'published': return 'bg-emerald-500';
     case 'review': return 'bg-amber-500';
@@ -41,8 +22,8 @@ const getStatusBadgeColor = (status: string): string => {
   }
 };
 
-function StatusPill({ status }: { status: Activity["status"] }) {
-  const map: Record<Activity["status"], string> = {
+function StatusPill({ status  }) {
+  const map = {
     draft: "bg-gray-100 text-gray-700",
     review: "bg-amber-100 text-amber-700",
     published: "bg-emerald-100 text-emerald-700",
@@ -54,12 +35,12 @@ function StatusPill({ status }: { status: Activity["status"] }) {
   );
 }
 
-export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, onNavigateToArticles }: Props) {
+export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, onNavigateToArticles  }) {
   const { user } = useAuth();
-  const [contentData, setContentData] = useState<ContentStatistics | null>(null);
+  const [contentData, setContentData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [error, setError] = useState(null);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
   const [activitiesPage, setActivitiesPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -77,7 +58,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
       } else {
         throw new Error('API returned success: false');
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Failed to fetch content statistics');
       
       // Set fallback data in case of error
@@ -107,7 +88,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
   }, [user?.id]);
 
   // Generate stats array from API data
-  const stats: Stat[] = contentData ? [
+  const stats = contentData ? [
     { 
       label: "Tổng Đã Xuất Bản", 
       value: contentData.overview.published_articles, 
@@ -131,12 +112,12 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
   ] : [];
 
   // Convert API data to activities format
-  const activities: Activity[] = contentData ? 
+  const activities = contentData ? 
     contentData.recent_articles.map(article => ({
       title: article.title,
       author: article.author,
       updatedAt: article.created_at,
-      status: article.status as "draft" | "review" | "published",
+      status: article.status,
       badgeColor: getStatusBadgeColor(article.status),
     })) : [];
 

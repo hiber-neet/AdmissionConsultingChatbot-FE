@@ -2,13 +2,12 @@ import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { articlesAPI } from "../../services/fastapi";
-import { ReviewArticle } from "../../types/review.types";
 import { Pagination } from "../common/Pagination";
 
 export default function ReviewQueue() {
-  const [articles, setArticles] = useState<ReviewArticle[]>([]);
+  const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [openFor, setOpenFor] = useState<ReviewArticle | null>(null);
+  const [openFor, setOpenFor] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,7 +31,7 @@ export default function ReviewQueue() {
   };
 
   // Handle approval
-  const handleApprove = async (article: ReviewArticle) => {
+  const handleApprove = async (article) => {
     setActionLoading(true);
     try {
       await articlesAPI.updateStatus(article.article_id, {
@@ -49,7 +48,7 @@ export default function ReviewQueue() {
   };
 
   // Handle rejection with mandatory reason
-  const handleReject = (article: ReviewArticle) => {
+  const handleReject = (article) => {
     setOpenFor(article);
     setFeedback("");
   };
@@ -82,7 +81,7 @@ export default function ReviewQueue() {
 
   // Handle escape key for modal
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenFor(null);
+    const onKey = (e) => e.key === "Escape" && setOpenFor(null);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);

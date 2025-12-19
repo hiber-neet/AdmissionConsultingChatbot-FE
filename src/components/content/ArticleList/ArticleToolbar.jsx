@@ -3,21 +3,6 @@ import { useEffect, useRef } from "react";
 import { Major } from '../../../utils/fastapi-client';
 import { ARTICLE_STATUSES } from '../../../constants/status';
 
-interface ArticleToolbarProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  statusFilter: string;
-  onStatusFilterChange: (status: string) => void;
-  categoryFilter: string;
-  onCategoryFilterChange: (category: string) => void;
-  showStatusDropdown: boolean;
-  onToggleStatusDropdown: () => void;
-  showCategoryDropdown: boolean;
-  onToggleCategoryDropdown: () => void;
-  majors: Major[];
-  majorsLoading: boolean;
-  onClickOutside: () => void;
-}
 
 export default function ArticleToolbar({
   searchQuery,
@@ -33,13 +18,13 @@ export default function ArticleToolbar({
   majors,
   majorsLoading,
   onClickOutside
-}: ArticleToolbarProps) {
+}) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         onClickOutside();
       }
     };

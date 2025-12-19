@@ -297,7 +297,7 @@ export default function CustomerLiveChatPage() {
                           >
                             <p className="text-sm">{msg.message_text}</p>
                             <p className={`text-xs mt-1 ${isMyMessage ? 'text-white/70' : 'text-gray-500'}`}>
-                              {new Date(msg.timestamp).toLocaleTimeString()}
+                              {new Date(msg.timestamp).toLocaleDateString('vi-VN')}
                             </p>
                           </div>
                         </div>

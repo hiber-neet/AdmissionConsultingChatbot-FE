@@ -7,11 +7,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../../ui/system_users/dropdown-menu';
-import { Article } from '../../../utils/fastapi-client';
 
 // Helper function to map status to Vietnamese
-const getStatusLabel = (status: string): string => {
-  const statusMap: Record<string, string> = {
+const getStatusLabel = (status)=> {
+  const statusMap = {
     'draft': 'Nháp',
     'approved': 'Đã Duyệt',
     'rejected': 'Từ Chối',
@@ -22,16 +21,6 @@ const getStatusLabel = (status: string): string => {
   return statusMap[status] || status;
 };
 
-interface ArticleTableProps {
-  articles: Article[];
-  loading: boolean;
-  error: string | null;
-  canEdit: boolean;
-  onArticleClick: (article: Article, event?: React.MouseEvent) => void;
-  onView: (article: Article) => void;
-  onEdit: (article: Article) => void;
-  onDelete: (article: Article) => void;
-}
 
 export default function ArticleTable({
   articles,
@@ -42,7 +31,7 @@ export default function ArticleTable({
   onView,
   onEdit,
   onDelete
-}: ArticleTableProps) {
+}) {
   if (loading) {
     return (
       <div className="bg-white border rounded-xl overflow-hidden">

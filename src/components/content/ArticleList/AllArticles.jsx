@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
 import { fastAPIArticles, majorsAPI } from '../../../services/fastapi';
-import { Article, Major } from '../../../utils/fastapi-client';
 import { useAuth } from '../../../contexts/Auth';
 import ArticleToolbar from './ArticleToolbar';
 import ArticleTable from './ArticleTable';
@@ -9,27 +8,23 @@ import EditArticleModal from './EditArticleModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import { Pagination } from '../../common/Pagination';
 
-export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateToEditorWithData }: { 
-  onCreate?: () => void; 
-  onNavigateToEditor?: () => void;
-  onNavigateToEditorWithData?: (articleData: { title: string }) => void;
-}) {
+export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateToEditorWithData }) { {
   const { user, hasPermission, isContentManagerLeader } = useAuth();
   const [q, setQ] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("Tất Cả Trạng Thái");
-  const [categoryFilter, setCategoryFilter] = useState<string>("Tất Cả Ngành");
+  const [statusFilter, setStatusFilter] = useState("Tất Cả Trạng Thái");
+  const [categoryFilter, setCategoryFilter] = useState("Tất Cả Ngành");
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [articles, setArticles] = useState<Article[]>([]);
+  const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [error, setError] = useState(null);
+  const [selected, setSelectedArticle] = useState(null);
   const [articleDetailsLoading, setArticleDetailsLoading] = useState(false);
-  const [articleDetailsError, setArticleDetailsError] = useState<string | null>(null);
-  const [majors, setMajors] = useState<Major[]>([]);
+  const [articleDetailsError, setArticleDetailsError] = useState(null);
+  const [majors, setMajors] = useState([]);
   const [majorsLoading, setMajorsLoading] = useState(false);
-  const [editingArticle, setEditingArticle] = useState<Article | null>(null);
-  const [deleteConfirmArticle, setDeleteConfirmArticle] = useState<Article | null>(null);
+  const [editing, setEditingArticle] = useState(null);
+  const [deleteConfirm, setDeleteConfirmArticle] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -44,7 +39,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         const isAdmin = hasPermission("Admin");
         const isLeader = isContentManagerLeader();
         
-        let data: Article[];
+        let data;
         
         if (isAdmin || isLeader) {
           // Admin or Content Manager Leader: Get all articles
@@ -115,7 +110,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   }, [q, statusFilter, categoryFilter]);
 
   // Fetch detailed article information
-  const fetchArticleDetails = async (articleId: number) => {
+  const fetchArticleDetails = async (articleId) => {
     setArticleDetailsLoading(true);
     setArticleDetailsError(null);
     
@@ -132,10 +127,10 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   };
 
   // Handle article click
-  const handleArticleClick = (article: Article, event?: React.MouseEvent) => {
+  const handleArticleClick = (article, event) => {
     // Prevent opening modal if clicking on checkbox, dropdown, or buttons
     if (event) {
-      const target = event.target as HTMLElement;
+      const target = event.target;
       if (
         target.tagName === 'INPUT' ||
         target.closest('button') ||
@@ -162,13 +157,13 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   };
 
   // Handler for status filter change
-  const handleStatusFilterChange = (status: string) => {
+  const handleStatusFilterChange = (status) => {
     setStatusFilter(status);
     setShowStatusDropdown(false);
   };
 
   // Handler for category filter change
-  const handleCategoryFilterChange = (category: string) => {
+  const handleCategoryFilterChange = (category) => {
     setCategoryFilter(category);
     setShowCategoryDropdown(false);
   };
@@ -189,7 +184,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   const refreshArticles = async () => {
     const isAdmin = hasPermission("Admin");
     const isLeader = isContentManagerLeader();
-    let data: Article[];
+    let data;
     if (isAdmin || isLeader) {
       data = await fastAPIArticles.getAll();
     } else if (hasPermission("Content Manager") && user?.id) {
@@ -314,4 +309,5 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
       )}
     </div>
   );
+}
 }
