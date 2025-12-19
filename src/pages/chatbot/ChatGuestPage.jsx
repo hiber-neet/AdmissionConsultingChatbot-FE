@@ -2,10 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import ChatGuestHeader from "../../components/chatbotguest/ChatGuestHeader.jsx";
 import { API_CONFIG } from "../../config/api.js";
 import ReactMarkdown from "react-markdown";
+
 const CHATBOT_PREFILL_KEY = "chatbot_prefill_message";
 const GUEST_ID_KEY = "guest_user_id_v1";
 const GUEST_SESSION_KEY = "guest_session_id_v1";
-
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -15,48 +15,47 @@ function generateNumericId() {
   return Math.floor(Math.random() * max);
 }
 
-
-
 export default function ChatGuestPage() {
-  const [messages, setMessages] = useState([]);  
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [wsReady, setWsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [partial, setPartial] = useState("");
-  const [prefillMessage, setPrefillMessage] = useState(null);  
+
+  // ❗️NEW: lưu RIASEC để gửi sau khi bot chào xong
+  const [prefillMessage, setPrefillMessage] = useState(null);
+  const [hasWelcomed, setHasWelcomed] = useState(false);
 
   const partialRef = useRef("");
   const wsRef = useRef(null);
   const listRef = useRef(null);
+  const prefillSentRef = useRef(false);
 
-    const prefillSentRef = useRef(false);   
-  // Tạo guestId + sessionId cố định cho guest (lưu vào localStorage)
-const [guestId] = useState(() => {
-  let stored = localStorage.getItem(GUEST_ID_KEY);
+  // guestId & sessionId (nếu sau này cần dùng)
+  const [guestId] = useState(() => {
+    let stored = localStorage.getItem(GUEST_ID_KEY);
+    let numeric;
+    if (stored && !Number.isNaN(Number(stored))) {
+      numeric = Number(stored);
+    } else {
+      numeric = generateNumericId();
+      localStorage.setItem(GUEST_ID_KEY, String(numeric));
+    }
+    return numeric;
+  });
 
+  const [sessionId] = useState(() => {
+    let stored = localStorage.getItem(GUEST_SESSION_KEY);
+    let numeric;
+    if (stored && !Number.isNaN(Number(stored))) {
+      numeric = Number(stored);
+    } else {
+      numeric = generateNumericId();
+      localStorage.setItem(GUEST_SESSION_KEY, String(numeric));
+    }
+    return numeric;
+  });
 
-  let numeric;
-  if (stored && !Number.isNaN(Number(stored))) {
-    numeric = Number(stored);
-  } else {
-    numeric = generateNumericId();
-    localStorage.setItem(GUEST_ID_KEY, String(numeric));
-  }
-  return numeric;
-});
-
-const [sessionId] = useState(() => {
-  let stored = localStorage.getItem(GUEST_SESSION_KEY);
-
-  let numeric;
-  if (stored && !Number.isNaN(Number(stored))) {
-    numeric = Number(stored);
-  } else {
-    numeric = generateNumericId();
-    localStorage.setItem(GUEST_SESSION_KEY, String(numeric));
-  }
-  return numeric;
-});
   // Auto-scroll xuống cuối mỗi khi có tin nhắn mới
   useEffect(() => {
     if (!listRef.current) return;
@@ -67,21 +66,24 @@ const [sessionId] = useState(() => {
   }, [messages, partial]);
 
   // Kết nối WS khi mount
-useEffect(() => {
-  // Tự đổi http -> ws, https -> wss
-  const wsUrl = API_BASE_URL.replace(/^http/, "ws") + "/chat/ws/chat";
+  useEffect(() => {
+    const wsUrl = API_BASE_URL.replace(/^http/, "ws") + "/chat/ws/chat";
 
-  const ws = new WebSocket(wsUrl);
-  wsRef.current = ws;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
 
-  ws.onopen = () => {
-    setWsReady(true);
-    ws.send(
-      JSON.stringify({
+    ws.onopen = () => {
+      setWsReady(true);
+      setHasWelcomed(false);       // reset trạng thái chào
+      prefillSentRef.current = false;
 
-      })
-    );
-  };
+      // Gửi handshake ban đầu (guest không có user_id)
+      ws.send(
+        JSON.stringify({
+          // có thể thêm guestId / sessionId nếu BE cần
+        })
+      );
+    };
 
     ws.onmessage = (e) => {
       try {
@@ -89,38 +91,54 @@ useEffect(() => {
 
         switch (data.event) {
           case "session_created":
+            // nếu muốn lấy session_id từ server thì xử lý ở đây
             break;
 
           case "chunk":
             setPartial((prev) => {
-              const next = prev + data.content;
+              const next = prev + (data.content ?? "");
               partialRef.current = next;
               return next;
             });
             break;
-case "go":
-case "done": {
-const finalText = (partialRef.current || "").trim();
-  if (finalText) {
-    const botMsg = { sender: "bot", text: finalText };
-    setMessages((prev) => [...prev, botMsg]);
-  }
 
-  partialRef.current = "";
-  setPartial("");             
-  setIsLoading(false);
-  break;
-}
+          case "go": {
+            // go = kết thúc đoạn greeting đầu tiên
+            const finalText = (partialRef.current || "").trim();
+            if (finalText) {
+              const botMsg = { sender: "bot", text: finalText };
+              setMessages((prev) => [...prev, botMsg]);
+            }
+            partialRef.current = "";
+            setPartial("");
+            setIsLoading(false);
+
+            setHasWelcomed(true);    
+            break;
+          }
+
+          case "done": {
+            // done cho các câu trả lời sau này
+            const finalText = (partialRef.current || "").trim();
+            if (finalText) {
+              const botMsg = { sender: "bot", text: finalText };
+              setMessages((prev) => [...prev, botMsg]);
+            }
+            partialRef.current = "";
+            setPartial("");
+            setIsLoading(false);
+            break;
+          }
 
           case "error":
             setIsLoading(false);
             break;
 
           default:
-            // Một số log hệ thống khác không theo format event/chunk/done
+          // ignore log khác
         }
       } catch {
-        // ignore log không phải JSON
+        // ignore non-JSON
       }
     };
 
@@ -131,7 +149,7 @@ const finalText = (partialRef.current || "").trim();
     return () => ws.close();
   }, [guestId, sessionId]);
 
-  // Lấy dữ liệu từ localStorage (có thể là JSON RIASEC hoặc legacy { text })
+  // Lấy dữ liệu từ localStorage (RIASEC JSON hoặc legacy text)
   useEffect(() => {
     try {
       const raw = localStorage.getItem(CHATBOT_PREFILL_KEY);
@@ -143,54 +161,57 @@ const finalText = (partialRef.current || "").trim();
       try {
         const parsed = JSON.parse(raw);
 
-        // legacy: { text: "..." }
         if (parsed && typeof parsed === "object" && "text" in parsed) {
+          // legacy: { text: "..." }
           initial = parsed.text;
-        }
-        // RIASEC JSON: { student_id, answers: {R,I,A,S,E,C} }
-        else if (
-          parsed &&
-          typeof parsed === "object" &&
-          "student_id" in parsed &&
-          "answers" in parsed
-        ) {
-          initial = JSON.stringify(parsed);
-        } else {
-          // fallback: stringify
-          initial = JSON.stringify(parsed);
-        }
-      } catch {
-        // không parse được => dùng raw
-        initial = raw;
+        }else if (
+        parsed &&
+        typeof parsed === "object" &&
+        "answers" in parsed
+      ) {
+        initial = `Phân tích "answers":${JSON.stringify(parsed.answers)}`;
+      } else {
+        // fallback: stringify toàn bộ
+        initial = JSON.stringify(parsed);
       }
-
-      if (!initial) return;
-
-      // Hiển thị như 1 tin nhắn user
-      setMessages([{ sender: "user", text: initial }]);
-      setPrefillMessage(initial);
-      setIsLoading(true);
     } catch {
-      /* ignore */
+      // không parse được => dùng raw
+      initial = raw;
     }
-  }, []);
 
+    if (!initial) return;
 
+    // ❗️CHỈ LƯU LẠI, KHÔNG PUSH LÊN UI NGAY
+    setPrefillMessage(initial);
+  } catch {
+    /* ignore */
+  }
+}, []);
+
+  // Sau khi WS sẵn sàng *và* bot đã chào xong -> mới gửi RIASEC lên
   useEffect(() => {
-  if (!wsReady || !prefillMessage) return;
-  if (wsRef.current?.readyState !== WebSocket.OPEN) return;
-  if (prefillSentRef.current) return;
+    if (!wsReady || !prefillMessage || !hasWelcomed) return;
+    if (wsRef.current?.readyState !== WebSocket.OPEN) return;
+    if (prefillSentRef.current) return;
 
-  wsRef.current.send(
-    JSON.stringify({
-      message: prefillMessage,
+    // Hiển thị như 1 tin nhắn user
+    const userMsg = { sender: "user", text: prefillMessage };
+    setMessages((prev) => [...prev, userMsg]);
 
-    })
-  );
+    setIsLoading(true);
+    setPartial("");
+    partialRef.current = "";
 
-  prefillSentRef.current = true; 
-  setPrefillMessage(null);
-}, [wsReady, prefillMessage]);
+    // Gửi nội dung RIASEC sang server để bot phân tích
+    wsRef.current.send(
+      JSON.stringify({
+        message: prefillMessage,
+      })
+    );
+
+    prefillSentRef.current = true;
+    setPrefillMessage(null);
+  }, [wsReady, prefillMessage, hasWelcomed]);
 
   const send = (text) => {
     if (!text.trim()) return;
@@ -206,7 +227,6 @@ const finalText = (partialRef.current || "").trim();
       wsRef.current.send(
         JSON.stringify({
           message: text,
-
         })
       );
     }
@@ -219,7 +239,7 @@ const finalText = (partialRef.current || "").trim();
   };
 
   return (
-<div className="min-h-screen bg-[#f7f7f8]">
+    <div className="min-h-screen bg-[#f7f7f8]">
       <ChatGuestHeader />
 
       {/* Khung chat */}
@@ -231,23 +251,28 @@ const finalText = (partialRef.current || "").trim();
             </div>
           )}
 
-       {messages.map((m, i) => (
-  <div key={i} className={`mb-4 flex ${m.sender === "user" ? "justify-end" : "justify-start"}`}>
-    <div
-      className={`max-w-[85%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed shadow-sm ${
-        m.sender === "user"
-          ? "bg-[#10a37f] text-white"
-          : "bg-white text-gray-800"
-      }`}
-    >
-      {m.sender === "bot" ? (
-        <ReactMarkdown>{m.text}</ReactMarkdown>
-      ) : (
-        m.text
-      )}
-    </div>
-  </div>
-))}
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              className={`mb-4 flex ${
+                m.sender === "user" ? "justify-end" : "justify-start"
+              }`}
+            >
+              <div
+                className={`max-w-[85%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed shadow-sm ${
+                  m.sender === "user"
+                    ? "bg-[#10a37f] text-white"
+                    : "bg-white text-gray-800"
+                }`}
+              >
+                {m.sender === "bot" ? (
+                  <ReactMarkdown>{m.text}</ReactMarkdown>
+                ) : (
+                  m.text
+                )}
+              </div>
+            </div>
+          ))}
 
           {isLoading && (
             <div className="mb-4 flex justify-start">

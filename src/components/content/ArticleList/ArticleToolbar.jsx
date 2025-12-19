@@ -1,6 +1,6 @@
 import { Search, ChevronDown } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { Major } from '../../../utils/fastapi-client';
+// import { Major } from '../../../utils/fastapi-client';
 import { ARTICLE_STATUSES } from '../../../constants/status';
 
 
