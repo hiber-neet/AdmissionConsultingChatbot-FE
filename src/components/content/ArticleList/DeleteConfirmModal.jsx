@@ -1,18 +1,12 @@
 import { X } from "lucide-react";
 import { useState } from "react";
-import { Article } from '../../../utils/fastapi-client';
 
-interface DeleteConfirmModalProps {
-  article: Article;
-  onClose: () => void;
-  onConfirm: () => Promise<void>;
-}
 
 export default function DeleteConfirmModal({ 
   article, 
   onClose, 
   onConfirm 
-}: DeleteConfirmModalProps) {
+}) {
   const [loading, setLoading] = useState(false);
 
   const handleConfirm = async () => {

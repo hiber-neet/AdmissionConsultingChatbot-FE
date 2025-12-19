@@ -4,7 +4,7 @@ import { AnalyticsStatistics } from '../../components/consultant/chatbotAnalytic
 export function AdminAnalyticsPage() {
   const navigate = useNavigate();
 
-  const handleNavigateToKnowledgeBase = (question: string) => {
+  const handleNavigateToKnowledgeBase = (question) => {
     // Navigate to knowledge base page
     navigate('/admin/knowledge', { state: { question, action: 'add' } });
   };

@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import ContentManagerDashboard from '../../components/content/ContentManagerDashboard';
 import { useNavigate } from 'react-router-dom';
+import ContentManagerDashboard from '../../components/content/ContentManagerDashboard';
 
 export function AdminContentManagerDashboardPage() {
   const navigate = useNavigate();

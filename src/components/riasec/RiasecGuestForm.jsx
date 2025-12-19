@@ -134,7 +134,7 @@ export default function RiasecGuestForm() {
         setSubmitted(true);
         setLoadedAt(
           latest.created_at
-            ? new Date(latest.created_at).toLocaleString()
+            ? new Date(latest.created_at).toLocaleDateString('vi-VN')
             : null
         );
       }

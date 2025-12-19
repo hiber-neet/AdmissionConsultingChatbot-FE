@@ -1,20 +1,13 @@
 import { X, Upload } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Article, Major } from '../../../utils/fastapi-client';
 
-interface EditArticleModalProps {
-  article: Article;
-  majors: Major[];
-  onClose: () => void;
-  onSave: (data: Partial<Article> | FormData) => Promise<void>;
-}
 
 export default function EditArticleModal({ 
   article, 
   majors, 
   onClose, 
   onSave 
-}: EditArticleModalProps) {
+}) {
   const [formData, setFormData] = useState({
     title: article.title,
     description: article.description,
@@ -23,9 +16,9 @@ export default function EditArticleModal({
     major_id: article.major_id,
     specialization_id: article.specialization_id
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(article.link_image || null);
-  const [specializations, setSpecializations] = useState<any[]>([]);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(article.link_image || null);
+  const [specializations, setSpecializations] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Fetch specializations when major changes
@@ -46,7 +39,7 @@ export default function EditArticleModal({
   }, [formData.major_id]);
 
   // Handle image file selection
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       // Validate file type
@@ -66,7 +59,7 @@ export default function EditArticleModal({
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -78,7 +71,7 @@ export default function EditArticleModal({
     setImagePreview(article.link_image || null); // Reset to original image
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -264,7 +257,7 @@ export default function EditArticleModal({
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Chọn chuyên ngành</option>
-                  {specializations.map((spec: any) => (
+                  {specializations.map((spec) => (
                     <option key={spec.specialization_id} value={spec.specialization_id}>
                       {spec.specialization_name}
                     </option>
