@@ -19,7 +19,6 @@ import { AdminLayout } from "../components/admin/AdminLayout.jsx";
 import { AdminDashboardPage } from "../pages/admin/AdminDashboardPage.jsx";
 import { QATemplateManagerPage } from "../pages/admin/QATemplateManagerPage.jsx";
 import { UserManagementPage } from "../pages/admin/UserManagementPage.jsx";
-import { AdminAdmissionDashboardPage } from "../pages/admin/AdminAdmissionDashboardPage.jsx";
 import { AdminConsultationPage } from "../pages/admin/AdminConsultationPage.jsx";
 
 import { AdminConsultantDashboardPage } from "../pages/admin/AdminConsultantDashboardPage.jsx";
@@ -129,7 +128,6 @@ export default function Router() {
         <Route path="templates" element={<QATemplateManagerPage />} />
         <Route path="users" element={<UserManagementPage />} />
         {/* Admission Management Routes */}
-        <Route path="admissions" element={<AdminAdmissionDashboardPage />} />
         <Route path="content" element={<AdminContentManagerDashboardPage />} />
         <Route path="consultation" element={<AdminConsultationPage />} />
         {/* Consultant Management Routes */}

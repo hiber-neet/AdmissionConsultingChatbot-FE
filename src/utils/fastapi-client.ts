@@ -3,6 +3,17 @@ import { API_CONFIG } from '../config/api.js';
 
 const FASTAPI_BASE_URL = API_CONFIG.FASTAPI_BASE_URL;
 
+// Custom error class for authentication errors
+export class AuthenticationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthenticationError';
+  }
+}
+
+// Flag to prevent multiple simultaneous redirects
+let isRedirecting = false;
+
 // Generic API client with error handling
 class FastAPIClient {
   private baseURL: string;
@@ -37,15 +48,22 @@ class FastAPIClient {
 
       // Handle 401 Unauthorized - token is invalid or expired
       if (response.status === 401) {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("token_type");
-        
-        // Redirect to login page
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
+        // Only handle logout once to prevent race conditions
+        if (!isRedirecting) {
+          isRedirecting = true;
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("token_type");
+          
+          // Small delay to ensure localStorage is cleared
+          setTimeout(() => {
+            if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+              window.location.href = '/login';
+            }
+          }, 100);
         }
         
-        throw new Error('Unauthorized - Your session has expired. Please log in again.');
+        // Throw specific error type that components can check for
+        throw new AuthenticationError('Your session has expired. Please log in again.');
       }
 
       if (!response.ok) {
@@ -83,6 +101,11 @@ class FastAPIClient {
       const data = JSON.parse(text);
       return data;
     } catch (error) {
+      // Re-throw authentication errors without logging
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
+      
       // Don't log error if it's an auth issue and user isn't logged in
       const isAuthError = error instanceof Error && 
         (error.message.includes('permission required') || 
@@ -125,6 +148,25 @@ class FastAPIClient {
 
 // Create FastAPI client instance
 export const fastAPIClient = new FastAPIClient(FASTAPI_BASE_URL);
+
+// Helper function to handle API errors in components
+export const handleAPIError = (error: unknown, fallbackMessage: string = 'An error occurred'): string => {
+  // Don't show error message if it's an authentication error (handled by redirect)
+  if (error instanceof AuthenticationError) {
+    return ''; // Return empty string, component should not display error
+  }
+  
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  return fallbackMessage;
+};
+
+// Helper function to check if an error is an authentication error
+export const isAuthError = (error: unknown): boolean => {
+  return error instanceof AuthenticationError;
+};
 
 export type LoginResponse = {
   access_token: string;

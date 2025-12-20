@@ -319,8 +319,6 @@ export function TrainingDataManagement() {
       <TabSwitcher
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        questionCount={questions.length}
-        documentCount={documents.length}
       />
 
       {/* Search and Filter */}
@@ -333,18 +331,31 @@ export function TrainingDataManagement() {
       />
 
       {/* Content Area */}
-      <div className="bg-white rounded-lg border shadow-sm p-4">
+      <div className="bg-white rounded-lg border shadow-sm">
         {loading ? (
           <div className="text-center py-12 text-gray-500">
             <p>Đang tải dữ liệu...</p>
           </div>
         ) : activeTab === 'questions' ? (
           <>
-            <QuestionList
-              questions={paginatedQuestions}
-              selectedQuestion={selectedQuestion}
-              onSelectQuestion={handleSelectQuestion}
-            />
+            {/* Questions Count Header */}
+            <div className="px-4 py-3 border-b bg-gray-50">
+              <p className="text-sm text-gray-600">
+                Tổng số: <span className="font-semibold text-gray-900">{questions.length}</span> câu hỏi
+                {filteredQuestions.length !== questions.length && (
+                  <span className="ml-2 text-gray-500">
+                    (Hiển thị: {filteredQuestions.length})
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="p-4">
+              <QuestionList
+                questions={paginatedQuestions}
+                selectedQuestion={selectedQuestion}
+                onSelectQuestion={handleSelectQuestion}
+              />
+            </div>
             {filteredQuestions.length > 0 && (
               <Pagination
                 currentPage={questionsPage}
@@ -355,11 +366,24 @@ export function TrainingDataManagement() {
           </>
         ) : (
           <>
-            <DocumentList
-              documents={paginatedDocuments}
-              selectedDocument={selectedDocument}
-              onSelectDocument={handleSelectDocument}
-            />
+            {/* Documents Count Header */}
+            <div className="px-4 py-3 border-b bg-gray-50">
+              <p className="text-sm text-gray-600">
+                Tổng số: <span className="font-semibold text-gray-900">{documents.length}</span> tài liệu
+                {filteredDocuments.length !== documents.length && (
+                  <span className="ml-2 text-gray-500">
+                    (Hiển thị: {filteredDocuments.length})
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="p-4">
+              <DocumentList
+                documents={paginatedDocuments}
+                selectedDocument={selectedDocument}
+                onSelectDocument={handleSelectDocument}
+              />
+            </div>
             {filteredDocuments.length > 0 && (
               <Pagination
                 currentPage={documentsPage}

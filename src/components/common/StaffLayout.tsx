@@ -54,13 +54,13 @@ export function StaffLayout({ roleKey }: StaffLayoutProps) {
   // Define navigation for all roles - CENTRALIZED
   const roleNavigations: RoleNavigations = {
     Admin: [
-      { id: 'dashboard', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/admin/dashboard' },
+      { id: 'dashboard', label: 'Tổng quan', icon: LayoutDashboard, path: '/admin/dashboard' },
       { id: 'templates', label: 'Mẫu Câu Hỏi Trả Lời', icon: MessageSquareText, path: '/admin/templates' },
       { id: 'users', label: 'Quản Lý Người Dùng', icon: Users, path: '/admin/users' },
       { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/admin/profile' },
     ],
     'Content Manager': [
-      { id: "dashboard", label: "Bảng Điều Khiển", icon: LayoutDashboard, path: '/content/dashboard', permission: "Content Manager" },
+      { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard, path: '/content/dashboard', permission: "Content Manager" },
       { id: "articles", label: "Danh Sách Bài Viết", icon: FileText, path: '/content/articles', permission: "Content Manager" },
       { id: "editor", label: "Bài Viết Mới", icon: PenSquare, path: '/content/editor', permission: "Content Manager" },
       ...(isContentManagerLeader?.() ? [
@@ -76,7 +76,7 @@ export function StaffLayout({ roleKey }: StaffLayoutProps) {
       { id: 'profile', label: user?.name || 'Hồ Sơ', icon: User, path: '/admission/profile' },
     ],
     Consultant: [
-      { id: 'overview', label: 'Bảng Điều Khiển', icon: LayoutDashboard, path: '/consultant/overview' },
+      { id: 'overview', label: 'Tổng quan', icon: LayoutDashboard, path: '/consultant/overview' },
       { id: 'analytics', label: 'Phân Tích Chatbot', icon: TrendingUp, path: '/consultant/analytics' },
       { id: 'trainingdata', label: 'Dữ Liệu Huấn Luyện', icon: Database, path: '/consultant/trainingdata' },
       { id: 'intents', label: 'Quản Lý Danh Mục', icon: Tag, path: '/consultant/intents' },

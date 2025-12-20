@@ -8,6 +8,7 @@ import { fastAPIContentAnalytics } from "@/services/fastapi";
 import { useAuth } from "@/contexts/Auth";
 import { STAFF_COLORS } from "@/constants/staffColors";
 import { Pagination } from "../common/Pagination";
+import { isAuthError } from "@/utils/fastapi-client";
 
 
 
@@ -59,6 +60,11 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
         throw new Error('API returned success: false');
       }
     } catch (err) {
+      // Don't show error if it's an authentication error (redirect will handle it)
+      if (isAuthError(err)) {
+        return;
+      }
+      
       setError(err.message || 'Failed to fetch content statistics');
       
       // Set fallback data in case of error
@@ -182,7 +188,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold">Tổng Quan Nội Dung</h1>
+            <h1 className="text-4xl font-bold">Tổng quan</h1>
           </div>
         
           <div className="flex gap-2">

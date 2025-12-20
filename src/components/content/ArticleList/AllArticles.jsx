@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { fastAPIArticles, majorsAPI } from '../../../services/fastapi';
 import { useAuth } from '../../../contexts/Auth';
+import { isAuthError } from '../../../utils/fastapi-client';
 import ArticleToolbar from './ArticleToolbar';
 import ArticleTable from './ArticleTable';
 import ArticleDetailsModal from './ArticleDetailsModal';
@@ -18,13 +19,13 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selected, setSelectedArticle] = useState(null);
+  const [selectedArticle, setSelectedArticle] = useState(null);
   const [articleDetailsLoading, setArticleDetailsLoading] = useState(false);
   const [articleDetailsError, setArticleDetailsError] = useState(null);
   const [majors, setMajors] = useState([]);
   const [majorsLoading, setMajorsLoading] = useState(false);
-  const [editing, setEditingArticle] = useState(null);
-  const [deleteConfirm, setDeleteConfirmArticle] = useState(null);
+  const [editingArticle, setEditingArticle] = useState(null);
+  const [deleteConfirmArticle, setDeleteConfirmArticle] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -55,6 +56,10 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         
         setArticles(data);
       } catch (err) {
+        // Don't show error if it's an authentication error (redirect will handle it)
+        if (isAuthError(err)) {
+          return;
+        }
         setError('Failed to load articles. Please try again.');
       } finally {
         setLoading(false);
@@ -120,6 +125,10 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
       
       setSelectedArticle(articleDetails);
     } catch (err) {
+      // Don't show error if it's an authentication error (redirect will handle it)
+      if (isAuthError(err)) {
+        return;
+      }
       setArticleDetailsError(err instanceof Error ? err.message : 'Failed to load article details');
     } finally {
       setArticleDetailsLoading(false);
@@ -182,17 +191,26 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
 
   // Refresh articles list
   const refreshArticles = async () => {
-    const isAdmin = hasPermission("Admin");
-    const isLeader = isContentManagerLeader();
-    let data;
-    if (isAdmin || isLeader) {
-      data = await fastAPIArticles.getAll();
-    } else if (hasPermission("Content Manager") && user?.id) {
-      data = await fastAPIArticles.getByUserId(parseInt(user.id));
-    } else {
-      return;
+    try {
+      const isAdmin = hasPermission("Admin");
+      const isLeader = isContentManagerLeader();
+      let data;
+      if (isAdmin || isLeader) {
+        data = await fastAPIArticles.getAll();
+      } else if (hasPermission("Content Manager") && user?.id) {
+        data = await fastAPIArticles.getByUserId(parseInt(user.id));
+      } else {
+        return;
+      }
+      setArticles(data);
+    } catch (err) {
+      // Don't show error if it's an authentication error (redirect will handle it)
+      if (isAuthError(err)) {
+        return;
+      }
+      // Optionally set error state here if needed
+      console.error('Failed to refresh articles:', err);
     }
-    setArticles(data);
   };
 
   return (
@@ -285,6 +303,10 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
               await refreshArticles();
               setEditingArticle(null);
             } catch (err) {
+              // Don't show error if it's an authentication error (redirect will handle it)
+              if (isAuthError(err)) {
+                return;
+              }
               alert('Failed to update article. Please try again.');
             }
           }}
@@ -302,6 +324,10 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
               await refreshArticles();
               setDeleteConfirmArticle(null);
             } catch (err) {
+              // Don't show error if it's an authentication error (redirect will handle it)
+              if (isAuthError(err)) {
+                return;
+              }
               alert('Failed to delete article. Please try again.');
             }
           }}

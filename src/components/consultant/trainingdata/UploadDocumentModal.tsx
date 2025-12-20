@@ -14,7 +14,6 @@ interface UploadDocumentModalProps {
 export function UploadDocumentModal({ intents, onClose, onSubmit }: UploadDocumentModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('');
   const [intentId, setIntentId] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(false);
 
@@ -48,9 +47,6 @@ export function UploadDocumentModal({ intents, onClose, onSubmit }: UploadDocume
       const formData = new FormData();
       formData.append('file', file);
       formData.append('title', title);
-      if (category) {
-        formData.append('category', category);
-      }
 
       await onSubmit(formData, intentId);
       onClose();
@@ -81,35 +77,27 @@ export function UploadDocumentModal({ intents, onClose, onSubmit }: UploadDocume
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Chọn File <span className="text-red-500">*</span>
             </label>
-            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-[#EB5A0D] transition-colors">
-              <div className="space-y-1 text-center">
-                <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                <div className="flex text-sm text-gray-600">
-                  <label
-                    htmlFor="file-upload"
-                    className="relative cursor-pointer bg-white rounded-md font-medium text-[#EB5A0D] hover:text-[#d14f0a] focus-within:outline-none"
-                  >
-                    <span>Chọn file</span>
-                    <input
-                      id="file-upload"
-                      name="file-upload"
-                      type="file"
-                      className="sr-only"
-                      onChange={handleFileChange}
-                      accept=".pdf,.doc,.docx,.txt"
-                    />
-                  </label>
-                  <p className="pl-1">hoặc kéo thả vào đây</p>
-                </div>
-                <p className="text-xs text-gray-500">
-                  PDF, DOC, DOCX, TXT
-                </p>
-                {file && (
-                  <p className="text-sm font-medium text-[#EB5A0D] mt-2">
-                    Đã chọn: {file.name}
-                  </p>
-                )}
-              </div>
+            <div className="mt-1">
+              <label
+                htmlFor="file-upload"
+                className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-[#EB5A0D] rounded-lg cursor-pointer bg-white hover:bg-orange-50 transition-colors"
+              >
+                <Upload className="h-5 w-5 text-[#EB5A0D]" />
+                <span className="font-medium text-[#EB5A0D]">
+                  {file ? file.name : 'Chọn File'}
+                </span>
+                <input
+                  id="file-upload"
+                  name="file-upload"
+                  type="file"
+                  className="sr-only"
+                  onChange={handleFileChange}
+                  accept=".pdf,.doc,.docx,.txt"
+                />
+              </label>
+              <p className="text-xs text-gray-500 mt-2">
+                Định dạng: PDF, DOC, DOCX, TXT
+              </p>
             </div>
           </div>
 
@@ -145,18 +133,6 @@ export function UploadDocumentModal({ intents, onClose, onSubmit }: UploadDocume
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Danh Mục (Không bắt buộc)
-            </label>
-            <Input
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="Nhập danh mục..."
-            />
           </div>
         </div>
 

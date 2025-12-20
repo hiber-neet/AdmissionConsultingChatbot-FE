@@ -145,7 +145,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
       <div className="p-6 pb-8 space-y-6">
         {/* Page Header */}
         <div>
-          <h1 className="text-3xl font-bold">Tổng Quan</h1>
+          <h1 className="text-4xl font-bold">Tổng Quan</h1>
         </div>
 
         {/* Key Metrics */}

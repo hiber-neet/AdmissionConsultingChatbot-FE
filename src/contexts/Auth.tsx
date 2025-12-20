@@ -4,6 +4,7 @@ import { Permission, hasPermission as checkPermission, initializePermissions, ty
 import { authAPI } from '../services/fastapi';
 import { API_CONFIG } from '../config/api.js';
 import { getRoleFromToken } from '../pages/login/jwtHelper';
+import { AuthenticationError } from '../utils/fastapi-client';
 
 // Re-export Role type for backward compatibility
 export type { Role };
@@ -128,6 +129,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               'Content-Type': 'application/json'
             }
           });
+          
+          // If 401, token is expired - logout and let redirect handle it
+          if (profileResponse.status === 401) {
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("token_type");
+            setIsLoading(false);
+            return;
+          }
           
           if (profileResponse.ok) {
             const profileData = await profileResponse.json();
@@ -274,6 +283,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 'Content-Type': 'application/json'
               }
             });
+            
+            // If 401 during login, something is wrong with the token
+            if (profileResponse.status === 401) {
+              localStorage.removeItem("access_token");
+              localStorage.removeItem("token_type");
+              return { ok: false, message: "Invalid authentication token" };
+            }
             
             if (profileResponse.ok) {
               const profileData = await profileResponse.json();

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { articlesAPI } from "../../services/fastapi";
+import { isAuthError } from "../../utils/fastapi-client";
 import { Pagination } from "../common/Pagination";
 
 export default function ReviewQueue() {
@@ -24,6 +25,10 @@ export default function ReviewQueue() {
       const data = await articlesAPI.getReviewQueue();
       setArticles(data);
     } catch (error) {
+      // Don't show error if it's an authentication error (redirect will handle it)
+      if (isAuthError(error)) {
+        return;
+      }
       toast.error('Không thể tải bài viết cần duyệt. Vui lòng thử lại.');
     } finally {
       setLoading(false);
@@ -41,6 +46,10 @@ export default function ReviewQueue() {
       toast.success(`Bài viết "${article.title}" đã được phê duyệt và xuất bản!`);
       await fetchReviewQueue(); // Refresh the list
     } catch (error) {
+      // Don't show error if it's an authentication error (redirect will handle it)
+      if (isAuthError(error)) {
+        return;
+      }
       toast.error('Không thể phê duyệt bài viết. Vui lòng thử lại.');
     } finally {
       setActionLoading(false);
@@ -73,6 +82,10 @@ export default function ReviewQueue() {
       setOpenFor(null);
       await fetchReviewQueue(); // Refresh the list
     } catch (error) {
+      // Don't show error if it's an authentication error (redirect will handle it)
+      if (isAuthError(error)) {
+        return;
+      }
       toast.error('Không thể từ chối bài viết. Vui lòng thử lại.');
     } finally {
       setActionLoading(false);
