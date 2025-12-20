@@ -1,4 +1,3 @@
-import { Search, ChevronDown } from "lucide-react";
 import { useEffect, useRef } from "react";
 // import { Major } from '../../../utils/fastapi-client';
 import { ARTICLE_STATUSES } from '../../../constants/status';
@@ -19,7 +18,7 @@ export default function ArticleToolbar({
   majorsLoading,
   onClickOutside
 }) {
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -38,7 +37,6 @@ export default function ArticleToolbar({
   return (
     <div ref={dropdownRef} className="bg-white border rounded-xl p-3 mb-4 flex flex-wrap items-center gap-3">
       <div className="flex items-center gap-2 px-3 py-2 border rounded-md w-full max-w-md">
-        <Search size={16} className="text-gray-400" />
         <input
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -52,7 +50,7 @@ export default function ArticleToolbar({
           onClick={onToggleStatusDropdown}
           className="flex items-center gap-1 px-3 py-2 border rounded-md text-sm hover:bg-gray-50"
         >
-          {statusFilter} <ChevronDown size={14} />
+          {statusFilter}
         </button>
         {showStatusDropdown && (
           <div className="absolute top-full left-0 mt-1 w-40 bg-white border rounded-md shadow-lg z-10">
@@ -74,7 +72,7 @@ export default function ArticleToolbar({
           onClick={onToggleCategoryDropdown}
           className="flex items-center gap-1 px-3 py-2 border rounded-md text-sm hover:bg-gray-50"
         >
-          {categoryFilter} <ChevronDown size={14} />
+          {categoryFilter}
         </button>
         {showCategoryDropdown && (
           <div className="absolute top-full left-0 mt-1 w-48 bg-white border rounded-md shadow-lg z-10">

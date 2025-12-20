@@ -4,11 +4,9 @@ import { TabType } from './types';
 interface TabSwitcherProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
-  questionCount?: number;
-  documentCount?: number;
 }
 
-export function TabSwitcher({ activeTab, onTabChange, questionCount = 0, documentCount = 0 }: TabSwitcherProps) {
+export function TabSwitcher({ activeTab, onTabChange }: TabSwitcherProps) {
   return (
     <div className="flex gap-2 mb-6">
       <button
@@ -21,11 +19,6 @@ export function TabSwitcher({ activeTab, onTabChange, questionCount = 0, documen
       >
         <MessageCircle className="h-5 w-5" />
         <span>Câu Hỏi Huấn Luyện</span>
-        <span className={`px-2 py-0.5 rounded-full text-xs ${
-          activeTab === 'questions' ? 'bg-white/20' : 'bg-gray-200'
-        }`}>
-          {questionCount}
-        </span>
       </button>
 
       <button
@@ -38,11 +31,6 @@ export function TabSwitcher({ activeTab, onTabChange, questionCount = 0, documen
       >
         <FileText className="h-5 w-5" />
         <span>Tài Liệu</span>
-        <span className={`px-2 py-0.5 rounded-full text-xs ${
-          activeTab === 'documents' ? 'bg-white/20' : 'bg-gray-200'
-        }`}>
-          {documentCount}
-        </span>
       </button>
     </div>
   );

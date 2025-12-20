@@ -105,7 +105,7 @@ export function AdminDashboard() {
       <div className="p-6 pb-8 space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-bold">Bảng Điều Khiển</h1>
+          <h1 className="text-4xl font-bold">Tổng quan</h1>
         </div>
 
         {/* Key Metrics */}

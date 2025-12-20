@@ -52,7 +52,6 @@ export function DocumentManagement() {
   const [intents, setIntents] = useState<Intent[]>([]);
   const [selectedIntent, setSelectedIntent] = useState<string>('');
   const [documentTitle, setDocumentTitle] = useState('');
-  const [documentCategory, setDocumentCategory] = useState('');
 
   // Check if user is leader (Admin or Consultant with leader flag)
   const isLeader = isConsultantLeader();
@@ -115,7 +114,6 @@ export function DocumentManagement() {
       const formData = new FormData();
       formData.append('file', uploadedFile);
       formData.append('title', documentTitle || uploadedFile.name.split('.')[0]);
-      formData.append('category', documentCategory || 'general');
       formData.append('current_user_id', user.id.toString());
 
       await knowledgeAPI.uploadDocument(formData, parseInt(selectedIntent));
@@ -124,7 +122,6 @@ export function DocumentManagement() {
       setUploadedFile(null);
       setSelectedIntent('');
       setDocumentTitle('');
-      setDocumentCategory('');
       setShowUploadDialog(false);
       
       // Refresh documents list
@@ -508,20 +505,6 @@ export function DocumentManagement() {
               </p>
             </div>
 
-            {/* Category */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t('documents.category_label')}</label>
-              <Input
-                type="text"
-                placeholder={t('documents.enter_category_placeholder')}
-                value={documentCategory}
-                onChange={(e) => setDocumentCategory(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                {t('documents.category_helper_text')}
-              </p>
-            </div>
-
             {/* File Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-red-600">{t('documents.file_required')}</label>
@@ -569,7 +552,6 @@ export function DocumentManagement() {
               setUploadedFile(null);
               setSelectedIntent('');
               setDocumentTitle('');
-              setDocumentCategory('');
               setShowUploadDialog(false);
             }}>{t('common.cancel')}</Button>
             <Button 
