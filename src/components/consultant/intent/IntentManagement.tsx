@@ -41,7 +41,9 @@ export function IntentManagement() {
     try {
       const response = await intentAPI.getIntents();
       const intentList = Array.isArray(response) ? response : [];
-      setIntents(intentList);
+      // Filter out intent_id = 0 (default/system intent)
+      const filteredList = intentList.filter(intent => intent.intent_id !== 0);
+      setIntents(filteredList);
     } catch (error) {
       toast.error('Không thể tải danh sách danh mục');
     } finally {

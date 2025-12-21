@@ -139,15 +139,17 @@ export function QuestionDetailModal({
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t bg-gray-50">
           <div className="flex gap-2">
-            <Button
-              onClick={handleDelete}
-              variant="outline"
-              className="text-red-600 hover:bg-red-50"
-              disabled={loading}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Xóa
-            </Button>
+            {isLeader && (
+              <Button
+                onClick={handleDelete}
+                variant="outline"
+                className="text-red-600 hover:bg-red-50"
+                disabled={loading}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Xóa
+              </Button>
+            )}
           </div>
         </div>
       </div>
