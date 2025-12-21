@@ -219,15 +219,17 @@ export function DocumentDetailModal({
               <Download className="h-4 w-4 mr-2" />
               Tải Xuống
             </Button>
-            <Button
-              onClick={handleDelete}
-              variant="outline"
-              className="text-red-600 hover:bg-red-50"
-              disabled={loading}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Xóa
-            </Button>
+            {isLeader && (
+              <Button
+                onClick={handleDelete}
+                variant="outline"
+                className="text-red-600 hover:bg-red-50"
+                disabled={loading}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Xóa
+              </Button>
+            )}
           </div>
         </div>
       </div>

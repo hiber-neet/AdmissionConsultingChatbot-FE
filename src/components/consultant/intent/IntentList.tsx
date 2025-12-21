@@ -29,7 +29,7 @@ export function IntentList({ intents, onEdit, onDelete, onClick, isLeader }: Int
                 {intent.intent_name}
               </h3>
             </div>
-            {isLeader && (
+            {isLeader && !intent.is_deleted && (
               <Button
                 variant="ghost"
                 size="sm"

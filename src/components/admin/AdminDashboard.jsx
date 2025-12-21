@@ -117,7 +117,6 @@ export function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl">{metrics?.active_chatbot_sessions || 0}</div>
-              <p className="text-xs text-muted-foreground">Cuộc trò chuyện được hỗ trợ bởi AI</p>
             </CardContent>
           </Card>
 
@@ -128,7 +127,6 @@ export function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl">{metrics?.total_customers || 0}</div>
-              <p className="text-xs text-muted-foreground">Học sinh và phụ huynh duy nhất</p>
             </CardContent>
           </Card>
 
@@ -139,7 +137,6 @@ export function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl">{metrics?.active_live_sessions || 0}</div>
-              <p className="text-xs text-muted-foreground">Trò chuyện với nhân viên</p>
             </CardContent>
           </Card>
         </div>
@@ -148,7 +145,6 @@ export function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Yêu Cầu Chatbot (7 Ngày Qua)</CardTitle>
-            <CardDescription>Tin nhắn khách hàng so với phản hồi chatbot</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -169,7 +165,6 @@ export function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Thống Kê Hệ Thống</CardTitle>
-            <CardDescription>Số liệu cơ sở tri thức và nội dung</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
