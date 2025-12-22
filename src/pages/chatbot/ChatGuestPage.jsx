@@ -293,13 +293,22 @@ export default function ChatGuestPage() {
         <div className="mx-auto max-w-3xl px-4 py-4">
           <div className="rounded-2xl border bg-white shadow-sm">
             <div className="flex items-end gap-3 p-3">
-              <textarea
-                rows={1}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={wsReady ? "Hỏi bất kỳ điều gì…" : "Đang kết nối…"}
-                className="max-h-40 flex-1 resize-none border-none p-2 focus:outline-none"
-              />
+<textarea
+  rows={1}
+  value={input}
+  onChange={(e) => setInput(e.target.value)}
+  placeholder={wsReady ? "Hỏi bất kỳ điều gì…" : "Đang kết nối…"}
+  className="max-h-40 flex-1 resize-none border-none p-2 focus:outline-none"
+  onKeyDown={(e) => {
+    // Enter để gửi, Shift+Enter để xuống dòng
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // không cho xuống dòng
+      if (wsReady && input.trim()) {
+        send(input);
+      }
+    }
+  }}
+/>
               <button
                 type="submit"
                 disabled={!wsReady || !input.trim()}

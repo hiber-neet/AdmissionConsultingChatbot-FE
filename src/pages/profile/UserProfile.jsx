@@ -802,8 +802,8 @@ setForm({
   email: data.email || user.email,
   phone: data.phone_number || "",
   subjects: sp.subjects || "",
-  preferredMajor,              // sẽ là "design"
-  region: interest.region || "", // sẽ là "student"
+  preferredMajor,              
+  region: interest.region || "",  
   riasecCode,
 });
       } catch (error) {
@@ -1004,35 +1004,55 @@ wsRef.current.send(
     setForm((p) => ({ ...p, admissionScore: clamped }));
   };
 
-  const onSave = async (e) => {
-    e?.preventDefault?.();
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(form.email)) {
-      alert("Vui lòng nhập đúng định dạng email.");
-      return;
-    }
-    const phonePattern = /^0\d{9}$/;
-    if (!phonePattern.test(form.phone)) {
-      alert("Số điện thoại phải bắt đầu bằng 0 và gồm 10 chữ số.");
-      return;
-    }
-    // if (
-    //   form.admissionScore === "" ||
-    //   Number.isNaN(Number(form.admissionScore)) ||
-    //   Number(form.admissionScore) > 30 ||
-    //   Number(form.admissionScore) < 0
-    // ) {
-    //   alert("Admission score chỉ được nhập số từ 0 đến 30.");
-    //   return;
-    // }
+const onSave = async (e) => {
+  e?.preventDefault?.();
 
-    try {
-      alert("Profile saved!");
-      setEditing(false);
-    } catch (error) {
-      alert("Cập nhật thất bại!");
+  // validate cơ bản
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(form.email)) {
+    alert("Vui lòng nhập đúng định dạng email.");
+    return;
+  }
+  const phonePattern = /^0\d{9}$/;
+  if (!phonePattern.test(form.phone)) {
+    alert("Số điện thoại phải bắt đầu bằng 0 và gồm 10 chữ số.");
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      alert("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+      return;
     }
-  };
+
+    // map đúng schema UserUpdate ở BE:
+    // full_name, email, phone_number, (password, status – nếu cần)
+    const payload = {
+      full_name: form.fullName,
+      email: form.email,
+      phone_number: form.phone,
+      // Nếu sau này có ô đổi mật khẩu thì thêm:
+      // password: form.password || undefined,
+      // status: true/false nếu cho phép đổi
+    };
+
+    await axios.put(`${API_BASE_URL}/users/${user.id}`, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    alert("Cập nhật hồ sơ thành công!");
+    setEditing(false);
+  } catch (error) {
+    const msg =
+      error?.response?.data?.detail ||
+      "Cập nhật thất bại, vui lòng thử lại.";
+    alert(msg);
+  }
+};
 
   const onCancel = () => setEditing(false);
 
