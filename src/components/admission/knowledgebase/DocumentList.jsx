@@ -59,7 +59,6 @@ export function DocumentList({ filteredDocuments }) {
           <div className="text-center py-12 text-muted-foreground">
             <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Không tìm thấy tài liệu nào.</p>
-            <p className="text-sm">Thử điều chỉnh tìm kiếm hoặc bộ lọc của bạn.</p>
           </div>
         </CardContent>
       </Card>
@@ -77,11 +76,6 @@ export function DocumentList({ filteredDocuments }) {
               </div>
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-base mb-1">{doc.title}</CardTitle>
-                {doc.description && (
-                  <CardDescription className="text-sm line-clamp-2">
-                    {doc.description}
-                  </CardDescription>
-                )}
               </div>
             </div>
           </CardHeader>
@@ -109,9 +103,8 @@ export function DocumentList({ filteredDocuments }) {
               </div>
             ) : (
               <Button 
-                variant="outline" 
                 size="sm" 
-                className="w-full gap-2"
+                className="w-full gap-2 bg-[#EB5A0D] hover:bg-[#d14f0a] text-white"
                 onClick={() => handleDownload(doc)}
               >
                 <Download className="h-4 w-4" />

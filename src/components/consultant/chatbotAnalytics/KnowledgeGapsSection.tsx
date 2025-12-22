@@ -52,7 +52,6 @@ export function KnowledgeGapsSection({
           <div className="text-center py-8 text-muted-foreground">
             <HelpCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
             <p>Không có câu hỏi chưa trả lời nào</p>
-            <p className="text-sm">Tất cả câu hỏi đã được trả lời!</p>
           </div>
         ) : (
           <div className="space-y-4">

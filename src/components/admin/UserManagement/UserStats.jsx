@@ -2,43 +2,30 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../ui/system_users/
 import PropTypes from 'prop-types';
 
 export function UserStats({ users }) {
-  const adminCount = users.filter(u => u.role === 'SYSTEM_ADMIN').length;
-  const contentManagerCount = users.filter(u => u.role === 'CONTENT_MANAGER').length;
-  const admissionOfficerCount = users.filter(u => u.role === 'ADMISSION_OFFICER').length;
-  const consultantCount = users.filter(u => u.role === 'CONSULTANT').length;
+  // Staff: Users with any permissions (admin, consultant, content_manager, admission_officer)
+  const staffCount = users.filter(u => u.permissions && u.permissions.length > 0).length;
+  
+  // Customer: Users with role_id === 5 OR no permissions
+  const customerCount = users.filter(u => 
+    u.role_id === 5 || !u.permissions || u.permissions.length === 0
+  ).length;
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-4">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Quản Trị Viên Hệ Thống</CardTitle>
+          <CardTitle className="text-sm">Nhân Viên</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl">{adminCount}</div>
+          <div className="text-2xl">{staffCount}</div>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Quản Lý Nội Dung</CardTitle>
+          <CardTitle className="text-sm">Khách Hàng</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl">{contentManagerCount}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Cán Bộ Tuyển Sinh</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl">{admissionOfficerCount}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Tư Vấn Viên</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl">{consultantCount}</div>
+          <div className="text-2xl">{customerCount}</div>
         </CardContent>
       </Card>
     </div>

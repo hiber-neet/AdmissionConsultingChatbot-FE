@@ -59,16 +59,15 @@ export function UserTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Người Dùng</TableHead>
-            <TableHead>Vai Trò</TableHead>
-            <TableHead>Trạng Thái</TableHead>
-            {showActions && <TableHead className="text-right">Thao Tác</TableHead>}
+            <TableHead className="w-[50%]">Người Dùng</TableHead>
+            <TableHead className="w-[25%]">Trạng Thái</TableHead>
+            {showActions && <TableHead className="text-right w-[25%]">Thao Tác</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.map((user) => (
             <TableRow key={user.id}>
-              <TableCell>
+              <TableCell className="w-[50%]">
                 <div className="flex items-center gap-3">
                   <div>
                     <div>{user.name}</div>
@@ -79,12 +78,7 @@ export function UserTable({
                   </div>
                 </div>
               </TableCell>
-              <TableCell>
-                <Badge variant="outline" className="bg-white border-gray-300">
-                  {getRoleLabel(user.role)}
-                </Badge>
-              </TableCell>
-              <TableCell>
+              <TableCell className="w-[25%]">
                 <Badge 
                   variant={user.status === 'active' ? 'default' : 'secondary'}
                   className={user.status === 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}
@@ -93,7 +87,7 @@ export function UserTable({
                 </Badge>
               </TableCell>
               {showActions && (
-                <TableCell className="text-right">
+                <TableCell className="text-right w-[25%]">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" disabled={loading}>

@@ -9,19 +9,37 @@ import { toast } from 'react-toastify';
 import { loadPermissions } from '../../../constants/permissions';
 import { API_CONFIG } from '../../../config/api.js';
 
+// Permission translation mapping (English to Vietnamese)
+const translatePermission = (permissionName) => {
+  const translations = {
+    'admin': 'Quản Trị Viên',
+    'consultant': 'Tư Vấn Viên',
+    'content_manager': 'Quản Lý Nội Dung',
+    'content manager': 'Quản Lý Nội Dung',
+    'admission_official': 'Cán Bộ Tuyển Sinh',
+    'admission official': 'Cán Bộ Tuyển Sinh',
+    'customer': 'Khách Hàng',
+    'student': 'Học Sinh',
+    'parent': 'Phụ Huynh'
+  };
+  
+  const key = permissionName.toLowerCase().replace(/\s+/g, '_');
+  return translations[key] || translations[permissionName.toLowerCase()] || permissionName;
+};
+
 // Get available permissions (will be loaded from API)
 const getAvailablePermissions = async () => {
   const permissions = await loadPermissions();
   return permissions.map(p => p.permission_name.toLowerCase().replace(/\s+/g, '_'));
 };
 
-// Generate permission labels from API data
+// Generate permission labels from API data with Vietnamese translation
 const getPermissionLabels = async () => {
   const permissions = await loadPermissions();
   const labels = {};
   permissions.forEach(p => {
     const key = p.permission_name.toLowerCase().replace(/\s+/g, '_');
-    labels[key] = p.permission_name;
+    labels[key] = translatePermission(p.permission_name);
   });
   return labels;
 };
@@ -85,9 +103,9 @@ export function UserFormDialog({
   }, [isOpen, permissionsLoaded]);
 
   // Helper function to filter permissions that can be revoked
-  // Admin permission cannot be revoked through edit interface
+  // Admin and Customer permissions cannot be revoked through edit interface
   const getRevokablePermissions = (permissions) => {
-    return permissions.filter(perm => perm !== 'admin');
+    return permissions.filter(perm => perm !== 'admin' && perm !== 'customer');
   };
 
   // Fetch user's current permissions from the backend
@@ -98,7 +116,7 @@ export function UserFormDialog({
       setLoadingPermissions(true);
       const token = localStorage.getItem('access_token');
       if (!token) {
-        throw new Error('No authentication token found');
+        throw new Error('Không tìm thấy token xác thực');
       }
 
   const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
@@ -113,7 +131,7 @@ export function UserFormDialog({
       });
 
       if (!allPermissionsResponse.ok) {
-        throw new Error(`Failed to fetch system permissions: ${allPermissionsResponse.status}`);
+        throw new Error(`Không thể tải danh sách quyền hệ thống: ${allPermissionsResponse.status}`);
       }
 
       const allSystemPermissions = await allPermissionsResponse.json();
@@ -134,7 +152,7 @@ export function UserFormDialog({
       });
 
       if (!userResponse.ok) {
-        throw new Error(`Failed to fetch users: ${userResponse.status}`);
+        throw new Error(`Không thể tải danh sách người dùng: ${userResponse.status}`);
       }
 
       const staffUsers = await userResponse.json();
@@ -146,7 +164,7 @@ export function UserFormDialog({
       );
       
       if (!user) {
-        throw new Error('User not found in staff list');
+        throw new Error('Không tìm thấy người dùng trong danh sách nhân viên');
       }
       
       // Extract and normalize user's current permission names
@@ -160,12 +178,14 @@ export function UserFormDialog({
       }
       
       // Step 3: Calculate available permissions (all system permissions minus current permissions)
-      // For editing mode, also exclude 'admin' permission
+      // For editing mode, also exclude 'admin' and 'customer' permissions
       let availablePermissionNames = allPermissionNames.filter(perm => {
         // Exclude current permissions
         if (currentPermissionNames.includes(perm)) return false;
-        // When editing, exclude admin permission from being granted
-        if (editingUser && perm === 'admin') return false;
+        // When editing, exclude admin and customer permissions from being granted
+        if (editingUser && (perm === 'admin' || perm === 'customer')) return false;
+        // Always exclude customer permission from being granted
+        if (perm === 'customer') return false;
         return true;
       });
       
@@ -225,8 +245,8 @@ export function UserFormDialog({
   };
 
   const handleRevokePermissionToggle = (permission) => {
-    // Prevent admin permission from being revoked through edit interface
-    if (permission === 'admin') {
+    // Prevent admin and customer permissions from being revoked through edit interface
+    if (permission === 'admin' || permission === 'customer') {
       return;
     }
     
@@ -249,7 +269,7 @@ export function UserFormDialog({
     try {
       const token = localStorage.getItem('access_token');
       if (!token) {
-        throw new Error('No authentication token found');
+        throw new Error('Không tìm thấy token xác thực');
       }
 
   const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
@@ -282,9 +302,9 @@ export function UserFormDialog({
         let errorMessage;
         try {
           const parsedError = JSON.parse(errorData);
-          errorMessage = parsedError.detail || `Grant failed: HTTP ${response.status}`;
+          errorMessage = parsedError.detail || `Không thể cấp quyền: HTTP ${response.status}`;
         } catch (parseError) {
-          errorMessage = `Grant failed: HTTP ${response.status}: ${errorData}`;
+          errorMessage = `Không thể cấp quyền: HTTP ${response.status}: ${errorData}`;
         }
         throw new Error(errorMessage);
       }
@@ -301,7 +321,7 @@ export function UserFormDialog({
     try {
       const token = localStorage.getItem('access_token');
       if (!token) {
-        throw new Error('No authentication token found');
+        throw new Error('Không tìm thấy token xác thực');
       }
 
   const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
@@ -315,7 +335,7 @@ export function UserFormDialog({
 
       if (permissionIds.length === 0) {
         const availablePerms = Object.keys(permissionNameToId).join(', ');
-        throw new Error(`No valid permission IDs found. Tried to revoke: [${permissions.join(', ')}]. Available permissions: [${availablePerms}]`);
+        throw new Error(`Không tìm thấy ID quyền hợp lệ. Đã thử thu hồi: [${permissions.join(', ')}]. Quyền có sẵn: [${availablePerms}]`);
       }
 
       const requestBody = {
@@ -337,9 +357,9 @@ export function UserFormDialog({
         let errorMessage;
         try {
           const parsedError = JSON.parse(errorData);
-          errorMessage = parsedError.detail || `Revoke failed: HTTP ${response.status}`;
+          errorMessage = parsedError.detail || `Không thể thu hồi quyền: HTTP ${response.status}`;
         } catch (parseError) {
-          errorMessage = `Revoke failed: HTTP ${response.status}: ${errorData}`;
+          errorMessage = `Không thể thu hồi quyền: HTTP ${response.status}: ${errorData}`;
         }
         throw new Error(errorMessage);
       }
@@ -368,18 +388,18 @@ export function UserFormDialog({
       // 1. Revoke permissions first
       if (permissionsToRevoke.length > 0) {
         const revokeResult = await callRevokeAPI(userId, permissionsToRevoke);
-        results.push(`Revoked: ${revokeResult.removed?.length || 0} permissions`);
+        results.push(`Đã thu hồi: ${revokeResult.removed?.length || 0} quyền`);
         if (revokeResult.skipped?.length > 0) {
-          results.push(`Skipped revoke: ${revokeResult.skipped.length} permissions`);
+          results.push(`Bỏ qua thu hồi: ${revokeResult.skipped.length} quyền`);
         }
       }
 
       // 2. Grant permissions second
       if (permissionsToGrant.length > 0) {
         const grantResult = await callGrantAPI(userId, permissionsToGrant);
-        results.push(`Granted: ${grantResult.added?.length || 0} permissions`);
+        results.push(`Đã cấp: ${grantResult.added?.length || 0} quyền`);
         if (grantResult.skipped?.length > 0) {
-          results.push(`Skipped grant: ${grantResult.skipped.length} permissions`);
+          results.push(`Bỏ qua cấp: ${grantResult.skipped.length} quyền`);
         }
       }
 
@@ -393,7 +413,7 @@ export function UserFormDialog({
       if (hasBasicChanges) {
         // Call the original onSubmit for basic user data update
         await onSubmit(e);
-        results.push('Updated basic user information');
+        results.push('Đã cập nhật thông tin cơ bản');
       }
 
       // Show success message

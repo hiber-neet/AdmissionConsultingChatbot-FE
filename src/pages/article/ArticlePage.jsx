@@ -13,6 +13,16 @@ function formatDate(dateStr) {
   return d.toLocaleDateString("vi-VN");
 }
 
+function translateStatus(status) {
+  const statusMap = {
+    'draft': 'Nháp',
+    'review': 'Đang Xem Xét',
+    'rejected': 'Bị Từ Chối',
+    'published': 'Đã Xuất Bản'
+  };
+  return statusMap[status] || status;
+}
+
 export default function ArticlePage() {
   const [articles, setArticles] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -131,7 +141,7 @@ export default function ArticlePage() {
                           {formatDate(a.create_at)}
                         </p>
                         <span className="text-[10px] uppercase px-2 py-1 rounded-full bg-green-100 text-green-700">
-                          {a.status}
+                          {translateStatus(a.status)}
                         </span>
                       </div>
                     </div>

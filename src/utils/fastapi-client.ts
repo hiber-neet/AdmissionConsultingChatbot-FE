@@ -46,10 +46,34 @@ class FastAPIClient {
     try {
       const response = await fetch(url, config);
 
-      // Handle 401 Unauthorized - token is invalid or expired
+      // Handle 401 Unauthorized - but be smart about it
       if (response.status === 401) {
-        // Only handle logout once to prevent race conditions
-        if (!isRedirecting) {
+        // Check if token is actually expired before logging out
+        const token = localStorage.getItem("access_token");
+        let shouldLogout = true;
+        
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split(".")[1]));
+            const isExpired = payload.exp && payload.exp * 1000 < Date.now();
+            
+            // Only logout if token is truly expired
+            // If token is valid but got 401, it's likely a permission issue, not expiration
+            shouldLogout = isExpired;
+            
+            if (!isExpired) {
+              // Token is valid, this is a permission error, not an auth error
+              const errorData = await response.json().catch(() => ({ detail: 'Permission denied' }));
+              throw new Error(errorData.detail || 'Permission denied');
+            }
+          } catch (decodeError) {
+            // If we can't decode the token, it's invalid, logout
+            shouldLogout = true;
+          }
+        }
+        
+        // Only logout if token is expired or invalid
+        if (shouldLogout && !isRedirecting) {
           isRedirecting = true;
           localStorage.removeItem("access_token");
           localStorage.removeItem("token_type");
@@ -60,10 +84,10 @@ class FastAPIClient {
               window.location.href = '/login';
             }
           }, 100);
+          
+          // Throw specific error type that components can check for
+          throw new AuthenticationError('Your session has expired. Please log in again.');
         }
-        
-        // Throw specific error type that components can check for
-        throw new AuthenticationError('Your session has expired. Please log in again.');
       }
 
       if (!response.ok) {

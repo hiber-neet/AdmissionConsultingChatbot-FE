@@ -21,14 +21,8 @@ export function RequestQueuePage() {
       name: item.customer?.full_name || `Customer ${item.customer_id}`,
       email: item.customer?.email || 'N/A',
       phone: item.customer?.phone_number || 'N/A',
-      studentType: 'domestic', // Default for now - we can enhance this later if customer profile data is needed
-      topic: 'Tư vấn tuyển sinh', // Default topic since we don't have specific topic data
-      message: 'Khách hàng yêu cầu tư vấn trực tiếp qua chat', // Default message since we don't have specific message content
-      priority: 'normal', // Default priority - could be enhanced based on wait time or other business logic
       waitTime: Math.floor((new Date() - new Date(item.created_at)) / (1000 * 60)), // Calculate actual wait time in minutes
       requestedAt: item.created_at,
-      avatar: item.customer?.full_name ? item.customer.full_name.split(' ').map(n => n[0]).join('').toUpperCase() : `C${item.customer_id}`,
-      // Remove location since it's not available in backend data
     }));
   };
 

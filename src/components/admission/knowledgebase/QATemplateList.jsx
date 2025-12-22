@@ -21,10 +21,10 @@ export function QATemplateList({
     <Tabs defaultValue="qa" className="space-y-4">
       <TabsList>
         <TabsTrigger value="qa">
-          Câu Hỏi & Trả Lời ({filteredQATemplates.length})
+          Câu Hỏi & Trả Lời
         </TabsTrigger>
         <TabsTrigger value="docs">
-          Tài Liệu ({filteredDocuments.length})
+          Tài Liệu
         </TabsTrigger>
       </TabsList>
 
@@ -35,7 +35,6 @@ export function QATemplateList({
               <div className="text-center py-12 text-muted-foreground">
                 <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Không tìm thấy mẫu câu hỏi nào.</p>
-                <p className="text-sm">Thử điều chỉnh tìm kiếm hoặc bộ lọc của bạn.</p>
               </div>
             </CardContent>
           </Card>
@@ -51,10 +50,9 @@ export function QATemplateList({
                     </CardDescription>
                   </div>
                   <Button
-                    variant="outline"
                     size="sm"
                     onClick={() => handleViewQA(template)}
-                    className="gap-2 flex-shrink-0"
+                    className="gap-2 flex-shrink-0 bg-[#EB5A0D] hover:bg-[#d14f0a] text-white"
                   >
                     <Eye className="h-4 w-4" />
                     Xem
@@ -94,7 +92,6 @@ export function QATemplateList({
               <div className="text-center py-12 text-muted-foreground">
                 <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Không tìm thấy tài liệu nào.</p>
-                <p className="text-sm">Thử điều chỉnh tìm kiếm hoặc bộ lọc của bạn.</p>
               </div>
             </CardContent>
           </Card>

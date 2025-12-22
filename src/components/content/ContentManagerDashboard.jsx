@@ -24,14 +24,17 @@ const getStatusBadgeColor = (status) => {
 };
 
 function StatusPill({ status  }) {
-  const map = {
-    draft: "bg-gray-100 text-gray-700",
-    review: "bg-amber-100 text-amber-700",
-    published: "bg-emerald-100 text-emerald-700",
+  const statusConfig = {
+    draft: { label: "Nháp", className: "bg-gray-100 text-gray-700" },
+    review: { label: "Đang Xem Xét", className: "bg-amber-100 text-amber-700" },
+    published: { label: "Đã Xuất Bản", className: "bg-emerald-100 text-emerald-700" },
   };
+  
+  const config = statusConfig[status] || { label: status, className: "bg-gray-100 text-gray-700" };
+  
   return (
-    <span className={`px-2.5 py-1 text-xs rounded-full ${map[status]}`}>
-      {status}
+    <span className={`px-2.5 py-1 text-xs rounded-full ${config.className}`}>
+      {config.label}
     </span>
   );
 }
