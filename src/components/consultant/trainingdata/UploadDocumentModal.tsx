@@ -21,9 +21,9 @@ export function UploadDocumentModal({ intents, onClose, onSubmit }: UploadDocume
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
-      // Auto-fill title with filename if title is empty
+
       if (!title) {
-        setTitle(selectedFile.name.replace(/\.[^/.]+$/, '')); // Remove extension
+        setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''));
       }
     }
   };
@@ -59,7 +59,7 @@ export function UploadDocumentModal({ intents, onClose, onSubmit }: UploadDocume
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-2xl font-bold text-gray-900">Tải Lên Tài Liệu Mới</h2>
           <button
@@ -70,9 +70,9 @@ export function UploadDocumentModal({ intents, onClose, onSubmit }: UploadDocume
           </button>
         </div>
 
-        {/* Content */}
+        {}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* File Upload */}
+          {}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Chọn File <span className="text-red-500">*</span>
@@ -101,7 +101,7 @@ export function UploadDocumentModal({ intents, onClose, onSubmit }: UploadDocume
             </div>
           </div>
 
-          {/* Title */}
+          {}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tiêu Đề <span className="text-red-500">*</span>
@@ -113,7 +113,7 @@ export function UploadDocumentModal({ intents, onClose, onSubmit }: UploadDocume
             />
           </div>
 
-          {/* Intent Selection */}
+          {}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Danh mục <span className="text-red-500">*</span>
@@ -136,7 +136,7 @@ export function UploadDocumentModal({ intents, onClose, onSubmit }: UploadDocume
           </div>
         </div>
 
-        {/* Footer */}
+        {}
         <div className="flex items-center justify-end gap-2 p-6 border-t bg-gray-50">
           <Button
             onClick={onClose}

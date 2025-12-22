@@ -34,7 +34,7 @@ export function EditIntentModal({ isOpen, onClose, intent, onEdit }: EditIntentM
     try {
       await onEdit(intentName.trim(), description.trim());
     } catch (error) {
-      // Error handled by parent
+
     } finally {
       setSubmitting(false);
     }

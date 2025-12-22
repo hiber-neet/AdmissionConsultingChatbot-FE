@@ -1,4 +1,4 @@
-// Training Data Types
+
 import { 
   TrainingQuestion as APITrainingQuestion, 
   KnowledgeDocument as APIKnowledgeDocument,

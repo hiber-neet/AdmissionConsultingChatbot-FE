@@ -2,10 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../ui/system_users/
 import PropTypes from 'prop-types';
 
 export function UserStats({ users }) {
-  // Staff: Users with any permissions (admin, consultant, content_manager, admission_officer)
+
   const staffCount = users.filter(u => u.permissions && u.permissions.length > 0).length;
-  
-  // Customer: Users with role_id === 5 OR no permissions
+
   const customerCount = users.filter(u => 
     u.role_id === 5 || !u.permissions || u.permissions.length === 0
   ).length;

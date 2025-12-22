@@ -31,7 +31,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
   const [riasecLoading, setRiasecLoading] = useState(false);
   const [riasecError, setRiasecError] = useState(null);
 
-  // Fetch student details from API
   const fetchStudentDetail = async (id) => {
     if (!id) return;
     
@@ -45,7 +44,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
         throw new Error('No authentication token found');
       }
 
-      // Extract numeric ID from student ID (e.g., "ST001" → "1")
       const idString = String(id);
       let numericId;
       if (idString.startsWith('ST')) {
@@ -53,8 +51,7 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
       } else {
         numericId = idString;
       }
-      
-      
+
       const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
       const url = `${baseUrl}/users/${numericId}`;
 
@@ -68,11 +65,9 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
 
       if (!response.ok) {
         const errorData = await response.text();
-        
-        // If 404, try alternative approaches
+
         if (response.status === 404) {
-          
-          // Try fetching all students first to see what IDs exist
+
           const studentsUrl = `${baseUrl}/users/students`;
           const studentsResponse = await fetch(studentsUrl, {
             headers: {
@@ -83,8 +78,7 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
           
           if (studentsResponse.ok) {
             const studentsData = await studentsResponse.json();
-            
-            // Try to find the student in the list
+
             const foundStudent = studentsData.find(s => 
               s.user_id == numericId || 
               `ST${String(s.user_id).padStart(3, '0')}` === id
@@ -118,7 +112,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
     }
   };
 
-  // Fetch RIASEC results for the student
   const fetchRiasecResults = async (id) => {
     if (!id) return;
     
@@ -127,7 +120,7 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
     setRiasecResults([]);
 
     try {
-      // Convert ID to numeric if needed
+
       const idString = String(id);
       let numericId;
       if (idString.startsWith('ST')) {
@@ -135,26 +128,24 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
       } else {
         numericId = parseInt(idString);
       }
-      
-      
+
       const response = await riasecAPI.getUserResults(numericId);
       
       setRiasecResults(response || []);
 
     } catch (err) {
-      
-      // Check different types of errors
+
       if (err.response?.status === 404) {
-        setRiasecResults([]);  // Empty array for no results
-        setRiasecError(null);  // Clear error since 404 is expected
+        setRiasecResults([]);
+        setRiasecError(null);
       } else if (err.response?.status === 500) {
-        // Server error - usually means backend issue
+
         setRiasecError('Lỗi máy chủ khi tải kết quả RIASEC. Vui lòng thử lại sau.');
       } else if (err.message === 'Internal Server Error') {
-        // Generic server error without response object
+
         setRiasecError('Lỗi máy chủ nội bộ khi tải kết quả RIASEC. Vui lòng thử lại sau.');
       } else {
-        // Other errors (network, etc.)
+
         setRiasecError(err.response?.data?.detail || err.message || 'Không thể tải kết quả RIASEC');
       }
     } finally {
@@ -162,14 +153,11 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
     }
   };
 
-  // Fetch student when dialog opens or userId changes
   useEffect(() => {
     if (isOpen && userId) {
       const fetchData = async () => {
         await fetchStudentDetail(userId);
-        
-        // Only fetch RIASEC results if student exists
-        // Check if student was successfully loaded before fetching RIASEC
+
         if (student && !error) {
           fetchRiasecResults(userId);
         } else {
@@ -183,14 +171,12 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
     }
   }, [isOpen, userId]);
 
-  // Separate effect to fetch RIASEC after student is loaded
   useEffect(() => {
     if (student && !error && isOpen) {
       fetchRiasecResults(userId);
     }
   }, [student, error, isOpen, userId]);
 
-  // Get status badge configuration
   const getStatusConfig = (status) => {
     if (status === true) {
       return { 
@@ -216,7 +202,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
     }
   };
 
-  // Render field if it has a value
   const renderField = (label, value, IconComponent) => {
     if (value === null || value === undefined || value === '') {
       return null;
@@ -233,7 +218,6 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
     );
   };
 
-  // Render RIASEC Results Section
   const renderRiasecSection = () => {
     return (
       <div className="mt-6">
@@ -284,7 +268,7 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
                   </div>
                 </div>
 
-                {/* Personality Type Result */}
+                {}
                 {result.result && (
                   <div className="mb-4 p-3 bg-white rounded border">
                     <div className="text-xs text-muted-foreground mb-1">Loại tính cách</div>
@@ -292,7 +276,7 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
                   </div>
                 )}
 
-                {/* RIASEC Scores */}
+                {}
                 <div className="space-y-3">
                   <div className="text-xs text-muted-foreground mb-2">Điểm số các khía cạnh:</div>
                   
@@ -361,7 +345,7 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
 
             {student && (
               <>
-                {/* Avatar and Name */}
+                {}
                 <div className="flex items-center gap-4 p-4 bg-primary/5 rounded-lg">
                   <Avatar className="h-16 w-16">
                     <AvatarFallback className="bg-primary text-primary-foreground text-lg">
@@ -397,7 +381,7 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
                   </div>
                 </div>
 
-                {/* Student Information */}
+                {}
                 <div className="space-y-3">
                   {renderField('Email', student.email, Mail)}
                   {renderField('Số Điện Thoại', student.phone_number, Phone)}
@@ -413,7 +397,7 @@ export function StudentDetailDialog({ isOpen, onClose, userId }) {
                   {student.role_id && renderField('Role ID', student.role_id, User)}
                 </div>
 
-                {/* RIASEC Results Section */}
+                {}
                 {renderRiasecSection()}
               </>
             )}

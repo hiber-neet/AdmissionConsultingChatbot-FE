@@ -1,7 +1,6 @@
 import { X } from "lucide-react";
 import { useState } from "react";
 
-
 export default function DeleteConfirmModal({ 
   article, 
   onClose, 
@@ -21,7 +20,7 @@ export default function DeleteConfirmModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-md">
-        {/* Modal Header */}
+        {}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">Xóa Bài Viết</h2>
           <button
@@ -33,7 +32,7 @@ export default function DeleteConfirmModal({
           </button>
         </div>
 
-        {/* Modal Content */}
+        {}
         <div className="p-6">
           <p className="text-gray-700 mb-4">
             Bạn có chắc chắn muốn xóa bài viết này?
@@ -47,7 +46,7 @@ export default function DeleteConfirmModal({
           </p>
         </div>
 
-        {/* Action Buttons */}
+        {}
         <div className="flex gap-3 p-6 border-t">
           <button
             onClick={handleConfirm}

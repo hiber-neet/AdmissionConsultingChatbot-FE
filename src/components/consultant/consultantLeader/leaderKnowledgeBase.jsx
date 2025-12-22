@@ -7,7 +7,6 @@ import { Textarea } from '../../ui/system_users/textarea';
 import { MessageCircle, FileText, Check, X, Loader2 } from 'lucide-react';
 import { knowledgeAPI } from '../../../services/fastapi';
 import { toast } from 'react-toastify';
-import { t } from '../../../utils/i18n';
 import { Pagination } from '../../common/Pagination';
 
 export function LeaderKnowledgeBase() {
@@ -19,8 +18,8 @@ export function LeaderKnowledgeBase() {
   const [rejectReason, setRejectReason] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedItemType, setSelectedItemType] = useState(null);
-  const [approvingId, setApprovingId] = useState(null); // Track which item is being approved
-  const [rejectingId, setRejectingId] = useState(null); // Track which item is being rejected
+  const [approvingId, setApprovingId] = useState(null);
+  const [rejectingId, setRejectingId] = useState(null);
   const [questionsPage, setQuestionsPage] = useState(1);
   const [documentsPage, setDocumentsPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
@@ -47,7 +46,7 @@ export function LeaderKnowledgeBase() {
   
   const handleApprove = async (id, type) => {
     try {
-      setApprovingId(id); // Set loading state for this specific item
+      setApprovingId(id);
       if (type === 'qa') {
         await knowledgeAPI.approveTrainingQuestion(id);
         toast.success('Đã duyệt câu hỏi huấn luyện!');
@@ -55,12 +54,12 @@ export function LeaderKnowledgeBase() {
         await knowledgeAPI.approveDocument(id);
         toast.success('Đã duyệt tài liệu!');
       }
-      // Refresh the lists
+
       await fetchPendingItems();
     } catch (error) {
       toast.error('Không thể duyệt. Vui lòng thử lại.');
     } finally {
-      setApprovingId(null); // Clear loading state
+      setApprovingId(null);
     }
   };
 
@@ -77,7 +76,7 @@ export function LeaderKnowledgeBase() {
     }
 
     try {
-      setRejectingId(selectedItem); // Set loading state
+      setRejectingId(selectedItem);
       if (selectedItemType === 'qa') {
         await knowledgeAPI.rejectTrainingQuestion(selectedItem, rejectReason);
         toast.success('Đã từ chối câu hỏi huấn luyện!');
@@ -85,11 +84,9 @@ export function LeaderKnowledgeBase() {
         await knowledgeAPI.rejectDocument(selectedItem, rejectReason);
         toast.success('Đã từ chối tài liệu!');
       }
-      
-      // Refresh the lists
+
       await fetchPendingItems();
-      
-      // Reset dialog
+
       setShowRejectDialog(false);
       setRejectReason('');
       setSelectedItem(null);
@@ -97,7 +94,7 @@ export function LeaderKnowledgeBase() {
     } catch (error) {
       toast.error('Không thể từ chối. Vui lòng thử lại.');
     } finally {
-      setRejectingId(null); // Clear loading state
+      setRejectingId(null);
     }
   };
 
@@ -267,21 +264,18 @@ export function LeaderKnowledgeBase() {
     );
   };
 
-  // Pagination for training questions
   const totalQuestionsPages = Math.ceil(trainingQuestions.length / ITEMS_PER_PAGE);
   const paginatedQuestions = trainingQuestions.slice(
     (questionsPage - 1) * ITEMS_PER_PAGE,
     questionsPage * ITEMS_PER_PAGE
   );
 
-  // Pagination for documents
   const totalDocumentsPages = Math.ceil(documents.length / ITEMS_PER_PAGE);
   const paginatedDocuments = documents.slice(
     (documentsPage - 1) * ITEMS_PER_PAGE,
     documentsPage * ITEMS_PER_PAGE
   );
 
-  // Reset pages when tab changes
   useEffect(() => {
     setQuestionsPage(1);
     setDocumentsPage(1);
@@ -371,7 +365,7 @@ export function LeaderKnowledgeBase() {
         </TabsContent>
       </Tabs>
 
-      {/* Reject Dialog */}
+      {}
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent>
           <DialogHeader>

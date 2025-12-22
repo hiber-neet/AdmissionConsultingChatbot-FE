@@ -73,9 +73,7 @@ export function KnowledgeGapsSection({
                         {new Date(question.timestamp).toLocaleDateString('vi-VN', {
                           year: 'numeric',
                           month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
+                          day: 'numeric'
                         })}
                       </span>
                     </div>
@@ -90,7 +88,7 @@ export function KnowledgeGapsSection({
               </div>
             ))}
             
-            {/* Show More Button */}
+            {}
             {unansweredQuestions && visibleCount < unansweredQuestions.length && (
               <div className="flex justify-center pt-4">
                 <Button 
@@ -103,7 +101,7 @@ export function KnowledgeGapsSection({
               </div>
             )}
             
-            {/* Show Less Button */}
+            {}
             {visibleCount > 5 && (
               <div className="flex justify-center pt-2">
                 <Button 

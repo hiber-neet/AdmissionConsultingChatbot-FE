@@ -10,7 +10,7 @@ export function AllArticlesPage() {
   };
 
   const handleNavigateToEditorWithData = (articleData) => {
-    // For now, navigate to editor. Could be enhanced to pass data via state or context
+
     navigate('/content/editor', { state: articleData });
   };
 

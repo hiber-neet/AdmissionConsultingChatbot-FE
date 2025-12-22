@@ -8,7 +8,6 @@ import {
   DropdownMenuTrigger,
 } from '../../ui/system_users/dropdown-menu';
 
-// Helper function to map status to Vietnamese
 const getStatusLabel = (status)=> {
   const statusMap = {
     'draft': 'Nháp',
@@ -20,7 +19,6 @@ const getStatusLabel = (status)=> {
   };
   return statusMap[status] || status;
 };
-
 
 export default function ArticleTable({
   articles,

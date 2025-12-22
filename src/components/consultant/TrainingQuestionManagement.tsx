@@ -19,7 +19,7 @@ interface TrainingQuestionPair {
   answer: string;
   intent_id?: number;
   intent_name?: string;
-  status?: string; // draft, approved, rejected, deleted
+  status?: string;
   created_at?: string;
   approved_at?: string;
   created_by?: number;
@@ -58,8 +58,8 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
   const [intentLoading, setIntentLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedIntent, setSelectedIntent] = useState(t('training.all_intents'));
-  const [statusFilter, setStatusFilter] = useState<string>('all'); // all, draft, approved, rejected
+  const [selectedIntent, setSelectedIntent] = useState('Tất cả danh mục');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedQuestion, setSelectedQuestion] = useState<TrainingQuestionPair | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -67,22 +67,18 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
   const [editedQuestion, setEditedQuestion] = useState('');
   const [editedAnswer, setEditedAnswer] = useState('');
   const [editedIntentId, setEditedIntentId] = useState<number | null>(null);
-  
-  // Template-related state
+
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [selectedQAPairIndex, setSelectedQAPairIndex] = useState<string>('');
 
-  // Check if user is leader (Admin or Consultant with leader flag)
   const isLeader = isConsultantLeader();
 
-  // Fetch training questions and intents on mount
   useEffect(() => {
     fetchData();
-  }, [statusFilter]); // Refetch when status filter changes
+  }, [statusFilter]);
 
-  // Helper function to get status badge
   const getStatusBadge = (status?: string) => {
     if (!status) return null;
     
@@ -107,25 +103,21 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
     try {
       setLoading(true);
       setIntentLoading(true);
-      
-      // Fetch intents
+
       const intentsData = await fastAPIClient.get<Intent[]>('/intent');
       setIntents(intentsData);
-      
-      // Fetch training questions - all users see all questions, but only leaders can approve/reject
+
       let questionsData: TrainingQuestionPair[];
       if (isLeader && statusFilter !== 'all') {
-        // Leaders can filter by specific status
+
         questionsData = await knowledgeAPI.getTrainingQuestions(statusFilter);
       } else {
-        // All users see all questions (no status filtering)
+
         questionsData = await knowledgeAPI.getTrainingQuestions();
       }
-      
-      // Sort questions by question_id in ascending order
+
       const sortedData = questionsData.sort((a, b) => a.question_id - b.question_id);
-      
-      // Map intent names to questions
+
       const questionsWithIntentNames = sortedData.map(question => {
         const intent = intentsData.find(i => i.intent_id === question.intent_id);
         return {
@@ -135,8 +127,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
       });
       
       setTrainingQuestions(questionsWithIntentNames);
-      
-      // Set the first question as selected by default
+
       if (questionsWithIntentNames.length > 0) {
         setSelectedQuestion(questionsWithIntentNames[0]);
       } else {
@@ -150,7 +141,6 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
     }
   };
 
-  // Fetch templates when add dialog opens
   useEffect(() => {
     const fetchTemplates = async () => {
       if (!showAddDialog) return;
@@ -169,20 +159,18 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
     fetchTemplates();
   }, [showAddDialog]);
 
-  // Create intent categories for filtering
-  const intentCategories = [t('training.all_intents'), ...intents.map(intent => intent.intent_name)];
+  const intentCategories = ['Tất cả danh mục', ...intents.map(intent => intent.intent_name)];
 
-  // Handle prefilled question from content optimization or analytics
   useEffect(() => {
     if (prefilledQuestion && templateAction) {
       if (templateAction === 'add') {
-        // Add new training question with prefilled question
+
         setEditedQuestion(prefilledQuestion);
         setEditedAnswer('');
         setEditedIntentId(null);
         setShowAddDialog(true);
       } else if (templateAction === 'edit') {
-        // Find and edit existing training question
+
         const existingQuestion = trainingQuestions.find(tq => tq.question === prefilledQuestion);
         if (existingQuestion) {
           setSelectedQuestion(existingQuestion);
@@ -192,7 +180,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
           setIsEditing(true);
         }
       } else if (templateAction === 'view') {
-        // Find and view existing training question
+
         const existingQuestion = trainingQuestions.find(tq => tq.question === prefilledQuestion);
         if (existingQuestion) {
           setSelectedQuestion(existingQuestion);
@@ -206,7 +194,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
   const filteredTrainingQuestions = trainingQuestions.filter(tq => {
     const matchesSearch = tq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          tq.answer.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesIntent = selectedIntent === t('training.all_intents') || tq.intent_name === selectedIntent;
+    const matchesIntent = selectedIntent === 'Tất cả danh mục' || tq.intent_name === selectedIntent;
     return matchesSearch && matchesIntent;
   });
 
@@ -226,7 +214,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
     }
 
     try {
-      // Update local state
+
       setTrainingQuestions(prev => 
         prev.map(tq => 
           tq.question_id === selectedQuestion.question_id
@@ -241,7 +229,6 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
         )
       );
 
-      // Update selected question
       const updatedQuestion = {
         ...selectedQuestion,
         question: editedQuestion.trim(),
@@ -264,12 +251,10 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
     try {
       await knowledgeAPI.deleteTrainingQuestion(selectedQuestion.question_id);
 
-      // Remove from local state
       setTrainingQuestions(prev => 
         prev.filter(tq => tq.question_id !== selectedQuestion.question_id)
       );
 
-      // Select the first question if available, or clear selection
       const remaining = trainingQuestions.filter(tq => tq.question_id !== selectedQuestion.question_id);
       setSelectedQuestion(remaining.length > 0 ? remaining[0] : null);
 
@@ -302,7 +287,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
 
   const handleTemplateChange = (templateId: string) => {
     setSelectedTemplateId(templateId);
-    setSelectedQAPairIndex(''); // Reset QA pair selection when template changes
+    setSelectedQAPairIndex('');
   };
 
   const handleCreateTrainingQuestion = async () => {
@@ -324,7 +309,6 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
         requestBody
       );
 
-      // Reset form and close dialog
       setEditedQuestion('');
       setEditedAnswer('');
       setEditedIntentId(null);
@@ -332,13 +316,10 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
       setSelectedQAPairIndex('');
       setShowAddDialog(false);
 
-      // Refresh the list to show the new question
       await fetchData();
 
-      // Show success message
       toast.success('Câu hỏi huấn luyện được tạo thành công!');
-      
-      // If user is a leader, show message about pending approval
+
       if (isLeader) {
         toast.info('Câu hỏi được lưu dưới dạng bản nháp và cần được duyệt.');
       } else {
@@ -353,9 +334,9 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
 
   return (
     <div className="min-h-screen h-full flex bg-[#F8FAFC]">
-      {/* Left Panel - Training Questions List */}
+      {}
       <div className="w-96 bg-white border-r border-gray-200 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
+        {}
         <div className="p-4 border-b border-gray-200 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{t('training.title')}</h2>
@@ -382,7 +363,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
 
           <Select value={selectedIntent} onValueChange={setSelectedIntent}>
             <SelectTrigger>
-              <SelectValue placeholder={t('training.select_intent')} />
+              <SelectValue placeholder={t('documents.select_intent_placeholder')} />
             </SelectTrigger>
             <SelectContent>
               {intentCategories.map(intent => (
@@ -391,7 +372,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
             </SelectContent>
           </Select>
 
-          {/* Status Filter - Available to all users */}
+          {}
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger>
               <SelectValue placeholder="Trạng thái" />
@@ -405,11 +386,11 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
           </Select>
 
           <div className="text-sm text-muted-foreground">
-            {loading ? t('common.loading') : `${filteredTrainingQuestions.length} ${t('training.title').toLowerCase()}`}
+            {loading ? 'Đang tải' : `${filteredTrainingQuestions.length} ${'Câu Hỏi Huấn Luyện'.toLowerCase()}`}
           </div>
         </div>
 
-        {/* Training Questions List */}
+        {}
         <ScrollArea className="flex-1 overflow-hidden">
           <div className="p-2 space-y-1 min-w-0">
             {loading ? (
@@ -450,14 +431,14 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
         </ScrollArea>
       </div>
 
-      {/* Right Panel - Training Question Detail View */}
+      {}
       <div className="flex-1 flex flex-col">
         {selectedQuestion ? (
           <ScrollArea className="flex-1">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-semibold">
-                  {isEditing ? t('training.edit_question') : t('training.question_details')}
+                  {isEditing ? 'Chỉnh sửa câu hỏi' : 'Chi tiết câu hỏi'}
                 </h1>
                 {!isEditing && (
                   <div className="flex gap-2">
@@ -497,7 +478,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                     <label className="text-sm font-medium">{t('common.intent')}</label>
                     <Select value={editedIntentId?.toString() || ''} onValueChange={(value) => setEditedIntentId(Number(value))}>
                       <SelectTrigger>
-                        <SelectValue placeholder={t('training.select_intent')} />
+                        <SelectValue placeholder={t('documents.select_intent_placeholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         {intentLoading ? (
@@ -525,7 +506,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <div className="text-sm text-muted-foreground">{t('common.intent')}</div>
-                      <div>{selectedQuestion.intent_name || t('common.loading')}</div>
+                      <div>{selectedQuestion.intent_name || 'Đang tải'}</div>
                     </div>
                     <div className="space-y-1">
                       <div className="text-sm text-muted-foreground">{t('common.question')} ID</div>
@@ -561,7 +542,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
         )}
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
@@ -577,7 +558,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
         </DialogContent>
       </Dialog>
 
-      {/* Add New Training Question Dialog */}
+      {}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-6xl w-[1200px] max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
@@ -589,7 +570,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
 
           <ScrollArea className="flex-1 overflow-y-auto -mx-6 px-6">
             <div className="grid grid-cols-1 gap-6 py-4">
-            {/* Templates Section */}
+            {}
             <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-blue-600" />
@@ -600,7 +581,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Template Dropdown */}
+                {}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">{t('training.select_template')}</label>
                   <Select 
@@ -609,7 +590,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                     disabled={templatesLoading || templates.length === 0}
                   >
                     <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder={templatesLoading ? t('common.loading') : t('training.select_template')} />
+                      <SelectValue placeholder={templatesLoading ? 'Đang tải' : 'Chọn mẫu câu hỏi'} />
                     </SelectTrigger>
                     <SelectContent>
                       {templates.map((template) => (
@@ -621,7 +602,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                   </Select>
                 </div>
 
-                {/* QA Pair Dropdown */}
+                {}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Chọn Cặp Hỏi-Đáp</label>
                   <Select 
@@ -646,7 +627,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                   </Select>
                 </div>
 
-                {/* Use Template Button */}
+                {}
                 <div className="space-y-2">
                   <label className="text-sm font-medium opacity-0">Hành động</label>
                   <Button
@@ -659,7 +640,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
                 </div>
               </div>
 
-              {/* Preview Selected QA Pair */}
+              {}
               {selectedTemplateId && selectedQAPairIndex && (
                 <div className="p-3 bg-white rounded-md border border-blue-200 text-sm">
                   <div className="font-medium text-gray-700 mb-1">Xem Trước:</div>
@@ -671,7 +652,7 @@ export function TrainingQuestionManagement({ prefilledQuestion, onQuestionUsed, 
               )}
             </div>
 
-            {/* Form Fields */}
+            {}
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1">

@@ -17,6 +17,27 @@ export function QATemplateList({
   documentsPage,
   setDocumentsPage
 }) {
+
+  const getStatusBadge = (status) => {
+    if (!status) return null;
+
+    const statusConfig = {
+      draft: { color: 'bg-yellow-100 text-yellow-800', label: 'Nháp' },
+      approved: { color: 'bg-green-100 text-green-800', label: 'Đã duyệt' },
+      rejected: { color: 'bg-red-100 text-red-800', label: 'Từ chối' },
+      deleted: { color: 'bg-gray-100 text-gray-800', label: 'Đã xóa' }
+    };
+
+    const config = statusConfig[status];
+    if (!config) return null;
+
+    return (
+      <span className={`px-2 py-1 text-xs font-medium rounded ${config.color}`}>
+        {config.label}
+      </span>
+    );
+  };
+
   return (
     <Tabs defaultValue="qa" className="space-y-4">
       <TabsList>
@@ -61,6 +82,7 @@ export function QATemplateList({
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap items-center gap-2">
+                  {getStatusBadge(template.status)}
                   <Badge variant="secondary">{template.category}</Badge>
                   {template.tags && template.tags.length > 0 && template.tags.map((tag) => (
                     <Badge key={tag} variant="outline" className="gap-1">

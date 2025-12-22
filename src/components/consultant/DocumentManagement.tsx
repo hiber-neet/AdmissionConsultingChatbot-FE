@@ -12,10 +12,8 @@ import { API_CONFIG } from '../../config/api.js';
 import { toast } from 'react-toastify';
 import { t } from '../../utils/i18n';
 
-// Use KnowledgeDocument interface directly from fastapi-client
 type Document = KnowledgeDocument;
 
-// Helper functions
 const getFileType = (filePath: string) => {
   const extension = filePath.split('.').pop()?.toLowerCase() || '';
   return extension;
@@ -40,7 +38,7 @@ export function DocumentManagement() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all'); // all, draft, approved, rejected
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -48,15 +46,12 @@ export function DocumentManagement() {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Upload form state
   const [intents, setIntents] = useState<Intent[]>([]);
   const [selectedIntent, setSelectedIntent] = useState<string>('');
   const [documentTitle, setDocumentTitle] = useState('');
 
-  // Check if user is leader (Admin or Consultant with leader flag)
   const isLeader = isConsultantLeader();
 
-  // Fetch documents on component mount and when status filter changes
   useEffect(() => {
     fetchDocuments();
     fetchIntents();
@@ -65,13 +60,12 @@ export function DocumentManagement() {
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      // Fetch documents with status filter if not 'all'
+
       const data = statusFilter !== 'all' 
         ? await knowledgeAPI.getDocuments(statusFilter)
         : await knowledgeAPI.getDocuments();
       setDocuments(data);
-      
-      // Set first document as selected if available
+
       if (data.length > 0 && !selectedDoc) {
         await fetchDocumentDetails(data[0].document_id);
       } else if (data.length === 0) {
@@ -118,13 +112,11 @@ export function DocumentManagement() {
 
       await knowledgeAPI.uploadDocument(formData, parseInt(selectedIntent));
 
-      // Reset form and close dialog
       setUploadedFile(null);
       setSelectedIntent('');
       setDocumentTitle('');
       setShowUploadDialog(false);
-      
-      // Refresh documents list
+
       await fetchDocuments();
       
       toast.success('Tải lên tài liệu thành công!');
@@ -141,11 +133,9 @@ export function DocumentManagement() {
     try {
       setDeleting(true);
       await knowledgeAPI.deleteDocument(selectedDoc.document_id);
-      
-      // Remove from local state
+
       setDocuments(prev => prev.filter(doc => doc.document_id !== selectedDoc.document_id));
-      
-      // Clear selection
+
       setSelectedDoc(null);
       setShowDeleteDialog(false);
       
@@ -160,8 +150,7 @@ export function DocumentManagement() {
   const handleDownload = async (doc: Document) => {
     try {
       const blob = await knowledgeAPI.downloadDocument(doc.document_id);
-      
-      // Create a download link and trigger it
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -182,8 +171,7 @@ export function DocumentManagement() {
     const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
-  
-  // Helper function to get status badge color
+
   const getStatusColor = (status?: string) => {
     switch (status) {
       case 'approved': return 'bg-green-100 text-green-800';
@@ -194,7 +182,6 @@ export function DocumentManagement() {
     }
   };
 
-  // Helper function to get status label in Vietnamese
   const getStatusLabel = (status?: string) => {
     switch (status) {
       case 'approved': return 'Đã duyệt';
@@ -207,9 +194,9 @@ export function DocumentManagement() {
 
   return (
     <div className="min-h-screen h-full flex bg-[#F8FAFC]">
-      {/* Left Panel - Document List */}
+      {}
       <div className="w-96 bg-white border-r border-gray-200 flex flex-col">
-        {/* Header */}
+        {}
         <div className="p-4 border-b border-gray-200 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{t('documents.title')}</h2>
@@ -237,7 +224,7 @@ export function DocumentManagement() {
             />
           </div>
 
-          {/* Status Filter - Available to all users */}
+          {}
           <div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full">
@@ -253,11 +240,11 @@ export function DocumentManagement() {
           </div>
 
           <div className="text-sm text-muted-foreground">
-            {filteredDocuments.length} {t('documents.title').toLowerCase()}
+            {filteredDocuments.length} {'Tài Liệu'.toLowerCase()}
           </div>
         </div>
 
-        {/* Document List */}
+        {}
         <ScrollArea className="flex-1">
           {loading ? (
             <div className="flex items-center justify-center p-8">
@@ -270,7 +257,7 @@ export function DocumentManagement() {
               <h3 className="text-lg font-medium mb-2">{t('documents.no_documents_found')}</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 {searchQuery 
-                  ? `${t('documents.no_documents_found')} "${searchQuery}"`
+                  ? t`${t('documents.no_documents_found')} "${searchQuery}"`
                   : t('documents.upload_first_document')
                 }
               </p>
@@ -336,7 +323,7 @@ export function DocumentManagement() {
         </ScrollArea>
       </div>
 
-      {/* Right Panel - Document Detail View */}
+      {}
       <div className="flex-1 flex flex-col">
         {selectedDoc ? (
           <ScrollArea className="flex-1">
@@ -368,7 +355,7 @@ export function DocumentManagement() {
                 </div>
               </div>
 
-              {/* Status Badge */}
+              {}
               {selectedDoc.status && (
                 <div className="mb-4">
                   <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedDoc.status)}`}>
@@ -431,7 +418,7 @@ export function DocumentManagement() {
         )}
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
@@ -460,7 +447,7 @@ export function DocumentManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Upload Document Dialog */}
+      {}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -471,7 +458,7 @@ export function DocumentManagement() {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            {/* Intent Selection */}
+            {}
             <div className="space-y-2">
               <label className="text-sm font-medium text-red-600">{t('documents.intent_required')}</label>
               <Select value={selectedIntent} onValueChange={setSelectedIntent}>
@@ -491,7 +478,7 @@ export function DocumentManagement() {
               )}
             </div>
 
-            {/* Document Title */}
+            {}
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('documents.document_title')}</label>
               <Input
@@ -505,7 +492,7 @@ export function DocumentManagement() {
               </p>
             </div>
 
-            {/* File Selection */}
+            {}
             <div className="space-y-2">
               <label className="text-sm font-medium text-red-600">{t('documents.file_required')}</label>
               <div className="flex items-center gap-4">
@@ -515,7 +502,7 @@ export function DocumentManagement() {
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      // Check file size (max 50MB)
+
                       const maxSize = 50 * 1024 * 1024;
                       if (file.size > maxSize) {
                         toast.error('Kích thước tệp vượt quá giới hạn 50MB');
@@ -524,7 +511,7 @@ export function DocumentManagement() {
                       }
                       
                       setUploadedFile(file);
-                      // Auto-fill title if empty
+
                       if (!documentTitle) {
                         setDocumentTitle(file.name.split('.')[0]);
                       }
@@ -564,7 +551,7 @@ export function DocumentManagement() {
                   {t('documents.uploading')}
                 </>
               ) : (
-                t('documents.upload_document')
+                'Tải Lên Tài Liệu'
               )}
             </Button>
           </DialogFooter>

@@ -28,10 +28,8 @@ export function IntentManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  // Check if user is leader (Admin or Consultant with leader flag)
   const isLeader = isConsultantLeader();
 
-  // Fetch intents on mount
   useEffect(() => {
     fetchIntents();
   }, []);
@@ -41,7 +39,7 @@ export function IntentManagement() {
     try {
       const response = await intentAPI.getIntents();
       const intentList = Array.isArray(response) ? response : [];
-      // Filter out intent_id = 0 (default/system intent)
+
       const filteredList = intentList.filter(intent => intent.intent_id !== 0);
       setIntents(filteredList);
     } catch (error) {
@@ -113,7 +111,6 @@ export function IntentManagement() {
     setShowDeleteDialog(true);
   };
 
-  // Filter intents based on search query and filter type
   const filteredIntents = intents.filter(intent => {
     const matchesSearch = intent.intent_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (intent.description && intent.description.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -124,26 +121,23 @@ export function IntentManagement() {
     } else if (filterType === 'deleted') {
       matchesFilter = intent.is_deleted === true;
     }
-    // filterType === 'all' shows everything
-    
+
     return matchesSearch && matchesFilter;
   });
 
-  // Pagination
   const totalPages = Math.ceil(filteredIntents.length / ITEMS_PER_PAGE);
   const paginatedIntents = filteredIntents.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filterType]);
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
-      {/* Header */}
+      {}
       <div className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
@@ -158,7 +152,7 @@ export function IntentManagement() {
           </Button>
         </div>
 
-        {/* Search and Filters */}
+        {}
         <div className="mt-4 flex items-center gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -171,7 +165,7 @@ export function IntentManagement() {
             />
           </div>
           
-          {/* Filter Buttons */}
+          {}
           <div className="flex gap-2">
             <Button
               variant={filterType === 'all' ? 'default' : 'outline'}
@@ -197,7 +191,7 @@ export function IntentManagement() {
           </div>
         </div>
 
-        {/* Stats */}
+        {}
         <div className="mt-4 flex items-center gap-6 text-sm">
           <div className="flex items-center gap-2">
             <Tag className="h-4 w-4 text-gray-400" />
@@ -216,7 +210,7 @@ export function IntentManagement() {
         </div>
       </div>
 
-      {/* Content */}
+      {}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="p-6">
@@ -261,7 +255,7 @@ export function IntentManagement() {
         </ScrollArea>
       </div>
 
-      {/* Modals */}
+      {}
       <AddIntentModal
         isOpen={showAddDialog}
         onClose={() => setShowAddDialog(false)}

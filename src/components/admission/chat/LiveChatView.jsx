@@ -4,7 +4,6 @@ import { useAuth } from '../../../contexts/Auth';
 import { liveChatAPI } from '../../../services/fastapi';
 import { toast } from 'react-toastify';
 
-// Import components
 import { ActiveSessionsList } from './ActiveSessionsList';
 import { ChatHeader } from './ChatHeader';
 import { MessagesArea } from './MessagesArea';
@@ -18,8 +17,7 @@ export function LiveChatView() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
-  // Get session info from navigation state
+
   const { sessionId: initialSessionId, officialId, queueId } = location.state || {};
   
   const [activeSessions, setActiveSessions] = useState([]);
@@ -30,12 +28,10 @@ export function LiveChatView() {
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [error, setError] = useState('');
   const [customerInfo, setCustomerInfo] = useState(null);
-  
-  // Student detail modal state
+
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
 
-  // Handle click on customer name/avatar to show details
   const handleShowStudentDetail = () => {
     if (customerInfo?.id) {
       setSelectedStudentId(customerInfo.id);
@@ -43,15 +39,12 @@ export function LiveChatView() {
     }
   };
 
-  // Handle WebSocket messages
   const handleMessageReceived = (newMessage) => {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  // WebSocket connection
   const { isConnected, sendMessage: wsSendMessage, disconnect } = useWebSocket(selectedSessionId, handleMessageReceived);
 
-  // Get active sessions for admission official
   const loadActiveSessions = async () => {
     if (!user?.id) return;
     
@@ -62,8 +55,7 @@ export function LiveChatView() {
       
       if (response && Array.isArray(response)) {
         setActiveSessions(response);
-        
-        // If no specific session was passed, auto-select the first active session
+
         if (!initialSessionId && response.length > 0) {
           setSelectedSessionId(response[0].session_id);
         }
@@ -72,8 +64,7 @@ export function LiveChatView() {
       }
     } catch (err) {
       setActiveSessions([]);
-      
-      // Only show error if it's not a 404 (which means no active sessions)
+
       if (err.response && err.response.status !== 404) {
         toast.error('Failed to load active sessions');
       }
@@ -82,7 +73,6 @@ export function LiveChatView() {
     }
   };
 
-  // Load existing messages and customer info
   const loadSessionData = async () => {
     if (!selectedSessionId) return;
     
@@ -91,13 +81,12 @@ export function LiveChatView() {
       
       if (response && Array.isArray(response)) {
         setMessages(response);
-        
-        // Get customer info from first message if available
-        const customerMessage = response.find(msg => msg.sender_id !== parseInt(user.id));
-        if (customerMessage) {
+
+        const currentSession = activeSessions.find(s => s.session_id === selectedSessionId);
+        if (currentSession && currentSession.customer_id) {
           setCustomerInfo({
-            id: customerMessage.sender_id,
-            name: `Student ${customerMessage.sender_id}`,
+            id: currentSession.customer_id,
+            name: currentSession.customer_name || `Customer ${currentSession.customer_id}`,
             avatar: 'ST'
           });
         }
@@ -110,7 +99,6 @@ export function LiveChatView() {
     }
   };
 
-  // Send message
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
 
@@ -122,7 +110,6 @@ export function LiveChatView() {
     }
   };
 
-  // Handle Enter key press
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -130,7 +117,6 @@ export function LiveChatView() {
     }
   };
 
-  // End session
   const handleEndSession = async () => {
     if (!selectedSessionId) return;
     
@@ -146,11 +132,9 @@ export function LiveChatView() {
       disconnect();
       
       toast.success('Session ended successfully');
-      
-      // Remove ended session from active sessions
+
       setActiveSessions(prev => prev.filter(session => session.session_id !== selectedSessionId));
-      
-      // Select another session if available
+
       const remainingSessions = activeSessions.filter(session => session.session_id !== selectedSessionId);
       if (remainingSessions.length > 0) {
         setSelectedSessionId(remainingSessions[0].session_id);
@@ -164,17 +148,14 @@ export function LiveChatView() {
     }
   };
 
-  // Handle session selection
   const handleSessionSelect = (sessionId) => {
     setSelectedSessionId(sessionId);
   };
 
-  // Go to queue
   const handleGoToQueue = () => {
     navigate('/admission/request-queue');
   };
 
-  // Initialize component
   useEffect(() => {
     const initialize = async () => {
       setLoading(true);
@@ -192,14 +173,12 @@ export function LiveChatView() {
     initialize();
   }, [user]);
 
-  // Refresh sessions when a new session is accepted
   useEffect(() => {
     if (initialSessionId && user?.id) {
       loadActiveSessions();
     }
   }, [initialSessionId, user?.id]);
 
-  // Effect for when selectedSessionId changes
   useEffect(() => {
     const setupSession = async () => {
       if (!selectedSessionId) {
@@ -214,20 +193,43 @@ export function LiveChatView() {
     setupSession();
   }, [selectedSessionId]);
 
-  // Listen for SSE queue updates to refresh active sessions
   useEffect(() => {
     const handleQueueUpdate = (event) => {
       loadActiveSessions();
     };
 
+    const handleChatEnded = (event) => {
+
+      const endedSessionId = event.detail?.session_id;
+      
+      if (endedSessionId) {
+
+        setActiveSessions(prev => prev.filter(session => session.session_id !== endedSessionId));
+
+        if (selectedSessionId === endedSessionId) {
+          const remainingSessions = activeSessions.filter(session => session.session_id !== endedSessionId);
+          if (remainingSessions.length > 0) {
+            setSelectedSessionId(remainingSessions[0].session_id);
+          } else {
+            setSelectedSessionId(null);
+            setMessages([]);
+            setCustomerInfo(null);
+          }
+        }
+      }
+
+      loadActiveSessions();
+    };
+
     window.addEventListener('queueUpdate', handleQueueUpdate);
+    window.addEventListener('chatEnded', handleChatEnded);
 
     return () => {
       window.removeEventListener('queueUpdate', handleQueueUpdate);
+      window.removeEventListener('chatEnded', handleChatEnded);
     };
-  }, []);
+  }, [selectedSessionId, activeSessions]);
 
-  // Show loading or error states
   if (loading || error) {
     return (
       <LoadingView 
@@ -241,7 +243,7 @@ export function LiveChatView() {
 
   return (
     <div className="h-screen flex bg-gray-50 overflow-hidden">
-      {/* Left Sidebar - Active Sessions */}
+      {}
       <ActiveSessionsList
         activeSessions={activeSessions}
         selectedSessionId={selectedSessionId}
@@ -251,7 +253,7 @@ export function LiveChatView() {
         isLoading={sessionsLoading}
       />
 
-      {/* Main Chat Area */}
+      {}
       {selectedSessionId ? (
         <div className="flex-1 flex flex-col h-full overflow-hidden">
           <ChatHeader
@@ -284,7 +286,7 @@ export function LiveChatView() {
         <EmptyChat onGoToQueue={handleGoToQueue} />
       )}
       
-      {/* Student Detail Modal */}
+      {}
       <StudentDetailModal
         isOpen={showStudentModal}
         onClose={() => setShowStudentModal(false)}

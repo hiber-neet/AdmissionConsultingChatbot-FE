@@ -26,7 +26,6 @@ import { StudentDetailModal } from './StudentDetailModal';
 import { API_CONFIG } from '../../config/api.js';
 import { Pagination } from '../common/Pagination';
 
-// Props: { onSelectStudent: (studentId: string) => void }
 export function StudentList({ onSelectStudent }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -37,20 +36,17 @@ export function StudentList({ onSelectStudent }) {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  // Handle student selection
   const handleStudentClick = (studentId) => {
-    setSelectedStudentId(studentId); // Use actual user_id
+    setSelectedStudentId(studentId);
     setIsDetailDialogOpen(true);
-    
-    // Also call the parent callback if provided
+
     if (onSelectStudent && typeof onSelectStudent === 'function') {
       onSelectStudent(studentId);
     }
   };
 
-  // Function to transform API student data to component format
   const transformStudentData = (apiStudent) => {
-    // Map role names to Vietnamese
+
     const roleNameMap = {
       'Student': 'Học Sinh',
       'Parent': 'Phụ Huynh',
@@ -58,17 +54,16 @@ export function StudentList({ onSelectStudent }) {
     };
 
     return {
-      id: apiStudent.user_id, // Use actual user_id directly
+      id: apiStudent.user_id,
       name: apiStudent.full_name || 'Chưa có tên',
       email: apiStudent.email || 'Chưa có email',
       phone: apiStudent.phone_number || 'Chưa có SĐT',
-      status: apiStudent.status, // Boolean: true = active, false = inactive
+      status: apiStudent.status,
       role_name: apiStudent.role_name || 'Student',
       role_name_vi: roleNameMap[apiStudent.role_name] || apiStudent.role_name || 'Học Sinh',
     };
   };
 
-  // Fetch students from API
   const fetchStudents = async () => {
     setLoading(true);
     
@@ -103,7 +98,6 @@ export function StudentList({ onSelectStudent }) {
 
       const data = await response.json();
 
-      // Filter and transform API data - only include Student, Parent, and Customer roles
       if (Array.isArray(data)) {
         const filteredData = data.filter(user => {
           const roleName = user.role_name;
@@ -126,7 +120,6 @@ export function StudentList({ onSelectStudent }) {
     fetchStudents();
   }, []);
 
-  // Get status badge based on status value
   const getStatusBadge = (status) => {
     if (status) {
       return (
@@ -145,16 +138,14 @@ export function StudentList({ onSelectStudent }) {
     }
   };
 
-  // Filter students
   const filteredStudents = students.filter((student) => {
-    // Search filter
+
     const matchesSearch =
       searchQuery === '' ||
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.phone.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Status filter
     const matchesStatus =
       statusFilter === 'all' ||
       (statusFilter === 'active' && student.status === true) ||
@@ -163,19 +154,16 @@ export function StudentList({ onSelectStudent }) {
     return matchesSearch && matchesStatus;
   });
 
-  // Pagination
   const totalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE);
   const paginatedStudents = filteredStudents.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, statusFilter]);
 
-  // Calculate statistics
   const stats = {
     total: students.length,
     active: students.filter(s => s.status === true).length,
@@ -185,7 +173,7 @@ export function StudentList({ onSelectStudent }) {
   return (
     <ScrollArea className="h-full">
       <div className="space-y-6 p-6 pb-24">
-        {/* Statistics Cards */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border-l-4 border-l-blue-500">
             <CardHeader className="pb-3">
@@ -230,7 +218,7 @@ export function StudentList({ onSelectStudent }) {
           </Card>
         </div>
 
-        {/* Filters */}
+        {}
         <Card>
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-4">
@@ -261,7 +249,7 @@ export function StudentList({ onSelectStudent }) {
           </CardContent>
         </Card>
 
-        {/* Students List */}
+        {}
         <Card>
           <CardHeader>
             <CardTitle>
@@ -327,7 +315,7 @@ export function StudentList({ onSelectStudent }) {
           </CardContent>
         </Card>
 
-        {/* Student Detail Modal */}
+        {}
         <StudentDetailModal
           isOpen={isDetailDialogOpen}
           onClose={() => setIsDetailDialogOpen(false)}

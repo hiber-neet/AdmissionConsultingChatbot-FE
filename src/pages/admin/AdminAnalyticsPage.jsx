@@ -5,7 +5,7 @@ export function AdminAnalyticsPage() {
   const navigate = useNavigate();
 
   const handleNavigateToKnowledgeBase = (question) => {
-    // Navigate to knowledge base page
+
     navigate('/admin/knowledge', { state: { question, action: 'add' } });
   };
 

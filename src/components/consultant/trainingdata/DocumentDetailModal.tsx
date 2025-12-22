@@ -45,11 +45,9 @@ export function DocumentDetailModal({
   const handleDownload = async () => {
     try {
       setLoading(true);
-      
-      // Use the proper API call with authentication (same as admission officer's page)
+
       const blob = await knowledgeAPI.downloadDocument(document.document_id);
-      
-      // Create a download link and trigger it
+
       const url = window.URL.createObjectURL(blob);
       const a = window.document.createElement('a');
       a.href = url;
@@ -102,7 +100,7 @@ export function DocumentDetailModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold text-gray-900">Chi Tiết Tài Liệu</h2>
@@ -116,9 +114,9 @@ export function DocumentDetailModal({
           </button>
         </div>
 
-        {/* Content */}
+        {}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Title */}
+          {}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tiêu Đề
@@ -128,7 +126,7 @@ export function DocumentDetailModal({
             </p>
           </div>
 
-          {/* Intent Selection */}
+          {}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Danh mục
@@ -138,7 +136,7 @@ export function DocumentDetailModal({
             </p>
           </div>
 
-          {/* Category */}
+          {}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Thể loại
@@ -148,7 +146,7 @@ export function DocumentDetailModal({
             </p>
           </div>
 
-          {/* File Information */}
+          {}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Loại File
@@ -158,7 +156,7 @@ export function DocumentDetailModal({
             </p>
           </div>
 
-          {/* Document Content Preview */}
+          {}
           {document.content && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -173,7 +171,7 @@ export function DocumentDetailModal({
             </div>
           )}
 
-          {/* Rejection Reason */}
+          {}
           {document.status === 'rejected' && document.reject_reason && (
             <div>
               <label className="block text-sm font-medium text-red-700 mb-2">
@@ -187,7 +185,7 @@ export function DocumentDetailModal({
             </div>
           )}
 
-          {/* Metadata */}
+          {}
           <div className="grid grid-cols-2 gap-4 pt-4 border-t">
             {document.created_at && (
               <div>
@@ -208,7 +206,7 @@ export function DocumentDetailModal({
           </div>
         </div>
 
-        {/* Footer */}
+        {}
         <div className="flex items-center justify-between p-6 border-t bg-gray-50">
           <div className="flex gap-2">
             <Button

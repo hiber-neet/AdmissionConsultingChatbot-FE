@@ -9,13 +9,32 @@ import { useState } from 'react';
 
 export function DocumentList({ filteredDocuments }) {
   const [failedDownloads, setFailedDownloads] = useState(new Set());
+
+  const getStatusBadge = (status) => {
+    if (!status) return null;
+
+    const statusConfig = {
+      draft: { color: 'bg-yellow-100 text-yellow-800', label: 'Nháp' },
+      approved: { color: 'bg-green-100 text-green-800', label: 'Đã duyệt' },
+      rejected: { color: 'bg-red-100 text-red-800', label: 'Từ chối' },
+      deleted: { color: 'bg-gray-100 text-gray-800', label: 'Đã xóa' }
+    };
+
+    const config = statusConfig[status];
+    if (!config) return null;
+
+    return (
+      <span className={`px-2 py-1 text-xs font-medium rounded ${config.color}`}>
+        {config.label}
+      </span>
+    );
+  };
   
   const handleDownload = async (doc) => {
     try {
-      // Use the proper API call with authentication
+
       const blob = await knowledgeAPI.downloadDocument(doc.document_id);
-      
-      // Create a download link and trigger it
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -27,15 +46,13 @@ export function DocumentList({ filteredDocuments }) {
       
       toast.success('Tải tài liệu thành công!');
     } catch (error) {
-      
-      // Mark this document as failed
+
       setFailedDownloads(prev => new Set([...prev, doc.document_id]));
-      
-      // Better error message extraction
+
       let errorMessage = 'Không thể tải tài liệu. Vui lòng thử lại.';
       
       if (error instanceof Error) {
-        // Check for specific error messages
+
         if (error.message.includes('File not found')) {
           errorMessage = 'Tệp không tồn tại trên máy chủ. Tài liệu này có thể đã bị xóa.';
         } else if (error.message.includes('404')) {
@@ -85,6 +102,7 @@ export function DocumentList({ filteredDocuments }) {
               <span>{doc.fileType}</span>
             </div>
             <div className="flex flex-wrap gap-2">
+              {getStatusBadge(doc.status)}
               <Badge variant="secondary">{doc.category}</Badge>
               {doc.tags && doc.tags.length > 0 && doc.tags.map((tag) => (
                 <Badge key={tag} variant="outline" className="gap-1">

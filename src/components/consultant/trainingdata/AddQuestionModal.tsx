@@ -19,14 +19,12 @@ export function AddQuestionModal({ intents, onClose, onSubmit }: AddQuestionModa
   const [answer, setAnswer] = useState('');
   const [intentId, setIntentId] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(false);
-  
-  // Template state
+
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [selectedQAPairIndex, setSelectedQAPairIndex] = useState<string>('');
   const [templatesLoading, setTemplatesLoading] = useState(false);
 
-  // Fetch templates on mount
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
@@ -43,19 +41,16 @@ export function AddQuestionModal({ intents, onClose, onSubmit }: AddQuestionModa
     fetchTemplates();
   }, []);
 
-  // Handle template selection
   const handleTemplateChange = (templateId: string) => {
     setSelectedTemplateId(templateId);
-    setSelectedQAPairIndex(''); // Reset QA pair selection
-    
-    // Only clear fields if selecting "none"
+    setSelectedQAPairIndex('');
+
     if (templateId === 'none') {
       setQuestion('');
       setAnswer('');
     }
   };
 
-  // Handle QA pair selection
   const handleQAPairChange = (index: string) => {
     setSelectedQAPairIndex(index);
     
@@ -69,7 +64,6 @@ export function AddQuestionModal({ intents, onClose, onSubmit }: AddQuestionModa
     }
   };
 
-  // Get current template's QA pairs
   const getCurrentTemplateQAPairs = (): TemplateQA[] => {
     if (!selectedTemplateId || selectedTemplateId === 'none') return [];
     const template = templates.find(t => t.template_id?.toString() === selectedTemplateId);
@@ -103,7 +97,7 @@ export function AddQuestionModal({ intents, onClose, onSubmit }: AddQuestionModa
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-2xl font-bold text-gray-900">Thêm Câu Hỏi Huấn Luyện Mới</h2>
           <button
@@ -114,9 +108,9 @@ export function AddQuestionModal({ intents, onClose, onSubmit }: AddQuestionModa
           </button>
         </div>
 
-        {/* Content */}
+        {}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Template Selection (Optional) */}
+          {}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h3 className="text-sm font-semibold text-blue-900 mb-3">
               Sử dụng Mẫu (Không bắt buộc)
@@ -170,7 +164,7 @@ export function AddQuestionModal({ intents, onClose, onSubmit }: AddQuestionModa
             </div>
           </div>
 
-          {/* Intent Selection */}
+          {}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Danh mục <span className="text-red-500">*</span>
@@ -192,7 +186,7 @@ export function AddQuestionModal({ intents, onClose, onSubmit }: AddQuestionModa
             </Select>
           </div>
 
-          {/* Question */}
+          {}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Câu Hỏi <span className="text-red-500">*</span>
@@ -205,7 +199,7 @@ export function AddQuestionModal({ intents, onClose, onSubmit }: AddQuestionModa
             />
           </div>
 
-          {/* Answer */}
+          {}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Câu Trả Lời <span className="text-red-500">*</span>
@@ -219,7 +213,7 @@ export function AddQuestionModal({ intents, onClose, onSubmit }: AddQuestionModa
           </div>
         </div>
 
-        {/* Footer */}
+        {}
         <div className="flex items-center justify-end gap-2 p-6 border-t bg-gray-50">
           <Button
             onClick={onClose}

@@ -1,7 +1,6 @@
 import { X, ExternalLink, Calendar, User, BookOpen, Tag, Eye } from "lucide-react";
 import { useState } from 'react';
 
-// Helper function to map status to Vietnamese
 const getStatusLabel = (status) => {
   const statusMap = {
     'draft': 'Nháp',
@@ -14,14 +13,12 @@ const getStatusLabel = (status) => {
   return statusMap[status] || status;
 };
 
-// Helper function to format date
 const formatDate = (dateStr) => {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return dateStr;
   return d.toLocaleDateString("vi-VN");
 };
-
 
 export default function ArticleDetailsModal({ 
   article, 
@@ -31,7 +28,7 @@ export default function ArticleDetailsModal({
   onRetry 
 }) {
   const [previewMode, setPreviewMode] = useState(false);
-  // Normalize image URL: if user stored a URL without protocol, assume https
+
   const safeImageUrl = article?.link_image
     ? (article.link_image.startsWith('http://') || article.link_image.startsWith('https://')
         ? article.link_image
@@ -43,7 +40,7 @@ export default function ArticleDetailsModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-[60vw] max-h-[90vh] overflow-hidden">
-        {/* Modal Header */}
+        {}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">
             {previewMode ? 'Xem Thử Bài Viết' : 'Chi Tiết Bài Viết'}
@@ -67,7 +64,7 @@ export default function ArticleDetailsModal({
           </div>
         </div>
 
-        {/* Modal Content */}
+        {}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           {loading && (
             <div className="flex items-center justify-center py-12">
@@ -91,7 +88,7 @@ export default function ArticleDetailsModal({
           {article && !loading && !error && (
             <>
               {previewMode ? (
-                // Preview Mode - Homepage Style
+
                 <div className="space-y-4">
                   {safeImageUrl && (
                     <img
@@ -99,7 +96,7 @@ export default function ArticleDetailsModal({
                       alt={article.title}
                       className="w-full h-64 object-cover rounded-lg"
                       onError={(e) => {
-                        // hide broken image but keep the link visible in details view
+
                         (e.target).style.display = 'none';
                       }}
                     />
@@ -135,18 +132,18 @@ export default function ArticleDetailsModal({
                   )}
                 </div>
               ) : (
-                // Detail Mode - Line by Line
+
                 <div className="space-y-4">
-              {/* Article Title */}
+              {}
               <div className="border-b pb-4">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   {article.title}
                 </h3>
               </div>
 
-              {/* Line by Line Attributes */}
+              {}
               <div className="space-y-3">
-                {/* Description */}
+                {}
                 {article.description && (
                   <div className="flex py-2 border-b border-gray-100">
                     <span className="w-48 text-gray-600 font-medium flex-shrink-0">Mô Tả:</span>
@@ -154,7 +151,7 @@ export default function ArticleDetailsModal({
                   </div>
                 )}
 
-                {/* Status */}
+                {}
                 <div className="flex items-center py-2 border-b border-gray-100">
                   <span className="w-48 text-gray-600 font-medium flex-shrink-0">Trạng Thái:</span>
                   <span className="flex-1">
@@ -178,31 +175,31 @@ export default function ArticleDetailsModal({
                   </span>
                 </div>
 
-                {/* Author */}
+                {}
                 <div className="flex py-2 border-b border-gray-100">
                   <span className="w-48 text-gray-600 font-medium flex-shrink-0">Tác Giả:</span>
                   <span className="flex-1 text-gray-900">{article.author_name}</span>
                 </div>
 
-                {/* Created Date */}
+                {}
                 <div className="flex py-2 border-b border-gray-100">
                   <span className="w-48 text-gray-600 font-medium flex-shrink-0">Ngày Tạo:</span>
                   <span className="flex-1 text-gray-900">{article.create_at}</span>
                 </div>
 
-                {/* Major */}
+                {}
                 <div className="flex py-2 border-b border-gray-100">
                   <span className="w-48 text-gray-600 font-medium flex-shrink-0">Ngành:</span>
                   <span className="flex-1 text-gray-900">{article.major_name}</span>
                 </div>
 
-                {/* Specialization */}
+                {}
                 <div className="flex py-2 border-b border-gray-100">
                   <span className="w-48 text-gray-600 font-medium flex-shrink-0">Chuyên Ngành:</span>
                   <span className="flex-1 text-gray-900">{article.specialization_name}</span>
                 </div>
 
-                {/* Article URL */}
+                {}
                 {article.url && (
                   <div className="flex py-2 border-b border-gray-100">
                     <span className="w-48 text-gray-600 font-medium flex-shrink-0">URL Bài Viết:</span>
@@ -220,7 +217,7 @@ export default function ArticleDetailsModal({
                   </div>
                 )}
 
-                {/* Link Image */}
+                {}
                 {safeImageUrl && (
                   <div className="flex py-2 border-b border-gray-100">
                     <span className="w-48 text-gray-600 font-medium flex-shrink-0">Link Hình Ảnh:</span>
@@ -238,7 +235,7 @@ export default function ArticleDetailsModal({
                   </div>
                 )}
 
-                {/* Image Preview */}
+                {}
                 {safeImageUrl && (
                   <div className="flex py-2 border-b border-gray-100">
                     <span className="w-48 text-gray-600 font-medium flex-shrink-0">Hình Ảnh:</span>
@@ -255,7 +252,7 @@ export default function ArticleDetailsModal({
                   </div>
                 )}
 
-                {/* Note */}
+                {}
                 {article.note && (
                   <div className="flex py-2 border-b border-gray-100">
                     <span className="w-48 text-gray-600 font-medium flex-shrink-0">Ghi Chú:</span>

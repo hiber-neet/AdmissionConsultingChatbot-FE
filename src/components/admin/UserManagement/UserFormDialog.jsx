@@ -9,7 +9,6 @@ import { toast } from 'react-toastify';
 import { loadPermissions } from '../../../constants/permissions';
 import { API_CONFIG } from '../../../config/api.js';
 
-// Permission translation mapping (English to Vietnamese)
 const translatePermission = (permissionName) => {
   const translations = {
     'admin': 'Quản Trị Viên',
@@ -27,13 +26,11 @@ const translatePermission = (permissionName) => {
   return translations[key] || translations[permissionName.toLowerCase()] || permissionName;
 };
 
-// Get available permissions (will be loaded from API)
 const getAvailablePermissions = async () => {
   const permissions = await loadPermissions();
   return permissions.map(p => p.permission_name.toLowerCase().replace(/\s+/g, '_'));
 };
 
-// Generate permission labels from API data with Vietnamese translation
 const getPermissionLabels = async () => {
   const permissions = await loadPermissions();
   const labels = {};
@@ -44,7 +41,6 @@ const getPermissionLabels = async () => {
   return labels;
 };
 
-// Generate permission name to ID mapping from API data
 const getPermissionNameToId = async () => {
   const permissions = await loadPermissions();
   const mapping = {};
@@ -62,25 +58,23 @@ export function UserFormDialog({
   formData,
   onFormChange,
   onSubmit,
-  onUserUpdated // New prop to refresh user list after changes
+  onUserUpdated
 }) {
   const [permissionsToRevoke, setPermissionsToRevoke] = useState([]);
   const [permissionsToGrant, setPermissionsToGrant] = useState([]);
   const [currentPermissions, setCurrentPermissions] = useState([]);
   const [availableToGrant, setAvailableToGrant] = useState([]);
   const [loadingPermissions, setLoadingPermissions] = useState(false);
-  
-  // Dynamic permissions state
+
   const [permissionLabels, setPermissionLabels] = useState({});
   const [permissionNameToId, setPermissionNameToId] = useState({});
   const [permissionsLoaded, setPermissionsLoaded] = useState(false);
 
-  // Load permissions from API on component mount
   useEffect(() => {
     const loadPermissionsData = async () => {
       try {
         setLoadingPermissions(true);
-        await loadPermissions(); // Load permissions into cache
+        await loadPermissions();
         
         const [labels, nameToId] = await Promise.all([
           getPermissionLabels(),
@@ -102,13 +96,10 @@ export function UserFormDialog({
     }
   }, [isOpen, permissionsLoaded]);
 
-  // Helper function to filter permissions that can be revoked
-  // Admin and Customer permissions cannot be revoked through edit interface
   const getRevokablePermissions = (permissions) => {
     return permissions.filter(perm => perm !== 'admin' && perm !== 'customer');
   };
 
-  // Fetch user's current permissions from the backend
   const fetchUserPermissions = async (userId) => {
     if (!userId) return;
     
@@ -120,8 +111,7 @@ export function UserFormDialog({
       }
 
   const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
-      
-      // Step 1: Get all system permissions
+
       const allPermissionsResponse = await fetch(`${baseUrl}/users/permissions`, {
         method: 'GET',
         headers: {
@@ -135,14 +125,12 @@ export function UserFormDialog({
       }
 
       const allSystemPermissions = await allPermissionsResponse.json();
-      
-      // Normalize system permission names
+
       const allPermissionNames = allSystemPermissions.map(p => {
         const name = p.permission_name?.toLowerCase().replace(/\s+/g, '_');
         return name;
       });
-      
-      // Step 2: Get user's current permissions
+
       const userResponse = await fetch(`${baseUrl}/users/staffs`, {
         method: 'GET',
         headers: {
@@ -156,8 +144,7 @@ export function UserFormDialog({
       }
 
       const staffUsers = await userResponse.json();
-      
-      // Find the specific user
+
       const user = staffUsers.find(u => 
         u.user_id?.toString() === userId?.toString() || 
         u.id?.toString() === userId?.toString()
@@ -166,8 +153,7 @@ export function UserFormDialog({
       if (!user) {
         throw new Error('Không tìm thấy người dùng trong danh sách nhân viên');
       }
-      
-      // Extract and normalize user's current permission names
+
       let currentPermissionNames = [];
       
       if (user.permissions && Array.isArray(user.permissions) && user.permissions.length > 0) {
@@ -176,20 +162,17 @@ export function UserFormDialog({
           return name;
         }).filter(Boolean);
       }
-      
-      // Step 3: Calculate available permissions (all system permissions minus current permissions)
-      // For editing mode, also exclude 'admin' and 'customer' permissions
+
       let availablePermissionNames = allPermissionNames.filter(perm => {
-        // Exclude current permissions
+
         if (currentPermissionNames.includes(perm)) return false;
-        // When editing, exclude admin and customer permissions from being granted
+
         if (editingUser && (perm === 'admin' || perm === 'customer')) return false;
-        // Always exclude customer permission from being granted
+
         if (perm === 'customer') return false;
         return true;
       });
-      
-      // Update state
+
       setCurrentPermissions(currentPermissionNames);
       setAvailableToGrant(availablePermissionNames);
       
@@ -200,13 +183,11 @@ export function UserFormDialog({
     }
   };
 
-  // Reset when dialog opens/closes or editingUser changes
   useEffect(() => {
     if (isOpen && editingUser) {
       setPermissionsToRevoke([]);
       setPermissionsToGrant([]);
-      
-      // Fetch fresh permissions data
+
       fetchUserPermissions(editingUser.id);
     } else {
       setPermissionsToRevoke([]);
@@ -245,9 +226,22 @@ export function UserFormDialog({
   };
 
   const handleRevokePermissionToggle = (permission) => {
-    // Prevent admin and customer permissions from being revoked through edit interface
+
     if (permission === 'admin' || permission === 'customer') {
       return;
+    }
+
+    if (!permissionsToRevoke.includes(permission)) {
+
+      const currentCount = currentPermissions.length;
+      const revokeCount = permissionsToRevoke.length + 1;
+      const grantCount = permissionsToGrant.length;
+      const remainingCount = currentCount - revokeCount + grantCount;
+
+      if (remainingCount < 1) {
+        toast.error('Không thể thu hồi tất cả quyền. Nhân viên phải có ít nhất 1 quyền.');
+        return;
+      }
     }
     
     setPermissionsToRevoke(prev => 
@@ -376,16 +370,21 @@ export function UserFormDialog({
     e.preventDefault();
     
     if (!editingUser) {
-      // For new users, use the original onSubmit
+
       onSubmit(e);
       return;
     }
 
     try {
-      const userId = editingUser.id; // Use 'id' field, not 'user_id'
+      const userId = editingUser.id;
       let results = [];
 
-      // 1. Revoke permissions first
+      const finalPermissionCount = currentPermissions.length - permissionsToRevoke.length + permissionsToGrant.length;
+      if (finalPermissionCount < 1) {
+        toast.error('Không thể lưu thay đổi. Nhân viên phải có ít nhất 1 quyền.');
+        return;
+      }
+
       if (permissionsToRevoke.length > 0) {
         const revokeResult = await callRevokeAPI(userId, permissionsToRevoke);
         results.push(`Đã thu hồi: ${revokeResult.removed?.length || 0} quyền`);
@@ -394,7 +393,6 @@ export function UserFormDialog({
         }
       }
 
-      // 2. Grant permissions second
       if (permissionsToGrant.length > 0) {
         const grantResult = await callGrantAPI(userId, permissionsToGrant);
         results.push(`Đã cấp: ${grantResult.added?.length || 0} quyền`);
@@ -403,7 +401,6 @@ export function UserFormDialog({
         }
       }
 
-      // 3. Update basic user info if needed
       const hasBasicChanges = 
         formData.name !== editingUser.name ||
         formData.email !== editingUser.email ||
@@ -411,28 +408,25 @@ export function UserFormDialog({
         (formData.password && formData.password.trim() !== '');
 
       if (hasBasicChanges) {
-        // Call the original onSubmit for basic user data update
+
         await onSubmit(e);
         results.push('Đã cập nhật thông tin cơ bản');
       }
 
-      // Show success message
       if (results.length > 0) {
         toast.success(`Cập nhật người dùng thành công! ${results.join(', ')}`);
       } else {
         toast.info('Không có thay đổi nào');
       }
 
-      // Refresh the user list if callback provided
       if (onUserUpdated) {
         await onUserUpdated();
       }
 
-      // Close dialog
       onClose();
 
     } catch (error) {
-      // Check if it's a live chat queue conflict
+
       if (error.message && error.message.includes('live chat queue')) {
         toast.error(`⚠️ ${error.message}`, { autoClose: 8000 });
       } else if (error.message && error.message.includes('Foreign')) {
@@ -452,7 +446,7 @@ export function UserFormDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Show loading state while permissions are being loaded */}
+        {}
         {!permissionsLoaded && loadingPermissions ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -461,7 +455,7 @@ export function UserFormDialog({
         ) : (
         <>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic User Information */}
+          {}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Họ và Tên</Label>
@@ -521,7 +515,7 @@ export function UserFormDialog({
             </div>
           </div>
 
-          {/* Role Selection - Only shown during creation */}
+          {}
           {!editingUser && (
             <>
               <div className="space-y-2">
@@ -532,8 +526,9 @@ export function UserFormDialog({
                 />
               </div>
 
-              {/* Leader checkbox for Consultant role */}
-              {formData.role === 'CONSULTANT' && (
+              {}
+              {(formData.role === 'CONSULTANT' || 
+                (editingUser && currentPermissions.includes('consultant'))) && (
                 <div className="space-y-2 pl-6">
                   <label className="flex items-center space-x-2 cursor-pointer">
                     <input
@@ -547,8 +542,9 @@ export function UserFormDialog({
                 </div>
               )}
 
-              {/* Leader checkbox for Content Manager role */}
-              {formData.role === 'CONTENT_MANAGER' && (
+              {}
+              {(formData.role === 'CONTENT_MANAGER' || 
+                (editingUser && (currentPermissions.includes('content_manager') || currentPermissions.includes('content manager')))) && (
                 <div className="space-y-2 pl-6">
                   <label className="flex items-center space-x-2 cursor-pointer">
                     <input
@@ -564,7 +560,7 @@ export function UserFormDialog({
             </>
           )}
 
-          {/* Permission Management - Only for editing existing users */}
+          {}
           {editingUser && (
             <div className="space-y-6 border-t pt-6">
               <h3 className="text-lg font-semibold">Quản Lý Quyền</h3>
@@ -575,10 +571,10 @@ export function UserFormDialog({
                 </div>
               ) : (
                 <>
-                  {/* Current Permissions Display */}
+                  {}
                   {currentPermissions.length > 0 ? (
                     <div className="space-y-3">
-                      {/* Admin Permissions (Read-only) */}
+                      {}
                       {currentPermissions.includes('admin') && (
                         <div className="space-y-2">
                           <Label className="text-sm font-medium text-blue-600">
@@ -593,7 +589,7 @@ export function UserFormDialog({
                         </div>
                       )}
                       
-                      {/* Other Permissions (Revokable) */}
+                      {}
                       {getRevokablePermissions(currentPermissions).length > 0 && (
                         <div className="space-y-2">
                           <Label className="text-sm font-medium text-red-600">
@@ -623,7 +619,7 @@ export function UserFormDialog({
                     </div>
                   )}
 
-                  {/* Available Permissions - For Grant */}
+                  {}
                   {availableToGrant.length > 0 && (
                     <div className="space-y-3">
                       <Label className="text-sm font-medium text-green-600">
@@ -648,7 +644,7 @@ export function UserFormDialog({
                     </div>
                   )}
 
-                  {/* Summary */}
+                  {}
                   <div className="text-sm text-gray-600">
                     {permissionsToRevoke.length > 0 && (
                       <p>Sẽ thu hồi: {permissionsToRevoke.map(p => permissionLabels[p] || p).join(', ')}</p>

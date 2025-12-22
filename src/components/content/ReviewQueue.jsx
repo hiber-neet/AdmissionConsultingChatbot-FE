@@ -14,7 +14,6 @@ export default function ReviewQueue() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  // Fetch articles for review on component mount
   useEffect(() => {
     fetchReviewQueue();
   }, []);
@@ -25,7 +24,7 @@ export default function ReviewQueue() {
       const data = await articlesAPI.getReviewQueue();
       setArticles(data);
     } catch (error) {
-      // Don't show error if it's an authentication error (redirect will handle it)
+
       if (isAuthError(error)) {
         return;
       }
@@ -35,7 +34,6 @@ export default function ReviewQueue() {
     }
   };
 
-  // Handle approval
   const handleApprove = async (article) => {
     setActionLoading(true);
     try {
@@ -44,9 +42,9 @@ export default function ReviewQueue() {
         note: "Đã Phê Duyệt"
       });
       toast.success(`Bài viết "${article.title}" đã được phê duyệt và xuất bản!`);
-      await fetchReviewQueue(); // Refresh the list
+      await fetchReviewQueue();
     } catch (error) {
-      // Don't show error if it's an authentication error (redirect will handle it)
+
       if (isAuthError(error)) {
         return;
       }
@@ -56,13 +54,11 @@ export default function ReviewQueue() {
     }
   };
 
-  // Handle rejection with mandatory reason
   const handleReject = (article) => {
     setOpenFor(article);
     setFeedback("");
   };
 
-  // Submit rejection with reason
   const submitFeedback = async () => {
     if (!feedback.trim()) {
       toast.error("Vui lòng cung cấp lý do từ chối.");
@@ -80,9 +76,9 @@ export default function ReviewQueue() {
       toast.success(`Bài viết "${openFor.title}" đã bị từ chối.`);
       setFeedback("");
       setOpenFor(null);
-      await fetchReviewQueue(); // Refresh the list
+      await fetchReviewQueue();
     } catch (error) {
-      // Don't show error if it's an authentication error (redirect will handle it)
+
       if (isAuthError(error)) {
         return;
       }
@@ -92,7 +88,6 @@ export default function ReviewQueue() {
     }
   };
 
-  // Handle escape key for modal
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && setOpenFor(null);
     window.addEventListener("keydown", onKey);
@@ -111,7 +106,6 @@ export default function ReviewQueue() {
     );
   }
 
-  // Pagination
   const totalPages = Math.ceil(articles.length / ITEMS_PER_PAGE);
   const paginatedArticles = articles.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -133,7 +127,7 @@ export default function ReviewQueue() {
 
   return (
     <div className="p-6">
-      {/* Header */}
+      {}
       <div className="mb-2 text-xl font-semibold">Hàng Đợi Duyệt Bài</div>
       <div className="text-sm text-gray-500 mb-6">
         {articles.length} bài viết đang chờ <span className="ml-1">duyệt</span>
@@ -142,7 +136,7 @@ export default function ReviewQueue() {
       <div className="space-y-6">
         {paginatedArticles.map((article) => (
           <div key={article.article_id} className="bg-white border rounded-2xl p-5 shadow-sm/5">
-            {/* Title + badge */}
+            {}
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold leading-6">{article.title}</h3>
@@ -152,7 +146,7 @@ export default function ReviewQueue() {
               </div>
             </div>
 
-            {/* Meta line */}
+            {}
             <div className="mt-2 text-xs text-gray-600 flex flex-wrap items-center gap-2">
               <span>Bởi {article.author_name || 'Không Rõ Tác Giả'}</span>
               <span className="mx-1">•</span>
@@ -165,7 +159,7 @@ export default function ReviewQueue() {
               </span>
             </div>
 
-            {/* Tags */}
+            {}
             <div className="mt-3 flex flex-wrap gap-2">
               {article.major_name && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
@@ -182,12 +176,26 @@ export default function ReviewQueue() {
               </span>
             </div>
 
-            {/* Summary box */}
+            {}
             <div className="mt-4 rounded-lg bg-gray-50 text-gray-700 text-sm px-4 py-3">
               {article.description}
             </div>
 
-            {/* URL if available */}
+            {}
+            {article.link_image && (
+              <div className="mt-4">
+                <img 
+                  src={article.link_image} 
+                  alt={article.title}
+                  className="w-full max-w-2xl rounded-lg object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+
+            {}
             {article.url && (
               <div className="mt-2 text-sm">
                 <span className="text-gray-500">URL:</span>{" "}
@@ -202,7 +210,7 @@ export default function ReviewQueue() {
               </div>
             )}
 
-            {/* Actions */}
+            {}
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button 
                 onClick={() => handleApprove(article)}
@@ -226,14 +234,14 @@ export default function ReviewQueue() {
         ))}
       </div>
 
-      {/* Pagination */}
+      {}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />
 
-      {/* Rejection Reason Modal */}
+      {}
       {openFor && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center"
@@ -241,10 +249,10 @@ export default function ReviewQueue() {
           aria-modal
           role="dialog"
         >
-          {/* backdrop */}
+          {}
           <div className="absolute inset-0 bg-black/50" />
 
-          {/* dialog */}
+          {}
           <div
             className="relative w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}

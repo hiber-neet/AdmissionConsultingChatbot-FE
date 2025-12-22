@@ -12,7 +12,7 @@ export function useWebSocket(selectedSessionId, onMessageReceived) {
     }
 
     try {
-      // Convert http/https URL to ws/wss
+
       const wsBaseUrl = API_CONFIG.FASTAPI_BASE_URL.replace(/^http/, 'ws');
       const wsUrl = `${wsBaseUrl}/live_chat/livechat/chat/${selectedSessionId}`;
       wsRef.current = new WebSocket(wsUrl);

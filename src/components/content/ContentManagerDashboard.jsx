@@ -10,15 +10,12 @@ import { STAFF_COLORS } from "@/constants/staffColors";
 import { Pagination } from "../common/Pagination";
 import { isAuthError } from "@/utils/fastapi-client";
 
-
-
-
-// Helper function to get status badge color
 const getStatusBadgeColor = (status) => {
   switch (status) {
     case 'published': return 'bg-emerald-500';
     case 'review': return 'bg-amber-500';
     case 'draft': return 'bg-slate-400';
+    case 'rejected': return 'bg-red-500';
     default: return 'bg-gray-400';
   }
 };
@@ -28,6 +25,7 @@ function StatusPill({ status  }) {
     draft: { label: "Nháp", className: "bg-gray-100 text-gray-700" },
     review: { label: "Đang Xem Xét", className: "bg-amber-100 text-amber-700" },
     published: { label: "Đã Xuất Bản", className: "bg-emerald-100 text-emerald-700" },
+    rejected: { label: "Từ Chối", className: "bg-red-100 text-red-800" },
   };
   
   const config = statusConfig[status] || { label: status, className: "bg-gray-100 text-gray-700" };
@@ -48,7 +46,6 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
   const [activitiesPage, setActivitiesPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  // Fetch content statistics from backend
   const fetchContentStatistics = async () => {
     try {
       setLoading(true);
@@ -63,14 +60,13 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
         throw new Error('API returned success: false');
       }
     } catch (err) {
-      // Don't show error if it's an authentication error (redirect will handle it)
+
       if (isAuthError(err)) {
         return;
       }
       
       setError(err.message || 'Failed to fetch content statistics');
-      
-      // Set fallback data in case of error
+
       setContentData({
         overview: {
           total_articles: 0,
@@ -91,12 +87,10 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
     }
   };
 
-  // Fetch data on component mount
   useEffect(() => {
     fetchContentStatistics();
   }, [user?.id]);
 
-  // Generate stats array from API data
   const stats = contentData ? [
     { 
       label: "Tổng Đã Xuất Bản", 
@@ -120,7 +114,6 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
     },
   ] : [];
 
-  // Convert API data to activities format
   const activities = contentData ? 
     contentData.recent_articles.map(article => ({
       title: article.title,
@@ -130,7 +123,6 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
       badgeColor: getStatusBadgeColor(article.status),
     })) : [];
 
-  // Pagination for activities
   const totalActivitiesPages = Math.ceil(activities.length / ITEMS_PER_PAGE);
   const paginatedActivities = activities.slice(
     (activitiesPage - 1) * ITEMS_PER_PAGE,
@@ -168,7 +160,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
   return (
     <div className="h-full w-full overflow-auto">
       <div className="mx-auto max-w-7xl px-6 py-6">
-        {/* Error Display */}
+        {}
         {error && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
             <div className="flex items-center gap-2">
@@ -188,7 +180,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
           </div>
         )}
 
-        {/* Header */}
+        {}
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold">Tổng quan</h1>
@@ -206,7 +198,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
           </div>
         </div>
 
-        {/* Stats */}
+        {}
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {stats.map((s) => (
             <div
@@ -227,7 +219,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
           ))}
         </div>
 
-        {/* Articles by Major (if available) */}
+        {}
         {contentData?.articles_by_major && contentData.articles_by_major.length > 0 && (
           <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
             <div className="mb-3 text-sm font-medium text-gray-800">
@@ -244,7 +236,7 @@ export default function ContentManagerDashboard({ onCreate, onNavigateToEditor, 
           </div>
         )}
 
-        {/* Recent Activity */}
+        {}
         <div className="rounded-xl border border-gray-200 bg-white">
           <div className="border-b border-gray-200 p-4 text-sm font-medium text-gray-800">
             Hoạt Động Gần Đây

@@ -21,7 +21,6 @@ interface UserProfile {
   email: string;
   phone_number?: string;
   permission?: string[];
-  role_name?: string;
   consultant_profile?: {
     status: boolean;
     is_leader: boolean;
@@ -67,42 +66,6 @@ export function ManagerProfile() {
     fetchProfile();
   }, [user?.id]);
 
-  const getRoleDisplayName = (role: string) => {
-    const roleMap: Record<string, string> = {
-      'SYSTEM_ADMIN': 'System Administrator',
-      'CONSULTANT': 'Consultant',
-      'CONTENT_MANAGER': 'Content Manager',
-      'ADMISSION_OFFICER': 'Admission Officer'
-    };
-    return roleMap[role] || role;
-  };
-
-  const getRoleBadgeVariant = (role: string): "default" | "secondary" | "destructive" | "outline" => {
-    const variantMap: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      'admin': 'destructive',
-      'SYSTEM_ADMIN': 'destructive',
-      'consultant': 'default',
-      'CONSULTANT': 'default',
-      'content_manager': 'secondary',
-      'CONTENT_MANAGER': 'secondary',
-      'admission_officer': 'outline',
-      'ADMISSION_OFFICER': 'outline'
-    };
-    return variantMap[role] || 'default';
-  };
-
-  const getDisplayRole = (): string => {
-    if (!profileData) return user?.role || 'Người dùng';
-    
-    // Check permissions to determine role
-    if (profileData.permission?.includes('Admin')) return 'Quản trị viên';
-    if (profileData.permission?.includes('Consultant')) return 'Tư vấn viên';
-    if (profileData.permission?.includes('Content Manager')) return 'Quản lý nội dung';
-    if (profileData.permission?.includes('Admission Official')) return 'Nhân viên tuyển sinh';
-    
-    return profileData.role_name || user?.role || 'Người dùng';
-  };
-
   const isLeader = (): boolean => {
     if (!profileData) return false;
     return profileData.consultant_is_leader || profileData.content_manager_is_leader || false;
@@ -134,7 +97,7 @@ export function ManagerProfile() {
 
   return (
     <div className="container mx-auto p-6 max-w-4xl space-y-6">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Hồ Sơ Người Dùng</h1>
@@ -142,7 +105,7 @@ export function ManagerProfile() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Card */}
+        {}
         <Card className="lg:col-span-3">
           <CardContent className="space-y-6 pt-6">
             <div className="flex items-center gap-4">
@@ -183,7 +146,7 @@ export function ManagerProfile() {
           </CardContent>
         </Card>
 
-        {/* Account Info Card */}
+        {}
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -197,14 +160,9 @@ export function ManagerProfile() {
                 <Label className="text-sm font-medium">Mã Người Dùng</Label>
                 <p className="text-sm text-muted-foreground">{profileData.user_id}</p>
               </div>
-              
-              <div className="space-y-1">
-                <Label className="text-sm font-medium">Loại Vai Trò</Label>
-                <p className="text-sm text-muted-foreground">{getDisplayRole()}</p>
-              </div>
             </div>
 
-            {/* Profile-specific information */}
+            {}
             {profileData.consultant_profile && (
               <>
                 <Separator className="my-4" />
@@ -220,7 +178,7 @@ export function ManagerProfile() {
                       </Badge>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Lãnh Đạo</Label>
+                      <Label className="text-xs text-muted-foreground">Giám Sát</Label>
                       <Badge 
                         className={`text-xs ${profileData.consultant_profile.is_leader ? 'bg-[#EB5A0D] text-white hover:bg-[#d14f0a]' : 'bg-gray-200 text-gray-700'}`}
                       >
@@ -238,7 +196,7 @@ export function ManagerProfile() {
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Hồ Sơ Quản Lý Nội Dung</Label>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Lãnh Đạo</Label>
+                    <Label className="text-xs text-muted-foreground">Giám Sát</Label>
                     <Badge 
                       className={`text-xs ${profileData.content_manager_profile.is_leader ? 'bg-[#EB5A0D] text-white hover:bg-[#d14f0a]' : 'bg-gray-200 text-gray-700'}`}
                     >

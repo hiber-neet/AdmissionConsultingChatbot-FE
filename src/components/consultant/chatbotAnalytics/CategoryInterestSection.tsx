@@ -75,7 +75,7 @@ export function CategoryInterestSection({ intentStats, loading, error }: Categor
               </TableBody>
             </Table>
             
-            {/* Show More/Less Buttons */}
+            {}
             <div className="p-4 border-t">
               {intentStats && visibleCount < intentStats.length && (
                 <div className="flex justify-center">

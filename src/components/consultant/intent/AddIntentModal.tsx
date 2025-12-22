@@ -24,11 +24,11 @@ export function AddIntentModal({ isOpen, onClose, onAdd }: AddIntentModalProps) 
     setSubmitting(true);
     try {
       await onAdd(intentName.trim(), description.trim());
-      // Reset form
+
       setIntentName('');
       setDescription('');
     } catch (error) {
-      // Error handled by parent
+
     } finally {
       setSubmitting(false);
     }

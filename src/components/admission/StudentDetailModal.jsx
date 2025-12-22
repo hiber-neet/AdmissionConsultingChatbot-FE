@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, Calendar, Award, Brain, TrendingUp, BookOpen } from 'lucide-react';
+import { X, User, Mail, Phone, Calendar, Brain, TrendingUp, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { riasecAPI, academicScoresAPI } from '../../services/fastapi';
 import { API_CONFIG } from '../../config/api.js';
 
@@ -11,8 +11,8 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
   const [riasecLoading, setRiasecLoading] = useState(false);
   const [academicScores, setAcademicScores] = useState(null);
   const [scoresLoading, setScoresLoading] = useState(false);
+  const [expandedResults, setExpandedResults] = useState({});
 
-  // Fetch student details
   const fetchStudentDetail = async (id) => {
     if (!id) return;
     
@@ -56,7 +56,6 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
     }
   };
 
-  // Fetch RIASEC results
   const fetchRiasecResults = async (id) => {
     if (!id) return;
     
@@ -82,7 +81,6 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
     }
   };
 
-  // Fetch Academic Scores
   const fetchAcademicScores = async (id) => {
     if (!id) return;
     
@@ -122,14 +120,21 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
     }
   }, [student, isOpen, userId]);
 
+  const toggleExpand = (resultId) => {
+    setExpandedResults(prev => ({
+      ...prev,
+      [resultId]: !prev[resultId]
+    }));
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      {/* Modal Container - Almost Full Screen */}
+      {}
       <div className="relative w-full h-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
         
-        {/* Fixed Header */}
+        {}
         <div className="flex-shrink-0 bg-[#EB5A0D] text-white px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -150,7 +155,7 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
           </div>
         </div>
 
-        {/* Scrollable Content */}
+        {}
         <div className="flex-1 overflow-y-auto">
           {loading && (
             <div className="flex flex-col items-center justify-center h-full p-12">
@@ -183,10 +188,10 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
 
           {student && !loading && !error && (
             <div className="p-6 space-y-4">
-              {/* Student Header Card */}
+              {}
               <div className="bg-white rounded-xl border-2 border-orange-100 shadow-lg p-5">
                 <div className="flex items-start gap-6">
-                  {/* Student Info */}
+                  {}
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -207,7 +212,7 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
                       </div>
                     </div>
 
-                    {/* Contact Grid */}
+                    {}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
                       <div className="flex items-center gap-2.5 p-3 bg-white rounded-lg border border-orange-100">
                         <div className="p-1.5 bg-orange-50 rounded-lg">
@@ -256,24 +261,12 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
                           </div>
                         </div>
                       )}
-
-                      {student.role_name && (
-                        <div className="flex items-center gap-2.5 p-3 bg-white rounded-lg border border-orange-100">
-                          <div className="p-1.5 bg-orange-50 rounded-lg">
-                            <Award className="h-4 w-4 text-[#EB5A0D]" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-0.5">Vai trò</p>
-                            <p className="text-xs font-medium text-gray-900">{student.role_name}</p>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* RIASEC Section */}
+              {}
               <div className="bg-white rounded-xl border-2 border-orange-100 shadow-lg overflow-hidden">
                 <div className="bg-[#EB5A0D] px-5 py-3.5 text-white">
                   <div className="flex items-center gap-2.5">
@@ -309,128 +302,131 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
 
                   {!riasecLoading && riasecResults.length > 0 && (
                     <div className="space-y-5">
-                      {riasecResults.map((result, index) => (
-                        <div key={index} className="border-2 border-orange-100 rounded-lg overflow-hidden">
-                          {/* Result Header */}
-                          <div className="bg-orange-50 px-4 py-2.5 border-b-2 border-orange-100">
-                            <div className="flex items-center justify-between">
-                              <h4 className="text-sm font-bold text-gray-900">
-                                Kết quả lần {riasecResults.length - index}
-                              </h4>
-                              <span className="px-2 py-0.5 bg-white border border-orange-200 rounded-full text-xs font-semibold text-[#EB5A0D]">
-                                ID: {result.result_id}
-                              </span>
-                            </div>
-                          </div>
+                      {[...riasecResults].reverse().map((result, index) => {
+                        const isExpanded = expandedResults[result.result_id] ?? true;
+                        
+                        return (
+                          <div key={result.result_id} className="border-2 border-orange-100 rounded-lg overflow-hidden">
+                            {}
+                            <button
+                              onClick={() => toggleExpand(result.result_id)}
+                              className="w-full bg-orange-50 px-4 py-2.5 border-b-2 border-orange-100 hover:bg-orange-100 transition-colors"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-sm font-bold text-gray-900">
+                                    Kết quả lần {index + 1}
+                                  </h4>
+                                  {result.result && (
+                                    <span className="text-sm text-gray-700">
+                                      - {result.result}
+                                    </span>
+                                  )}
+                                </div>
+                                {isExpanded ? (
+                                  <ChevronUp className="h-5 w-5 text-gray-600" />
+                                ) : (
+                                  <ChevronDown className="h-5 w-5 text-gray-600" />
+                                )}
+                              </div>
+                            </button>
 
-                          <div className="p-4">
-                            {/* Personality Type */}
-                            {result.result && (
-                              <div className="mb-5">
-                                <div className="bg-white border-2 border-gray-200 rounded-lg p-4">
-                                  <div className="flex items-center justify-between">
-                                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                      Loại Tính Cách
-                                    </p>
-                                    <p className="text-lg font-bold text-gray-900">
-                                      {result.result}
-                                    </p>
+                            {}
+                            {isExpanded && (
+                              <div className="p-4">
+                                {}
+                                <div className="space-y-4">
+                                  <div className="flex items-center gap-1.5 mb-3">
+                                    <TrendingUp className="h-4 w-4 text-[#EB5A0D]" />
+                                    <h5 className="text-sm font-bold text-gray-900">Biểu Đồ Điểm Số Chi Tiết</h5>
                                   </div>
+
+                                  {[
+                                    { 
+                                      key: 'score_realistic', 
+                                      label: 'Thực Tế (Realistic)', 
+                                      color: 'from-green-500 to-emerald-600',
+                                      bg: 'bg-green-50',
+                                      border: 'border-green-200'
+                                    },
+                                    { 
+                                      key: 'score_investigative', 
+                                      label: 'Nghiên Cứu (Investigative)', 
+                                      color: 'from-blue-500 to-cyan-600',
+                                      bg: 'bg-blue-50',
+                                      border: 'border-blue-200'
+                                    },
+                                    { 
+                                      key: 'score_artistic', 
+                                      label: 'Nghệ Thuật (Artistic)', 
+                                      color: 'from-purple-500 to-violet-600',
+                                      bg: 'bg-purple-50',
+                                      border: 'border-purple-200'
+                                    },
+                                    { 
+                                      key: 'score_social', 
+                                      label: 'Xã Hội (Social)', 
+                                      color: 'from-orange-500 to-amber-600',
+                                      bg: 'bg-orange-50',
+                                      border: 'border-orange-200'
+                                    },
+                                    { 
+                                      key: 'score_enterprising', 
+                                      label: 'Kinh Doanh (Enterprising)', 
+                                      color: 'from-red-500 to-rose-600',
+                                      bg: 'bg-red-50',
+                                      border: 'border-red-200'
+                                    },
+                                    { 
+                                      key: 'score_conventional', 
+                                      label: 'Quy Ước (Conventional)', 
+                                      color: 'from-gray-500 to-slate-600',
+                                      bg: 'bg-gray-50',
+                                      border: 'border-gray-200'
+                                    }
+                                  ].map(({ key, label, color, bg, border }) => {
+                                    const score = result[key] || 0;
+                                    const percentage = (score / 5.0) * 100;
+                                    
+                                    return (
+                                      <div key={key} className={`${bg} border ${border} rounded-lg p-3`}>
+                                        <div className="flex items-center justify-between mb-2">
+                                          <span className="text-xs text-gray-900">{label}</span>
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="text-lg font-extrabold text-gray-900">
+                                              {score.toFixed(1)}
+                                            </span>
+                                            <span className="text-xs text-gray-500 font-medium">/5.0</span>
+                                          </div>
+                                        </div>
+                                        <div className="relative h-6 bg-white rounded-md overflow-hidden border-2 border-gray-200">
+                                          <div 
+                                            className={`h-full bg-gradient-to-r ${color} transition-all duration-700 ease-out relative`}
+                                            style={{ width: `${percentage}%` }}
+                                          >
+                                            <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                                          </div>
+                                          <div className="absolute inset-0 flex items-center justify-center">
+                                            <span className="text-xs font-bold text-gray-700 drop-shadow-sm">
+                                              {percentage.toFixed(0)}%
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
-
-                            {/* RIASEC Bars */}
-                            <div className="space-y-4">
-                              <div className="flex items-center gap-1.5 mb-3">
-                                <TrendingUp className="h-4 w-4 text-[#EB5A0D]" />
-                                <h5 className="text-sm font-bold text-gray-900">Biểu Đồ Điểm Số Chi Tiết</h5>
-                              </div>
-
-                              {[
-                                { 
-                                  key: 'score_realistic', 
-                                  label: 'Thực Tế (Realistic)', 
-                                  color: 'from-green-500 to-emerald-600',
-                                  bg: 'bg-green-50',
-                                  border: 'border-green-200'
-                                },
-                                { 
-                                  key: 'score_investigative', 
-                                  label: 'Nghiên Cứu (Investigative)', 
-                                  color: 'from-blue-500 to-cyan-600',
-                                  bg: 'bg-blue-50',
-                                  border: 'border-blue-200'
-                                },
-                                { 
-                                  key: 'score_artistic', 
-                                  label: 'Nghệ Thuật (Artistic)', 
-                                  color: 'from-purple-500 to-violet-600',
-                                  bg: 'bg-purple-50',
-                                  border: 'border-purple-200'
-                                },
-                                { 
-                                  key: 'score_social', 
-                                  label: 'Xã Hội (Social)', 
-                                  color: 'from-orange-500 to-amber-600',
-                                  bg: 'bg-orange-50',
-                                  border: 'border-orange-200'
-                                },
-                                { 
-                                  key: 'score_enterprising', 
-                                  label: 'Kinh Doanh (Enterprising)', 
-                                  color: 'from-red-500 to-rose-600',
-                                  bg: 'bg-red-50',
-                                  border: 'border-red-200'
-                                },
-                                { 
-                                  key: 'score_conventional', 
-                                  label: 'Quy Ước (Conventional)', 
-                                  color: 'from-gray-500 to-slate-600',
-                                  bg: 'bg-gray-50',
-                                  border: 'border-gray-200'
-                                }
-                              ].map(({ key, label, color, bg, border }) => {
-                                const score = result[key] || 0;
-                                const percentage = (score / 5.0) * 100;
-                                
-                                return (
-                                  <div key={key} className={`${bg} border ${border} rounded-lg p-3`}>
-                                    <div className="flex items-center justify-between mb-2">
-                                      <span className="text-xs font-bold text-gray-900">{label}</span>
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="text-lg font-extrabold text-gray-900">
-                                          {score.toFixed(1)}
-                                        </span>
-                                        <span className="text-xs text-gray-500 font-medium">/5.0</span>
-                                      </div>
-                                    </div>
-                                    <div className="relative h-6 bg-white rounded-md overflow-hidden border-2 border-gray-200">
-                                      <div 
-                                        className={`h-full bg-gradient-to-r ${color} transition-all duration-700 ease-out relative`}
-                                        style={{ width: `${percentage}%` }}
-                                      >
-                                        <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                                      </div>
-                                      <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className="text-xs font-bold text-gray-700 drop-shadow-sm">
-                                          {percentage.toFixed(0)}%
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Academic Scores Section */}
+              {}
               <div className="bg-white rounded-xl border-2 border-orange-100 shadow-lg overflow-hidden">
                 <div className="bg-[#EB5A0D] px-5 py-3.5 text-white">
                   <div className="flex items-center gap-2.5">
