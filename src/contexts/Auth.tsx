@@ -221,6 +221,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     restoreSession();
   }, []);
 
+  // Listen for storage changes from other tabs (cross-tab sync)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      // Only react to access_token changes
+      if (e.key === 'access_token') {
+        const newToken = e.newValue;
+        const oldToken = e.oldValue;
+        
+        // Token was removed in another tab - logout this tab
+        if (!newToken && oldToken) {
+          console.warn('Token removed in another tab - logging out');
+          performLogout();
+          return;
+        }
+        
+        // Token was changed in another tab - reload user session
+        if (newToken && newToken !== oldToken) {
+          console.warn('Token changed in another tab - reloading session');
+          window.location.reload();
+        }
+      }
+    };
+
+    // Add event listener for storage changes
+    window.addEventListener('storage', handleStorageChange);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   const login = async (email: string, password: string) => {
     try {
       

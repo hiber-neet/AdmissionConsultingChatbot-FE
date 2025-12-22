@@ -164,9 +164,6 @@ export function KnowledgeBaseViewer() {
         <div className="p-6 pb-8 space-y-6">
           <div>
             <h2>Cơ Sở Tri Thức</h2>
-            <p className="text-muted-foreground">
-              Xem các mẫu câu hỏi & câu trả lời và tài liệu hướng dẫn (Chỉ Đọc)
-            </p>
           </div>
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
@@ -185,16 +182,12 @@ export function KnowledgeBaseViewer() {
         {/* Page Header */}
         <div>
           <h2>Cơ Sở Tri Thức</h2>
-          <p className="text-muted-foreground">
-            Xem các mẫu câu hỏi & câu trả lời và tài liệu hướng dẫn (Chỉ Đọc)
-          </p>
+          {/* Stats moved here */}
+          <StatsCards 
+            qaTemplatesCount={trainingQuestions.length}
+            documentsCount={documents.length}
+          />
         </div>
-
-        {/* Stats Cards */}
-        <StatsCards 
-          qaTemplatesCount={trainingQuestions.length}
-          documentsCount={documents.length}
-        />
 
         {/* Search and Filter */}
         <SearchAndFilter

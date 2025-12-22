@@ -1,9 +1,9 @@
 // Article status constants for filtering
 export const ARTICLE_STATUSES = [
-  "All Status",
-  "Drafted",
-  "Rejected",
-  "Published"
+  "Tất Cả Trạng Thái",
+  "Bản Nháp",
+  "Bị Từ Chối",
+  "Đã Xuất Bản"
 ] as const;
 
 // Type for article status filter

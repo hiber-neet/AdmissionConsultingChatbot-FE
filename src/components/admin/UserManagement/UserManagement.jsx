@@ -92,8 +92,7 @@ export function UserManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sectionFilter, setSectionFilter] = useState('all'); // 'all', 'admin', 'staff', 'customer'
-  const [adminPage, setAdminPage] = useState(1);
+  const [sectionFilter, setSectionFilter] = useState('all'); // 'all', 'staff', 'customer'
   const [staffPage, setStaffPage] = useState(1);
   const [customerPage, setCustomerPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -446,30 +445,20 @@ export function UserManagement() {
     return matchesSearch;
   });
 
-  // Admin users (System Administrators) - show separately above staff
-  const adminUsers = filteredUsers.filter(user => 
-    user.permissions && user.permissions.includes('admin')
-  );
-
-  // Separate users into staff and customers
+  // Separate users into staff and customers based on permissions
+  // Staff: Any user with permissions
+  // Customer: Users with role_id === 5 OR no permissions
   const staffUsers = filteredUsers.filter(user => 
-    user.permissions && user.permissions.length > 0 &&
-    !(user.permissions && user.permissions.includes('admin'))
+    user.permissions && user.permissions.length > 0
   );
   
   const customerUsers = filteredUsers.filter(user => 
-    !user.permissions || user.permissions.length === 0
+    user.role_id === 5 || !user.permissions || user.permissions.length === 0
   );
 
   // Pagination calculations
-  const totalAdminPages = Math.ceil(adminUsers.length / ITEMS_PER_PAGE);
   const totalStaffPages = Math.ceil(staffUsers.length / ITEMS_PER_PAGE);
   const totalCustomerPages = Math.ceil(customerUsers.length / ITEMS_PER_PAGE);
-
-  const paginatedAdminUsers = adminUsers.slice(
-    (adminPage - 1) * ITEMS_PER_PAGE,
-    adminPage * ITEMS_PER_PAGE
-  );
 
   const paginatedStaffUsers = staffUsers.slice(
     (staffPage - 1) * ITEMS_PER_PAGE,
@@ -483,7 +472,6 @@ export function UserManagement() {
 
   // Reset page numbers when filters change
   useEffect(() => {
-    setAdminPage(1);
     setStaffPage(1);
     setCustomerPage(1);
   }, [searchQuery, sectionFilter]);
@@ -874,16 +862,6 @@ export function UserManagement() {
             Tất Cả
           </button>
           <button
-            onClick={() => setSectionFilter('admin')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              sectionFilter === 'admin'
-                ? 'bg-orange-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Quản Trị Viên
-          </button>
-          <button
             onClick={() => setSectionFilter('staff')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               sectionFilter === 'staff'
@@ -901,7 +879,7 @@ export function UserManagement() {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Phụ Huynh & Học Sinh
+            Khách Hàng
           </button>
         </div>
 
@@ -920,36 +898,12 @@ export function UserManagement() {
       {/* User Tables */}
       <ScrollArea className="flex-1">
         <div className="p-6 pb-8 space-y-8">
-          {/* Admin Section (read-only actions) */}
-          {(sectionFilter === 'all' || sectionFilter === 'admin') && adminUsers.length > 0 && (
-            <div>
-              <div className="mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Quản Trị Viên ({adminUsers.length})
-                </h2>
-              </div>
-              <UserTable
-                users={paginatedAdminUsers}
-                onEdit={null}
-                onBanUser={null}
-                loading={loading}
-                isCustomerSection={false}
-                showActions={false}
-              />
-              <Pagination
-                currentPage={adminPage}
-                totalPages={totalAdminPages}
-                onPageChange={setAdminPage}
-              />
-            </div>
-          )}
-
-          {/* Staff Section */}
+          {/* Staff Section (includes all staff: admins, consultants, content managers, admission officers) */}
           {(sectionFilter === 'all' || sectionFilter === 'staff') && (
             <div>
               <div className="mb-4">
                 <h2 className="text-xl font-semibold text-gray-900">
-                  Nhân Viên ({staffUsers.length})
+                  Nhân Viên
                 </h2>
               </div>
               <UserTable
@@ -972,7 +926,7 @@ export function UserManagement() {
             <div>
               <div className="mb-4 border-t pt-6">
                 <h2 className="text-xl font-semibold text-gray-900">
-                  Học Sinh & Phụ Huynh ({customerUsers.length})
+                  Khách Hàng
                 </h2>
               </div>
               <UserTable

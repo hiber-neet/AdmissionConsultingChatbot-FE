@@ -4,26 +4,13 @@ import {
   User,
   MessageCircle,
   Search,
-  Filter,
   UserPlus,
-  AlertCircle,
-  Globe,
   Calendar,
-  Tag,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/system_users/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/system_users/card';
 import { Button } from '../ui/system_users/button';
-import { Badge } from '../ui/system_users/badge';
-import { Avatar, AvatarFallback } from '../ui/system_users/avatar';
 import { ScrollArea } from '../ui/system_users/scroll-area';
 import { Input } from '../ui/system_users/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/system_users/select';
 import { Separator } from '../ui/system_users/separator';
 import { Pagination } from '../common/Pagination';
 
@@ -33,13 +20,8 @@ import { Pagination } from '../common/Pagination';
 //   name: string,           // Customer's full name
 //   email: string,          // Customer's email  
 //   phone: string,          // Customer's phone number
-//   studentType: 'international' | 'domestic',  // Default: 'domestic'
-//   topic: string,          // Default: 'Tư vấn tuyển sinh'
-//   message: string,        // Default message about consultation request
-//   priority: 'high' | 'normal' | 'low',  // Default: 'normal'
 //   waitTime: number,       // Calculated wait time in minutes
 //   requestedAt: string,    // When the request was created
-//   avatar: string,         // Generated from customer name initials
 // }
 
 // RequestQueue component props:
@@ -52,21 +34,14 @@ import { Pagination } from '../common/Pagination';
 export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('all');
-  const [filterPriority, setFilterPriority] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
   const filteredRequests = requests.filter((request) => {
     const matchesSearch =
       request.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
       request.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType =
-      filterType === 'all' || request.studentType === filterType;
-    const matchesPriority =
-      filterPriority === 'all' || request.priority === filterPriority;
-    return matchesSearch && matchesType && matchesPriority;
+    return matchesSearch;
   });
 
   // Pagination
@@ -79,29 +54,12 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterType, filterPriority]);
-
-
-  const getPriorityConfig = (priority) => {
-    const configs = {
-      high: { label: 'Cao', variant: 'destructive', color: 'text-red-600' },
-      normal: { label: 'Trung Bình', variant: 'secondary', color: 'text-blue-600' },
-      low: { label: 'Thấp', variant: 'outline', color: 'text-gray-600' },
-    };
-    return configs[priority];
-  };
+  }, [searchQuery]);
 
   const getWaitTimeColor = (minutes) => {
     if (minutes > 15) return 'text-red-600';
     if (minutes > 10) return 'text-orange-600';
     return 'text-green-600';
-  };
-
-  const stats = {
-    total: requests.length,
-    high: requests.filter(r => r.priority === 'high').length,
-    avgWaitTime: Math.round(requests.reduce((sum, r) => sum + r.waitTime, 0) / requests.length) || 0,
-    international: requests.filter(r => r.studentType === 'international').length,
   };
 
   return (
@@ -119,35 +77,12 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Tìm kiếm theo tên, email hoặc chủ đề..."
+                  placeholder="Tìm kiếm theo tên hoặc email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
                 />
               </div>
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-full md:w-48">
-                  <User className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Loại Sinh Viên" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất Cả</SelectItem>
-                  <SelectItem value="international">Quốc Tế</SelectItem>
-                  <SelectItem value="domestic">Trong Nước</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filterPriority} onValueChange={setFilterPriority}>
-                <SelectTrigger className="w-full md:w-48">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Mức Ưu Tiên" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất Cả Mức</SelectItem>
-                  <SelectItem value="high">Cao</SelectItem>
-                  <SelectItem value="normal">Trung Bình</SelectItem>
-                  <SelectItem value="low">Thấp</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </CardContent>
         </Card>
@@ -158,11 +93,6 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
             <h3 className="font-semibold">
               Danh Sách Yêu Cầu ({filteredRequests.length})
             </h3>
-            {filteredRequests.length > 0 && (
-              <p className="text-sm text-muted-foreground">
-                Sắp xếp theo thời gian chờ
-              </p>
-            )}
           </div>
 
           {filteredRequests.length === 0 ? (
@@ -172,7 +102,7 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
                   <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Không có yêu cầu nào trong hàng đợi.</p>
                   <p className="text-sm">
-                    {searchQuery || filterType !== 'all' || filterPriority !== 'all'
+                    {searchQuery
                       ? 'Thử điều chỉnh bộ lọc của bạn.'
                       : 'Các yêu cầu mới sẽ hiển thị ở đây.'}
                   </p>
@@ -182,63 +112,25 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
           ) : (
             <>
               {paginatedRequests.map((request) => {
-              const priorityConfig = getPriorityConfig(request.priority);
               const waitTimeColor = getWaitTimeColor(request.waitTime);
 
               return (
                 <Card
                   key={request.id}
-                  className={`hover:shadow-md transition-all ${
-                    request.priority === 'high' ? 'border-l-4 border-l-red-500' : ''
-                  }`}
+                  className="hover:shadow-md transition-all"
                 >
                   <CardHeader>
                     <div className="flex items-start gap-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarFallback
-                          className={`${
-                            request.studentType === 'international'
-                              ? 'bg-purple-500'
-                              : 'bg-blue-500'
-                          } text-white`}
-                        >
-                          {request.avatar}
-                        </AvatarFallback>
-                      </Avatar>
-
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-4 mb-2">
                           <div className="flex-1 min-w-0">
-                            <CardTitle className="text-base mb-1">
+                            <CardTitle className="text-base mb-3">
                               {request.name}
                             </CardTitle>
-                            <div className="flex flex-wrap items-center gap-2 mb-2">
-                              <Badge
-                                variant={
-                                  request.studentType === 'international'
-                                    ? 'default'
-                                    : 'secondary'
-                                }
-                                className="gap-1"
-                              >
-                                <Globe className="h-3 w-3" />
-                                {request.studentType === 'international'
-                                  ? 'Sinh viên Quốc tế'
-                                  : 'Sinh viên Trong nước'}
-                              </Badge>
-                              <Badge variant={priorityConfig.variant} className="gap-1">
-                                <AlertCircle className="h-3 w-3" />
-                                {priorityConfig.label}
-                              </Badge>
-                              {/* <Badge variant="outline" className={`gap-1 ${waitTimeColor}`}>
-                                <Clock className="h-3 w-3" />
-                                Chờ {request.waitTime} phút
-                              </Badge> */}
-                            </div>
                           </div>
                           <Button
                             onClick={() => onTakeRequest(request.id)}
-                            className="gap-2 flex-shrink-0"
+                            className="gap-2 flex-shrink-0 bg-[#EB5A0D] hover:bg-[#d14f0a] text-white"
                             disabled={acceptingRequestId === request.id}
                           >
                             <UserPlus className="h-4 w-4" />
@@ -247,23 +139,6 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
                         </div>
 
                         <div className="space-y-2">
-                          <div className="flex items-start gap-2">
-                            <Tag className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                            <div>
-                              <span className="text-sm font-medium">Chủ đề: </span>
-                              <span className="text-sm">{request.topic}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-start gap-2">
-                            <MessageCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                            <div className="text-sm text-muted-foreground line-clamp-2">
-                              {request.message}
-                            </div>
-                          </div>
-
-                          <Separator className="my-3" />
-
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
                               <User className="h-3 w-3" />
@@ -275,12 +150,26 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>
-                              Yêu cầu lúc:{' '}
-                              {new Date(request.requestedAt).toLocaleDateString('vi-VN')}
-                            </span>
+                          <Separator className="my-3" />
+
+                          <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-3 w-3" />
+                              <span>
+                                Yêu cầu lúc:{' '}
+                                {new Date(request.requestedAt).toLocaleDateString('vi-VN', {
+                                  year: 'numeric',
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
+                            <div className={`flex items-center gap-1 ${waitTimeColor}`}>
+                              <Clock className="h-3 w-3" />
+                              <span>Chờ {request.waitTime} phút</span>
+                            </div>
                           </div>
                         </div>
                       </div>
