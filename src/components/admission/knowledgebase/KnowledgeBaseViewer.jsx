@@ -21,15 +21,8 @@ export function KnowledgeBaseViewer() {
   const [documentsPage, setDocumentsPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  // Static categories for filtering
-  const categories = [
-    'Tất Cả Danh Mục',
-    'Tuyển Sinh',
-    'Học Thuật',
-    'Hỗ Trợ Tài Chính',
-    'Cuộc Sống Khu Học Xá',
-    'Khác'
-  ];
+  // Dynamic categories from intents API
+  const categories = ['Tất Cả Danh Mục', ...intents.map(intent => intent.intent_name)];
 
   // Fetch data from APIs
   useEffect(() => {

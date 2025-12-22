@@ -15,14 +15,14 @@ interface NotificationProviderProps {
 }
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [lastEvent, setLastEvent] = useState<any>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    // Start SSE for any logged-in user with an ID (backend will filter by official_id)
-    if (user?.id) {
+    // Start SSE ONLY for Admission Officials
+    if (user?.id && hasPermission('Admission Official')) {
       startSSEConnection();
     } else {
       stopSSEConnection();
@@ -31,7 +31,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     return () => {
       stopSSEConnection();
     };
-  }, [user]);
+  }, [user, hasPermission]);
 
   const startSSEConnection = () => {
     if (!user?.id) {
@@ -118,7 +118,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const handleEvent = (data: any) => {
     if (data.event === 'queue_updated') {
       // Show notification toast
-      toast.info('🔔 New consultation request received', {
+      toast.info('🔔 Nhận được yêu cầu tư vấn mới', {
         position: "top-right",
         autoClose: 4000,
       });

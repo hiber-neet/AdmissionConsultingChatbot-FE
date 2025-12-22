@@ -2,7 +2,6 @@ import React from 'react';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '../../ui/system_users/button';
 import { Badge } from '../../ui/system_users/badge';
-import { Avatar, AvatarFallback } from '../../ui/system_users/avatar';
 import { ScrollArea } from '../../ui/system_users/scroll-area';
 
 export function ActiveSessionsList({ 
@@ -58,11 +57,6 @@ export function ActiveSessionsList({
                   selectedSessionId === session.session_id ? 'bg-blue-50 border border-blue-200' : 'border border-transparent'
                 }`}
               >
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-blue-500 text-white">
-                    {session.customer_name?.slice(0, 2)?.toUpperCase() || 'ST'}
-                  </AvatarFallback>
-                </Avatar>
                 <div className="flex-1 text-left">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-sm">{session.customer_name}</span>
@@ -72,9 +66,6 @@ export function ActiveSessionsList({
                   </div>
                   <div className="text-sm text-muted-foreground truncate">{session.session_type || 'Trò Chuyện Trực Tiếp'}</div>
                   <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="text-xs font-normal">
-                      Phiên {session.session_id}
-                    </Badge>
                     <div className="flex items-center gap-1">
                       <div className="h-2 w-2 rounded-full bg-green-500"></div>
                       <span className="text-xs text-green-600">Đang Hoạt Động</span>

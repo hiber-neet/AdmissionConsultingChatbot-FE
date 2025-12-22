@@ -1,6 +1,5 @@
 import React, { useRef, useEffect } from 'react';
 import { MessageCircle } from 'lucide-react';
-import { Avatar, AvatarFallback } from '../../ui/system_users/avatar';
 
 export function MessagesArea({ messages, userId, userName }) {
   const messagesEndRef = useRef(null);
@@ -17,7 +16,7 @@ export function MessagesArea({ messages, userId, userName }) {
       {messages.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No messages yet. Start the conversation!</p>
+          <p>Chưa có tin nhắn. Bắt đầu cuộc trò chuyện!</p>
         </div>
       ) : (
         messages.map((message, index) => (
@@ -29,26 +28,12 @@ export function MessagesArea({ messages, userId, userName }) {
                 : 'justify-start'
             }`}
           >
-            <div className="flex items-start space-x-2 max-w-xs lg:max-w-md">
-              {message.sender_id !== parseInt(userId) && (
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback>ST</AvatarFallback>
-                </Avatar>
-              )}
-              
-              <div className={`rounded-lg px-3 py-2 ${
-                message.sender_id === parseInt(userId)
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white border'
-              }`}>
-                <p className="text-sm">{message.message_text}</p>
-              </div>
-              
-              {message.sender_id === parseInt(userId) && (
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback>{userName?.slice(0, 2)?.toUpperCase()}</AvatarFallback>
-                </Avatar>
-              )}
+            <div className={`rounded-lg px-3 py-2 max-w-xs lg:max-w-md ${
+              message.sender_id === parseInt(userId)
+                ? 'bg-blue-500 text-white'
+                : 'bg-white border'
+            }`}>
+              <p className="text-sm">{message.message_text}</p>
             </div>
           </div>
         ))

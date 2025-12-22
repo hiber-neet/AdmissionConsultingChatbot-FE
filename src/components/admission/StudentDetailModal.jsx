@@ -127,17 +127,17 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       {/* Modal Container - Almost Full Screen */}
-      <div className="relative w-full h-full max-w-7xl max-h-[95vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div className="relative w-full h-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
         
         {/* Fixed Header */}
-        <div className="flex-shrink-0 bg-[#EB5A0D] text-white px-8 py-6">
+        <div className="flex-shrink-0 bg-[#EB5A0D] text-white px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <User className="h-8 w-8" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                <User className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Hồ Sơ Học Sinh</h1>
+                <h1 className="text-2xl font-bold tracking-tight">Hồ Sơ Khách Hàng</h1>
               </div>
             </div>
             
@@ -145,7 +145,7 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
               onClick={onClose}
               className="p-2 hover:bg-white/20 rounded-lg transition-colors"
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -153,27 +153,27 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
           {loading && (
-            <div className="flex flex-col items-center justify-center h-full p-16">
+            <div className="flex flex-col items-center justify-center h-full p-12">
               <div className="relative">
-                <div className="w-20 h-20 border-8 border-orange-200 border-t-[#EB5A0D] rounded-full animate-spin"></div>
-                <User className="absolute inset-0 m-auto h-10 w-10 text-[#EB5A0D]" />
+                <div className="w-16 h-16 border-6 border-orange-200 border-t-[#EB5A0D] rounded-full animate-spin"></div>
+                <User className="absolute inset-0 m-auto h-8 w-8 text-[#EB5A0D]" />
               </div>
-              <h3 className="mt-6 text-xl font-semibold text-gray-800">Đang tải thông tin...</h3>
-              <p className="mt-2 text-gray-500">Vui lòng đợi trong giây lát</p>
+              <h3 className="mt-4 text-lg font-semibold text-gray-800">Đang tải thông tin...</h3>
+              <p className="mt-1 text-sm text-gray-500">Vui lòng đợi trong giây lát</p>
             </div>
           )}
 
           {error && (
-            <div className="flex items-center justify-center h-full p-16">
-              <div className="max-w-md w-full bg-red-50 border-2 border-red-200 rounded-xl p-8 text-center">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <X className="h-8 w-8 text-red-600" />
+            <div className="flex items-center justify-center h-full p-12">
+              <div className="max-w-md w-full bg-red-50 border-2 border-red-200 rounded-lg p-6 text-center">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <X className="h-6 w-6 text-red-600" />
                 </div>
-                <h3 className="text-xl font-bold text-red-900 mb-2">Không thể tải thông tin</h3>
-                <p className="text-red-700 mb-4">{error}</p>
+                <h3 className="text-lg font-bold text-red-900 mb-2">Không thể tải thông tin</h3>
+                <p className="text-sm text-red-700 mb-3">{error}</p>
                 <button
                   onClick={() => fetchStudentDetail(userId)}
-                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                  className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors font-medium"
                 >
                   Thử lại
                 </button>
@@ -182,24 +182,24 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
           )}
 
           {student && !loading && !error && (
-            <div className="p-8 space-y-6">
+            <div className="p-6 space-y-4">
               {/* Student Header Card */}
-              <div className="bg-white rounded-2xl border-2 border-orange-100 shadow-lg p-8">
-                <div className="flex items-start gap-8">
+              <div className="bg-white rounded-xl border-2 border-orange-100 shadow-lg p-5">
+                <div className="flex items-start gap-6">
                   {/* Student Info */}
                   <div className="flex-1">
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-1.5">
                           {student.full_name || 'Chưa cập nhật'}
                         </h2>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           {student.status ? (
-                            <span className="px-4 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
                               Đang hoạt động
                             </span>
                           ) : (
-                            <span className="px-4 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm font-semibold">
+                            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold">
                               Không hoạt động
                             </span>
                           )}
@@ -208,31 +208,31 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
                     </div>
 
                     {/* Contact Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                      <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-orange-100">
-                        <div className="p-2 bg-orange-50 rounded-lg">
-                          <Mail className="h-5 w-5 text-[#EB5A0D]" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                      <div className="flex items-center gap-2.5 p-3 bg-white rounded-lg border border-orange-100">
+                        <div className="p-1.5 bg-orange-50 rounded-lg">
+                          <Mail className="h-4 w-4 text-[#EB5A0D]" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Email</p>
+                          <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-0.5">Email</p>
                           <a 
                             href={`mailto:${student.email}`}
-                            className="text-sm font-medium text-[#EB5A0D] hover:text-orange-700 truncate block"
+                            className="text-xs font-medium text-[#EB5A0D] hover:text-orange-700 truncate block"
                           >
                             {student.email || 'Chưa cập nhật'}
                           </a>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-orange-100">
-                        <div className="p-2 bg-orange-50 rounded-lg">
-                          <Phone className="h-5 w-5 text-[#EB5A0D]" />
+                      <div className="flex items-center gap-2.5 p-3 bg-white rounded-lg border border-orange-100">
+                        <div className="p-1.5 bg-orange-50 rounded-lg">
+                          <Phone className="h-4 w-4 text-[#EB5A0D]" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Số điện thoại</p>
+                          <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-0.5">Số điện thoại</p>
                           <a 
                             href={`tel:${student.phone_number}`}
-                            className="text-sm font-medium text-[#EB5A0D] hover:text-orange-700 truncate block"
+                            className="text-xs font-medium text-[#EB5A0D] hover:text-orange-700 truncate block"
                           >
                             {student.phone_number || 'Chưa cập nhật'}
                           </a>
@@ -240,13 +240,13 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
                       </div>
 
                       {student.created_at && (
-                        <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-orange-100">
-                          <div className="p-2 bg-orange-50 rounded-lg">
-                            <Calendar className="h-5 w-5 text-[#EB5A0D]" />
+                        <div className="flex items-center gap-2.5 p-3 bg-white rounded-lg border border-orange-100">
+                          <div className="p-1.5 bg-orange-50 rounded-lg">
+                            <Calendar className="h-4 w-4 text-[#EB5A0D]" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Ngày đăng ký</p>
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-0.5">Ngày đăng ký</p>
+                            <p className="text-xs font-medium text-gray-900">
                               {new Date(student.created_at).toLocaleDateString('vi-VN', {
                                 year: 'numeric',
                                 month: 'long',
@@ -258,13 +258,13 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
                       )}
 
                       {student.role_name && (
-                        <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-orange-100">
-                          <div className="p-2 bg-orange-50 rounded-lg">
-                            <Award className="h-5 w-5 text-[#EB5A0D]" />
+                        <div className="flex items-center gap-2.5 p-3 bg-white rounded-lg border border-orange-100">
+                          <div className="p-1.5 bg-orange-50 rounded-lg">
+                            <Award className="h-4 w-4 text-[#EB5A0D]" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Vai trò</p>
-                            <p className="text-sm font-medium text-gray-900">{student.role_name}</p>
+                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-0.5">Vai trò</p>
+                            <p className="text-xs font-medium text-gray-900">{student.role_name}</p>
                           </div>
                         </div>
                       )}
@@ -274,75 +274,77 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
               </div>
 
               {/* RIASEC Section */}
-              <div className="bg-white rounded-2xl border-2 border-orange-100 shadow-lg overflow-hidden">
-                <div className="bg-[#EB5A0D] px-8 py-6 text-white">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                      <Brain className="h-6 w-6" />
+              <div className="bg-white rounded-xl border-2 border-orange-100 shadow-lg overflow-hidden">
+                <div className="bg-[#EB5A0D] px-5 py-3.5 text-white">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                      <Brain className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-bold">Kết Quả Trắc Nghiệm RIASEC</h3>
+                      <h3 className="text-lg font-bold">Kết Quả Trắc Nghiệm RIASEC</h3>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-8">
+                <div className="p-5">
                   {riasecLoading && (
-                    <div className="flex flex-col items-center justify-center py-16">
+                    <div className="flex flex-col items-center justify-center py-12">
                       <div className="relative">
-                        <div className="w-16 h-16 border-8 border-orange-200 border-t-[#EB5A0D] rounded-full animate-spin"></div>
-                        <Brain className="absolute inset-0 m-auto h-8 w-8 text-[#EB5A0D]" />
+                        <div className="w-12 h-12 border-6 border-orange-200 border-t-[#EB5A0D] rounded-full animate-spin"></div>
+                        <Brain className="absolute inset-0 m-auto h-6 w-6 text-[#EB5A0D]" />
                       </div>
-                      <p className="mt-4 text-gray-600 font-medium">Đang tải kết quả RIASEC...</p>
+                      <p className="mt-3 text-sm text-gray-600 font-medium">Đang tải kết quả RIASEC...</p>
                     </div>
                   )}
 
                   {!riasecLoading && riasecResults.length === 0 && (
-                    <div className="text-center py-16">
-                      <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Brain className="h-10 w-10 text-orange-400" />
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Brain className="h-8 w-8 text-orange-400" />
                       </div>
-                      <h4 className="text-xl font-bold text-gray-900 mb-2">Chưa có kết quả</h4>
-                      <p className="text-gray-600">Học sinh chưa thực hiện bài trắc nghiệm RIASEC</p>
+                      <h4 className="text-lg font-bold text-gray-900 mb-1.5">Chưa có kết quả</h4>
+                      <p className="text-sm text-gray-600">Học sinh chưa thực hiện bài trắc nghiệm RIASEC</p>
                     </div>
                   )}
 
                   {!riasecLoading && riasecResults.length > 0 && (
-                    <div className="space-y-8">
+                    <div className="space-y-5">
                       {riasecResults.map((result, index) => (
-                        <div key={index} className="border-2 border-orange-100 rounded-xl overflow-hidden">
+                        <div key={index} className="border-2 border-orange-100 rounded-lg overflow-hidden">
                           {/* Result Header */}
-                          <div className="bg-orange-50 px-6 py-4 border-b-2 border-orange-100">
+                          <div className="bg-orange-50 px-4 py-2.5 border-b-2 border-orange-100">
                             <div className="flex items-center justify-between">
-                              <h4 className="text-lg font-bold text-gray-900">
+                              <h4 className="text-sm font-bold text-gray-900">
                                 Kết quả lần {riasecResults.length - index}
                               </h4>
-                              <span className="px-3 py-1 bg-white border border-orange-200 rounded-full text-xs font-semibold text-[#EB5A0D]">
+                              <span className="px-2 py-0.5 bg-white border border-orange-200 rounded-full text-xs font-semibold text-[#EB5A0D]">
                                 ID: {result.result_id}
                               </span>
                             </div>
                           </div>
 
-                          <div className="p-6">
+                          <div className="p-4">
                             {/* Personality Type */}
                             {result.result && (
-                              <div className="mb-8">
-                                <div className="bg-[#EB5A0D] rounded-xl p-8 text-center shadow-xl">
-                                  <p className="text-white/90 text-sm font-semibold uppercase tracking-widest mb-2">
-                                    Loại Tính Cách
-                                  </p>
-                                  <p className="text-white text-4xl font-extrabold tracking-tight">
-                                    {result.result}
-                                  </p>
+                              <div className="mb-5">
+                                <div className="bg-white border-2 border-gray-200 rounded-lg p-4">
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                      Loại Tính Cách
+                                    </p>
+                                    <p className="text-lg font-bold text-gray-900">
+                                      {result.result}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             )}
 
                             {/* RIASEC Bars */}
-                            <div className="space-y-6">
-                              <div className="flex items-center gap-2 mb-4">
-                                <TrendingUp className="h-5 w-5 text-[#EB5A0D]" />
-                                <h5 className="text-lg font-bold text-gray-900">Biểu Đồ Điểm Số Chi Tiết</h5>
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-1.5 mb-3">
+                                <TrendingUp className="h-4 w-4 text-[#EB5A0D]" />
+                                <h5 className="text-sm font-bold text-gray-900">Biểu Đồ Điểm Số Chi Tiết</h5>
                               </div>
 
                               {[
@@ -393,17 +395,17 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
                                 const percentage = (score / 5.0) * 100;
                                 
                                 return (
-                                  <div key={key} className={`${bg} border ${border} rounded-xl p-5`}>
-                                    <div className="flex items-center justify-between mb-3">
-                                      <span className="text-sm font-bold text-gray-900">{label}</span>
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-2xl font-extrabold text-gray-900">
+                                  <div key={key} className={`${bg} border ${border} rounded-lg p-3`}>
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-xs font-bold text-gray-900">{label}</span>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-lg font-extrabold text-gray-900">
                                           {score.toFixed(1)}
                                         </span>
-                                        <span className="text-sm text-gray-500 font-medium">/5.0</span>
+                                        <span className="text-xs text-gray-500 font-medium">/5.0</span>
                                       </div>
                                     </div>
-                                    <div className="relative h-8 bg-white rounded-lg overflow-hidden border-2 border-gray-200">
+                                    <div className="relative h-6 bg-white rounded-md overflow-hidden border-2 border-gray-200">
                                       <div 
                                         className={`h-full bg-gradient-to-r ${color} transition-all duration-700 ease-out relative`}
                                         style={{ width: `${percentage}%` }}
@@ -411,7 +413,7 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
                                         <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
                                       </div>
                                       <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className="text-sm font-bold text-gray-700 drop-shadow-sm">
+                                        <span className="text-xs font-bold text-gray-700 drop-shadow-sm">
                                           {percentage.toFixed(0)}%
                                         </span>
                                       </div>
@@ -429,76 +431,62 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
               </div>
 
               {/* Academic Scores Section */}
-              <div className="bg-white rounded-2xl border-2 border-orange-100 shadow-lg overflow-hidden">
-                <div className="bg-[#EB5A0D] px-8 py-6 text-white">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                      <BookOpen className="h-6 w-6" />
+              <div className="bg-white rounded-xl border-2 border-orange-100 shadow-lg overflow-hidden">
+                <div className="bg-[#EB5A0D] px-5 py-3.5 text-white">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                      <BookOpen className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-bold">Kết Quả Học Tập</h3>
+                      <h3 className="text-lg font-bold">Kết Quả Học Tập</h3>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-8">
+                <div className="p-5">
                   {scoresLoading && (
-                    <div className="flex flex-col items-center justify-center py-16">
+                    <div className="flex flex-col items-center justify-center py-12">
                       <div className="relative">
-                        <div className="w-16 h-16 border-8 border-orange-200 border-t-[#EB5A0D] rounded-full animate-spin"></div>
-                        <BookOpen className="absolute inset-0 m-auto h-8 w-8 text-[#EB5A0D]" />
+                        <div className="w-12 h-12 border-6 border-orange-200 border-t-[#EB5A0D] rounded-full animate-spin"></div>
+                        <BookOpen className="absolute inset-0 m-auto h-6 w-6 text-[#EB5A0D]" />
                       </div>
-                      <p className="mt-4 text-gray-600 font-medium">Đang tải kết quả học tập...</p>
+                      <p className="mt-3 text-sm text-gray-600 font-medium">Đang tải kết quả học tập...</p>
                     </div>
                   )}
 
                   {!scoresLoading && !academicScores && (
-                    <div className="text-center py-16">
-                      <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <BookOpen className="h-10 w-10 text-orange-400" />
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <BookOpen className="h-8 w-8 text-orange-400" />
                       </div>
-                      <h4 className="text-xl font-bold text-gray-900 mb-2">Chưa có dữ liệu</h4>
-                      <p className="text-gray-600">Học sinh chưa cập nhật kết quả học tập</p>
+                      <h4 className="text-lg font-bold text-gray-900 mb-1.5">Chưa có dữ liệu</h4>
+                      <p className="text-sm text-gray-600">Học sinh chưa cập nhật kết quả học tập</p>
                     </div>
                   )}
 
                   {!scoresLoading && academicScores && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {[
-                        { key: 'math', label: 'Toán', color: 'from-blue-500 to-cyan-600', bg: 'bg-blue-50', border: 'border-blue-200' },
-                        { key: 'literature', label: 'Ngữ Văn', color: 'from-purple-500 to-violet-600', bg: 'bg-purple-50', border: 'border-purple-200' },
-                        { key: 'english', label: 'Tiếng Anh', color: 'from-green-500 to-emerald-600', bg: 'bg-green-50', border: 'border-green-200' },
-                        { key: 'physics', label: 'Vật Lý', color: 'from-indigo-500 to-blue-600', bg: 'bg-indigo-50', border: 'border-indigo-200' },
-                        { key: 'chemistry', label: 'Hóa Học', color: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', border: 'border-amber-200' },
-                        { key: 'biology', label: 'Sinh Học', color: 'from-lime-500 to-green-600', bg: 'bg-lime-50', border: 'border-lime-200' },
-                        { key: 'history', label: 'Lịch Sử', color: 'from-yellow-500 to-amber-600', bg: 'bg-yellow-50', border: 'border-yellow-200' },
-                        { key: 'geography', label: 'Địa Lý', color: 'from-teal-500 to-cyan-600', bg: 'bg-teal-50', border: 'border-teal-200' },
-                      ].map(({ key, label, color, bg, border }) => {
+                        { key: 'math', label: 'Toán', bg: 'bg-blue-50', border: 'border-blue-200' },
+                        { key: 'literature', label: 'Ngữ Văn', bg: 'bg-purple-50', border: 'border-purple-200' },
+                        { key: 'english', label: 'Tiếng Anh', bg: 'bg-green-50', border: 'border-green-200' },
+                        { key: 'physics', label: 'Vật Lý', bg: 'bg-indigo-50', border: 'border-indigo-200' },
+                        { key: 'chemistry', label: 'Hóa Học', bg: 'bg-amber-50', border: 'border-amber-200' },
+                        { key: 'biology', label: 'Sinh Học', bg: 'bg-lime-50', border: 'border-lime-200' },
+                        { key: 'history', label: 'Lịch Sử', bg: 'bg-yellow-50', border: 'border-yellow-200' },
+                        { key: 'geography', label: 'Địa Lý', bg: 'bg-teal-50', border: 'border-teal-200' },
+                      ].map(({ key, label, bg, border }) => {
                         const score = academicScores[key] || 0;
-                        const percentage = (score / 10.0) * 100;
                         
                         return (
-                          <div key={key} className={`${bg} border ${border} rounded-xl p-5`}>
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="text-sm font-bold text-gray-900">{label}</span>
-                              <div className="flex items-center gap-2">
+                          <div key={key} className={`${bg} border ${border} rounded-lg p-3`}>
+                            <div className="text-center">
+                              <p className="text-xs font-semibold text-gray-600 mb-1">{label}</p>
+                              <div className="flex items-baseline justify-center gap-1">
                                 <span className="text-2xl font-extrabold text-gray-900">
                                   {score.toFixed(1)}
                                 </span>
-                                <span className="text-sm text-gray-500 font-medium">/10</span>
-                              </div>
-                            </div>
-                            <div className="relative h-8 bg-white rounded-lg overflow-hidden border-2 border-gray-200">
-                              <div 
-                                className={`h-full bg-gradient-to-r ${color} transition-all duration-700 ease-out relative`}
-                                style={{ width: `${percentage}%` }}
-                              >
-                                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                              </div>
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-sm font-bold text-gray-700 drop-shadow-sm">
-                                  {percentage.toFixed(0)}%
-                                </span>
+                                <span className="text-xs text-gray-500 font-medium">/10</span>
                               </div>
                             </div>
                           </div>
