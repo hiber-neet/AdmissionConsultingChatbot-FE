@@ -302,7 +302,7 @@ export default function ChatGuestPage() {
   onKeyDown={(e) => {
     // Enter để gửi, Shift+Enter để xuống dòng
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault(); // không cho xuống dòng
+      e.preventDefault();
       if (wsReady && input.trim()) {
         send(input);
       }
