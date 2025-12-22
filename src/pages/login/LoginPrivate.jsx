@@ -25,38 +25,33 @@ const handleLogin = async (event) => {
     return;
   }
 
-  try {
+   try {
     setSubmitting(true);
 
     const result = await login(email, password);
 
     if (result?.ok) {
-      const { token } = result;
+      const appRole = result.role || "Student"; // role kiểu "Admin" | "Student"...
 
-      const role = getRoleFromToken(token || "");
-
-      let appRole = null;
-      if (role === "admin") appRole = "SYSTEM_ADMIN";
-      else if (role === "content_manager") appRole = "CONTENT_MANAGER";
-      else if (role === "consultant") appRole = "CONSULTANT";
-      else if (role === "admission_officer") appRole = "ADMISSION_OFFICER";
-      else appRole = "STUDENT";
-     // 🔹 Nếu là student thì cho về /profile
-      let targetRoute = "";
-      if (appRole === "STUDENT") {
-        targetRoute = "/profile";
-      } else {
-        targetRoute = getDefaultRoute(appRole);
+      if (appRole !== "Student" && appRole !== "Parent") {
+        // Không cho staff dùng trang này
+        swal({
+          title: "Sai trang đăng nhập",
+          text: "Tài khoản của bạn là cán bộ. Vui lòng dùng trang 'Cán Bộ FPT'.",
+          icon: "warning",
+          buttons: {
+            ok: { text: "Đến trang cán bộ", value: true, className: "swal-ok-button" },
+          },
+        }).then(() => {
+          navigate("/loginforad");
+        });
+        return;
       }
 
-      // toast.success(
-      //   `Đăng nhập thành công! Chuyển đến ${
-      //     appRole === "STUDENT" ? "Profile" : "Dashboard"
-      //   }.` 
-      // );
-
-      navigate(targetRoute);
+      // Student / Parent -> về profile
+      navigate("/profile");
     } else {
+      // sai TK / MK
       swal({
         title: "Sai tài khoản hoặc mật khẩu",
         text: result?.message || "Vui lòng kiểm tra lại email hoặc mật khẩu.",
