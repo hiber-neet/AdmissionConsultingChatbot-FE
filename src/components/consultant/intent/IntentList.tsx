@@ -53,7 +53,7 @@ export function IntentList({ intents, onEdit, onDelete, onClick, isLeader }: Int
 
           <div className="flex items-center justify-between text-xs text-gray-500">
             <span>ID: {intent.intent_id}</span>
-            {/* Deleted Badge - Bottom Right */}
+            {}
             {intent.is_deleted && (
               <div className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded font-medium">
                 <Ban className="h-3 w-3" />

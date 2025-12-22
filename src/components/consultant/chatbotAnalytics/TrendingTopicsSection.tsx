@@ -78,7 +78,7 @@ export function TrendingTopicsSection({
               </div>
             ))}
             
-            {/* Show More Button */}
+            {}
             {intentStats && visibleCount < intentStats.length && (
               <div className="flex justify-center pt-4">
                 <Button 
@@ -91,7 +91,7 @@ export function TrendingTopicsSection({
               </div>
             )}
             
-            {/* Show Less Button */}
+            {}
             {visibleCount > 5 && (
               <div className="flex justify-center pt-2">
                 <Button 

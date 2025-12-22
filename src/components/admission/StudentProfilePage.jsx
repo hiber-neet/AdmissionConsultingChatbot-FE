@@ -7,7 +7,7 @@ export function StudentProfilePage() {
   const { studentId } = useParams();
 
   const handleBack = () => {
-    // Navigate back to student list
+
     navigate('/admission/students');
   };
 

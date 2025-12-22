@@ -13,23 +13,6 @@ import { Input } from '../ui/system_users/input';
 import { Separator } from '../ui/system_users/separator';
 import { Pagination } from '../common/Pagination';
 
-// QueueRequest object structure (data available from backend):
-// {
-//   id: string,
-//   name: string,           // Customer's full name
-//   email: string,          // Customer's email  
-//   phone: string,          // Customer's phone number
-//   waitTime: number,       // Calculated wait time in minutes
-//   requestedAt: string,    // When the request was created
-// }
-
-// RequestQueue component props:
-// {
-//   requests: QueueRequest[],
-//   onTakeRequest: (requestId: string) => void,
-//   acceptingRequestId: string | null - ID of the request currently being accepted
-// }
-
 export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,14 +26,12 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
     return matchesSearch;
   });
 
-  // Pagination (no sorting - use filtered results)
   const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
   const paginatedRequests = filteredRequests.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
@@ -58,12 +39,12 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
   return (
     <ScrollArea className="h-full">
       <div className="p-6 pb-8 space-y-6">
-        {/* Page Header */}
+        {}
         <div>
           <h1 className="text-3xl font-bold">Hàng Đợi Yêu Cầu Tư Vấn</h1>
         </div>
 
-        {/* Filters */}
+        {}
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row gap-4">
@@ -80,7 +61,7 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
           </CardContent>
         </Card>
 
-        {/* Request Queue List */}
+        {}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">

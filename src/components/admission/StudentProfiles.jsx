@@ -31,119 +31,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/system_users/tab
 import { Separator } from '../ui/system_users/separator';
 import { Progress } from '../ui/system_users/progress';
 
-// UploadedFile object structure:
-// {
-//   id: string,
-//   name: string,
-//   type: 'pdf' | 'image' | 'document' | 'spreadsheet',
-//   size: string,
-//   uploadedDate: string,
-//   category: string
-// }
-
-// Props: { studentId: string, onBack: () => void }
-
-// Mock data - In real app, this would be fetched based on studentId
-const mockStudentData = {
-  ST001: {
-    id: 'ST001',
-    name: 'Nguyễn Văn An',
-    email: 'an.nguyen@email.com',
-    phone: '+84 912 345 678',
-    dateOfBirth: '2002-05-15',
-    location: 'Hà Nội, Việt Nam',
-    address: '123 Đường Láng, Quận Đống Đa, Hà Nội',
-    nationality: 'Việt Nam',
-    appliedDate: '2024-11-10',
-    program: 'Khoa học Máy tính',
-    status: 'approved',
-    gpa: 3.8,
-    testScore: 95,
-    languageScore: {
-      test: 'IELTS',
-      score: 7.5,
-      date: '2024-08-20',
-    },
-    education: [
-      {
-        school: 'Đại học Bách Khoa Hà Nội',
-        degree: 'Cử nhân',
-        major: 'Công nghệ Thông tin',
-        gpa: 3.8,
-        startDate: '2020-09',
-        endDate: '2024-06',
-      },
-      {
-        school: 'Trường THPT Chu Văn An',
-        degree: 'Tốt nghiệp THPT',
-        major: 'Khoa học Tự nhiên',
-        gpa: 9.2,
-        startDate: '2017-09',
-        endDate: '2020-06',
-      },
-    ],
-    experience: [
-      {
-        title: 'Thực tập sinh Phát triển Phần mềm',
-        company: 'VNG Corporation',
-        duration: '6 tháng',
-        description: 'Phát triển ứng dụng web sử dụng React và Node.js',
-      },
-    ],
-    awards: [
-      'Học bổng Xuất sắc Đại học Bách Khoa (2021-2023)',
-      'Giải Nhì Cuộc thi Lập trình ACM-ICPC Vùng',
-      'Giải Ba Olympic Tin học Quốc gia',
-    ],
-    personalStatement: 'Tôi là một sinh viên đam mê công nghệ với mong muốn theo đuổi nghiên cứu về trí tuệ nhân tạo và học máy. Trong quá trình học tập, tôi đã tích lũy được kiến thức vững chắc về các nguyên lý cơ bản của khoa học máy tính và có kinh nghiệm thực tế trong phát triển phần mềm. Tôi tin rằng chương trình học này sẽ giúp tôi phát triển kỹ năng và kiến thức cần thiết để đóng góp vào lĩnh vực công nghệ.',
-    uploadedFiles: [
-      {
-        id: 'F001',
-        name: 'Bằng tốt nghiệp.pdf',
-        type: 'pdf',
-        size: '2.4 MB',
-        uploadedDate: '2024-11-10',
-        category: 'Văn bằng',
-      },
-      {
-        id: 'F002',
-        name: 'Bảng điểm đại học.pdf',
-        type: 'pdf',
-        size: '1.8 MB',
-        uploadedDate: '2024-11-10',
-        category: 'Văn bằng',
-      },
-      {
-        id: 'F003',
-        name: 'Chứng chỉ IELTS.pdf',
-        type: 'pdf',
-        size: '950 KB',
-        uploadedDate: '2024-11-10',
-        category: 'Chứng chỉ',
-      },
-      {
-        id: 'F004',
-        name: 'Thư giới thiệu - PGS. Trần Văn A.pdf',
-        type: 'pdf',
-        size: '450 KB',
-        uploadedDate: '2024-11-11',
-        category: 'Thư giới thiệu',
-      },
-      {
-        id: 'F005',
-        name: 'CV-Resume.pdf',
-        type: 'pdf',
-        size: '320 KB',
-        uploadedDate: '2024-11-11',
-        category: 'Hồ sơ',
-      },
-    ],
-  },
-  // Add more mock students if needed
-};
-
 export function StudentProfile({ studentId, onBack }) {
-  const student = mockStudentData[studentId] || mockStudentData.ST001;
+
+  const student = {
+    id: studentId,
+    name: 'Dữ liệu không khả dụng',
+    email: 'N/A',
+    phone: 'N/A',
+    dateOfBirth: 'N/A',
+    location: 'N/A',
+    address: 'N/A',
+    nationality: 'N/A',
+    appliedDate: 'N/A',
+    program: 'N/A',
+    status: 'pending',
+    gpa: 0,
+    testScore: 0,
+    languageScore: null,
+    education: [],
+    experience: [],
+    awards: [],
+    personalStatement: 'Tính năng này đang được phát triển. Vui lòng kết nối với API để hiển thị dữ liệu thực tế.',
+    uploadedFiles: []
+  };
+  
   const [selectedTab, setSelectedTab] = useState('overview');
 
   const getStatusConfig = (status) => {
@@ -183,7 +94,7 @@ export function StudentProfile({ studentId, onBack }) {
   return (
     <ScrollArea className="h-full">
       <div className="p-6 pb-8 space-y-6">
-        {/* Back Button and Header */}
+        {}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="h-4 w-4" />
@@ -196,7 +107,7 @@ export function StudentProfile({ studentId, onBack }) {
           </div>
         </div>
 
-        {/* Student Header Card */}
+        {}
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row gap-6">
@@ -281,7 +192,7 @@ export function StudentProfile({ studentId, onBack }) {
           </CardContent>
         </Card>
 
-        {/* Tabs for Detailed Information */}
+        {}
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
           <TabsList className="w-full justify-start">
             <TabsTrigger value="overview">Tổng Quan</TabsTrigger>
@@ -292,7 +203,7 @@ export function StudentProfile({ studentId, onBack }) {
 
           <TabsContent value="overview" className="space-y-6 mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Academic Performance */}
+              {}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -330,7 +241,7 @@ export function StudentProfile({ studentId, onBack }) {
                 </CardContent>
               </Card>
 
-              {/* Awards and Achievements */}
+              {}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -352,7 +263,7 @@ export function StudentProfile({ studentId, onBack }) {
                 </CardContent>
               </Card>
 
-              {/* Experience */}
+              {}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -375,7 +286,7 @@ export function StudentProfile({ studentId, onBack }) {
                 </CardContent>
               </Card>
 
-              {/* Contact Information */}
+              {}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">

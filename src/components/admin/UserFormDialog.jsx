@@ -32,7 +32,7 @@ export function UserFormDialog({
   };
 
   const handleRoleChange = (role) => {
-    onFormChange({ ...formData, role, permissions: [] }); // Reset permissions when role changes
+    onFormChange({ ...formData, role, permissions: [] });
   };
 
   const handlePermissionsChange = (permissions) => {
@@ -133,14 +133,14 @@ export function UserFormDialog({
           )}
 
           <div className="space-y-6">
-            {/* Role Selection */}
+            {}
             <RoleSelector
               selectedRole={formData.role}
               onRoleChange={handleRoleChange}
               isEditing={!!editingUser}
             />
 
-            {/* Permission Management */}
+            {}
             {formData.role && (
               <PermissionSelector
                 role={formData.role}

@@ -14,19 +14,17 @@ export function RequestQueuePage() {
   const [error, setError] = useState(null);
   const [acceptingRequestId, setAcceptingRequestId] = useState(null);
 
-  // Transform API data to match the RequestQueue component's expected format
   const transformQueueData = (apiData) => {
     return apiData.map(item => ({
       id: item.id.toString(),
       name: item.customer?.full_name || `Customer ${item.customer_id}`,
       email: item.customer?.email || 'N/A',
       phone: item.customer?.phone_number || 'N/A',
-      waitTime: Math.floor((new Date() - new Date(item.created_at)) / (1000 * 60)), // Calculate actual wait time in minutes
+      waitTime: Math.floor((new Date() - new Date(item.created_at)) / (1000 * 60)),
       requestedAt: item.created_at,
     }));
   };
 
-  // Fetch queue data from API
   const fetchQueueData = async () => {
     if (!user?.id) {
       setError('User not authenticated');
@@ -37,11 +35,9 @@ export function RequestQueuePage() {
     try {
       setLoading(true);
       setError(null);
-      
-      // Use the user's ID as the official ID
+
       const response = await fastAPILiveChat.getQueueList(parseInt(user.id));
-      
-      // Handle both cases: direct array or response.data
+
       const apiData = Array.isArray(response) ? response : (response.data || []);
       
       const transformedData = transformQueueData(apiData);
@@ -55,31 +51,34 @@ export function RequestQueuePage() {
 
   useEffect(() => {
     fetchQueueData();
-    
-    // Set up periodic refresh every 30 seconds
+
     const interval = setInterval(fetchQueueData, 30000);
     
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  // Listen for SSE queue updates
   useEffect(() => {
     const handleQueueUpdate = (event) => {
-      // Refresh the queue data when we receive an SSE notification
+
       fetchQueueData();
     };
 
-    // Listen for custom events from the NotificationContext
+    const handleQueueAccepted = (event) => {
+
+      fetchQueueData();
+    };
+
     window.addEventListener('queueUpdate', handleQueueUpdate);
+    window.addEventListener('queueAccepted', handleQueueAccepted);
 
     return () => {
       window.removeEventListener('queueUpdate', handleQueueUpdate);
+      window.removeEventListener('queueAccepted', handleQueueAccepted);
     };
   }, []);
 
   const handleTakeRequest = async (requestId) => {
-    
-    // Set loading state for this specific request
+
     setAcceptingRequestId(requestId);
     setError(null);
     
@@ -89,24 +88,21 @@ export function RequestQueuePage() {
         toast.error('User not authenticated. Please login again.');
         return;
       }
-      
-      // Call accept API
+
       const queueId = parseInt(requestId);
       const officialId = parseInt(user.id);
-      
-      
+
       const response = await fastAPILiveChat.acceptRequest(officialId, queueId);
-      
-      // Handle different response types
+
       if (response && response.error) {
-        // Handle specific error cases
+
         switch (response.error) {
           case 'max_sessions_reached':
             toast.error('🚫 Maximum sessions reached! You cannot accept more requests at this time. Please end some active sessions first.');
             break;
           case 'queue_not_found':
             toast.error('❌ Request not found. It may have been already taken by another official.');
-            // Refresh the queue to show updated data
+
             await fetchQueueData();
             break;
           case 'official_not_found':
@@ -117,13 +113,11 @@ export function RequestQueuePage() {
         }
         return;
       }
-      
-      // Success case - handle ChatSession object response
+
       if (response && response.chat_session_id) {
-        // New response format: ChatSession object with chat_session_id
-        toast.success('✅ Request accepted successfully! Redirecting to consultation...');
-        
-        // Navigate to consultation page with session info
+
+        toast.success('✅ Đã chấp nhận yêu cầu! Đang chuyển đến tư vấn...');
+
         navigate('/admission/consultation', { 
           state: { 
             sessionId: response.chat_session_id,
@@ -132,10 +126,9 @@ export function RequestQueuePage() {
           } 
         });
       } else if (response && response.session_id) {
-        // Legacy response format: { session_id: number }
-        toast.success('✅ Request accepted successfully! Redirecting to consultation...');
-        
-        // Navigate to consultation page with session info
+
+        toast.success('✅ Đã chấp nhận yêu cầu! Đang chuyển đến tư vấn...');
+
         navigate('/admission/consultation', { 
           state: { 
             sessionId: response.session_id,
@@ -144,19 +137,18 @@ export function RequestQueuePage() {
           } 
         });
       } else if (response && response.success) {
-        // Some APIs return { success: true, session_id: ... }
-        toast.success('✅ Request accepted successfully! Redirecting to consultation...');
+
+        toast.success('✅ Đã chấp nhận yêu cầu! Đang chuyển đến tư vấn...');
         await fetchQueueData();
         navigate('/admission/consultation');
       } else {
-        toast.warning('⚠️ Request might have been accepted, but received unexpected response. Please check your active sessions.');
-        // Fallback: refresh queue and navigate
+        toast.warning('⚠️ Yêu cầu có thể đã được chấp nhận, nhưng nhận được phản hồi không mong đợi. Vui lòng kiểm tra các phiên hoạt động của bạn.');
+
         await fetchQueueData();
         navigate('/admission/consultation');
       }
     } catch (err) {
-      
-      // Handle different types of errors
+
       if (err.response && err.response.status === 500) {
         toast.error('🔧 Server error occurred. Please try again in a moment.');
       } else if (err.response && err.response.status === 401) {
@@ -171,7 +163,7 @@ export function RequestQueuePage() {
       
       setError('Failed to accept request. Please try again.');
     } finally {
-      // Clear loading state
+
       setAcceptingRequestId(null);
     }
   };

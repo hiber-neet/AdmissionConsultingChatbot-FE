@@ -37,8 +37,7 @@ interface DashboardOverviewProps {
 
 export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewProps = {}) {
   const [timeRange, setTimeRange] = useState<'today' | 'week'>('week');
-  
-  // API state for dashboard statistics
+
   const [stats, setStats] = useState<ConsultantStatistics | null>(null);
   const [recentQuestions, setRecentQuestions] = useState<RecentQuestion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,21 +45,19 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  // Fetch dashboard statistics and recent questions
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Fetch both statistics and recent questions in parallel
+
         const [statsResponse, questionsResponse] = await Promise.all([
           consultantAnalyticsAPI.getStatistics(),
           consultantAnalyticsAPI.getRecentQuestions(5)
         ]);
         
         setStats(statsResponse.data);
-        // Handle case where questionsResponse might be an array directly or have .data property
+
         const questionsData = Array.isArray(questionsResponse) ? questionsResponse : questionsResponse?.data || [];
         setRecentQuestions(questionsData);
       } catch (err: any) {
@@ -73,7 +70,6 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
     fetchDashboardData();
   }, []);
 
-  // Helper function to format relative time
   const formatRelativeTime = (dateString: string): string => {
     const date = new Date(dateString);
     const now = new Date();
@@ -89,14 +85,12 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
     }
   };
 
-  // Pagination for recent questions
   const totalPages = Math.ceil(recentQuestions.length / ITEMS_PER_PAGE);
   const paginatedQuestions = recentQuestions.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Show loading state
   if (loading) {
     return (
       <ScrollArea className="min-h-screen h-full">
@@ -110,7 +104,6 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <ScrollArea className="min-h-screen h-full">
@@ -127,7 +120,6 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
     );
   }
 
-  // No data state
   if (!stats) {
     return (
       <ScrollArea className="min-h-screen h-full">
@@ -143,12 +135,12 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
   return (
     <ScrollArea className="min-h-screen h-full">
       <div className="p-6 pb-8 space-y-6">
-        {/* Page Header */}
+        {}
         <div>
           <h1 className="text-4xl font-bold">Tổng Quan</h1>
         </div>
 
-        {/* Key Metrics */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="border-l-4 border-l-[#3B82F6]">
             <CardHeader className="pb-3">
@@ -187,9 +179,9 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
           </Card>
         </div>
 
-        {/* Charts Section */}
+        {}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Questions Over Time Chart */}
+          {}
           <Card className="lg:col-span-full">
             <CardHeader>
               <CardTitle>Câu Hỏi Theo Thời Gian</CardTitle>
@@ -228,7 +220,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
           </Card>
         </div>
 
-        {/* Recent Questions */}
+        {}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">

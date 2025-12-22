@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 
 export function AdminDashboard() {
-  // State for API data
+
   const [metrics, setMetrics] = useState({
     active_chatbot_sessions: 0,
     total_customers: 0,
@@ -32,12 +32,10 @@ export function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
-  // Fetch all dashboard data
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch all data in parallel
+
       const [
         metricsResponse,
         chatbotRequestsResponse,
@@ -48,7 +46,6 @@ export function AdminDashboard() {
         dashboardAnalyticsAPI.getSystemHealth().catch(() => null)
       ]);
 
-      // Update state with API data - handle potential null/undefined responses
       if (metricsResponse) {
         setMetrics(metricsResponse);
       } else {
@@ -103,12 +100,12 @@ export function AdminDashboard() {
   return (
     <ScrollArea className="h-full">
       <div className="p-6 pb-8 space-y-6">
-        {/* Header */}
+        {}
         <div>
           <h1 className="text-4xl font-bold">Tổng quan</h1>
         </div>
 
-        {/* Key Metrics */}
+        {}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -141,7 +138,7 @@ export function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Charts */}
+        {}
         <Card>
           <CardHeader>
             <CardTitle>Yêu Cầu Chatbot (7 Ngày Qua)</CardTitle>
@@ -161,7 +158,7 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* System Statistics */}
+        {}
         <Card>
           <CardHeader>
             <CardTitle>Thống Kê Hệ Thống</CardTitle>

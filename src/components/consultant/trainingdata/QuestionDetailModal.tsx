@@ -55,7 +55,7 @@ export function QuestionDetailModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold text-gray-900">Chi Tiết Câu Hỏi</h2>
@@ -69,9 +69,9 @@ export function QuestionDetailModal({
           </button>
         </div>
 
-        {/* Content */}
+        {}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Intent Selection */}
+          {}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Danh mục
@@ -81,7 +81,7 @@ export function QuestionDetailModal({
             </p>
           </div>
 
-          {/* Question */}
+          {}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Câu Hỏi
@@ -91,7 +91,7 @@ export function QuestionDetailModal({
             </p>
           </div>
 
-          {/* Answer */}
+          {}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Câu Trả Lời
@@ -101,7 +101,7 @@ export function QuestionDetailModal({
             </p>
           </div>
 
-          {/* Rejection Reason */}
+          {}
           {question.status === 'rejected' && question.reject_reason && (
             <div>
               <label className="block text-sm font-medium text-red-700 mb-2">
@@ -115,7 +115,7 @@ export function QuestionDetailModal({
             </div>
           )}
 
-          {/* Metadata */}
+          {}
           <div className="grid grid-cols-2 gap-4 pt-4 border-t">
             {question.created_at && (
               <div>
@@ -136,7 +136,7 @@ export function QuestionDetailModal({
           </div>
         </div>
 
-        {/* Footer */}
+        {}
         <div className="flex items-center justify-between p-6 border-t bg-gray-50">
           <div className="flex gap-2">
             {isLeader && (

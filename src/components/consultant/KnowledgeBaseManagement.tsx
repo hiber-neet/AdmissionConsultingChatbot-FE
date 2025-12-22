@@ -30,70 +30,10 @@ interface QAPair {
   relatedQuestions?: number[];
 }
 
-const qaPairs: QAPair[] = [
-  {
-    id: 1,
-    question: 'What are the application deadlines for Fall 2025?',
-    answer: 'For Fall 2025 admission: Early Decision - November 15, 2024, Regular Decision - January 15, 2025, Transfer Students - March 1, 2025. We recommend submitting applications at least two weeks before the deadline to ensure all materials are processed.',
-    category: 'Admission Requirements',
-    lastUpdated: '2024-10-01',
-    source: 'Official Admissions Website',
-    relatedQuestions: [2, 5],
-  },
-  {
-    id: 2,
-    question: 'What documents are required for admission?',
-    answer: 'Required documents include: Official high school transcripts, SAT/ACT scores (optional for Fall 2025), Two letters of recommendation, Personal statement/essay, Application fee ($75, waiver available), and English proficiency scores for international students (TOEFL/IELTS).',
-    category: 'Admission Requirements',
-    lastUpdated: '2024-09-28',
-    source: 'Admissions Office',
-    relatedQuestions: [1, 3],
-  },
-  {
-    id: 3,
-    question: 'What is the average GPA for admitted students?',
-    answer: 'The average GPA for admitted students is 3.7 on a 4.0 scale. However, we review applications holistically. Strong test scores, extracurricular activities, leadership experience, and compelling essays can compensate for a lower GPA.',
-    category: 'Admission Requirements',
-    lastUpdated: '2024-09-25',
-    source: 'Admissions Statistics 2024',
-    relatedQuestions: [2],
-  },
-  {
-    id: 4,
-    question: 'What financial aid options are available?',
-    answer: 'We offer comprehensive financial aid including merit-based scholarships, need-based grants, federal student loans, and work-study programs. Financial aid packages are customized based on your academic profile and demonstrated financial need. Complete the FAFSA to be considered.',
-    category: 'Financial Aid',
-    lastUpdated: '2024-09-20',
-    source: 'Financial Aid Office',
-    relatedQuestions: [5, 6],
-  },
-  {
-    id: 5,
-    question: 'How do I apply for scholarships?',
-    answer: 'Most merit scholarships are automatically considered when you apply for admission - no separate application needed. For need-based aid, complete the FAFSA by our priority deadline of February 1st. Additional department-specific scholarships may require separate applications.',
-    category: 'Financial Aid',
-    lastUpdated: '2024-09-18',
-    source: 'Financial Aid Office',
-    relatedQuestions: [4],
-  },
-  {
-    id: 6,
-    question: 'What is the estimated cost of attendance?',
-    answer: 'For the 2024-2025 academic year: Tuition & Fees: $42,000, Room & Board: $14,000, Books & Supplies: $1,200, Personal Expenses: $2,800. Total estimated cost: $60,000. Financial aid is available to help cover these costs.',
-    category: 'Tuition Fees',
-    lastUpdated: '2024-09-15',
-    source: 'Student Accounts Office',
-    relatedQuestions: [4, 5],
-  },
-];
+const qaPairs: QAPair[] = [];
 
 const categories = [
   'Tất Cả Danh Mục',
-  'Admission Requirements',
-  'Financial Aid',
-  'Tuition Fees',
-  'Programs',
-  'Campus Life',
 ];
 
 export function KnowledgeBaseManagement() {
@@ -123,7 +63,7 @@ export function KnowledgeBaseManagement() {
   };
 
   const handleSave = () => {
-    // Save logic would go here
+
     setIsEditing(false);
   };
 
@@ -133,9 +73,9 @@ export function KnowledgeBaseManagement() {
 
   return (
     <div className="h-full flex bg-[#F8FAFC]">
-      {/* Left Panel - Q&A List */}
+      {}
       <div className="w-96 bg-white border-r border-gray-200 flex flex-col">
-        {/* Header */}
+        {}
         <div className="p-4 border-b border-gray-200 space-y-4">
           <div className="flex items-center justify-between">
             <h2>Cơ Sở Tri Thức</h2>
@@ -145,7 +85,7 @@ export function KnowledgeBaseManagement() {
             </Button>
           </div>
           
-          {/* Search */}
+          {}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -156,7 +96,7 @@ export function KnowledgeBaseManagement() {
             />
           </div>
 
-          {/* Category Filter */}
+          {}
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger>
               <SelectValue />
@@ -173,7 +113,7 @@ export function KnowledgeBaseManagement() {
           </div>
         </div>
 
-        {/* Q&A List */}
+        {}
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-1">
             {filteredQAPairs.map(qa => (
@@ -208,12 +148,12 @@ export function KnowledgeBaseManagement() {
         </ScrollArea>
       </div>
 
-      {/* Right Panel - Detail View */}
+      {}
       <div className="flex-1 flex flex-col">
         {selectedQA ? (
           <ScrollArea className="flex-1">
             <div className="p-6 pb-8 max-w-4xl">
-              {/* Action Buttons */}
+              {}
               <div className="flex items-center justify-between mb-6">
                 <h1>Chi Tiết Hỏi-Đáp</h1>
                 {!isEditing ? (
@@ -260,9 +200,9 @@ export function KnowledgeBaseManagement() {
                 )}
               </div>
 
-              {/* Q&A Content */}
+              {}
               <div className="space-y-6">
-                {/* Question */}
+                {}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Câu Hỏi</CardTitle>
@@ -281,7 +221,7 @@ export function KnowledgeBaseManagement() {
                   </CardContent>
                 </Card>
 
-                {/* Answer */}
+                {}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Câu Trả Lời</CardTitle>
@@ -300,7 +240,7 @@ export function KnowledgeBaseManagement() {
                   </CardContent>
                 </Card>
 
-                {/* Metadata */}
+                {}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Siêu Dữ Liệu</CardTitle>
@@ -350,7 +290,7 @@ export function KnowledgeBaseManagement() {
                   </CardContent>
                 </Card>
 
-                {/* Related Questions */}
+                {}
                 {selectedQA.relatedQuestions && selectedQA.relatedQuestions.length > 0 && (
                   <Card>
                     <CardHeader>
@@ -393,7 +333,7 @@ export function KnowledgeBaseManagement() {
         )}
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
@@ -407,7 +347,7 @@ export function KnowledgeBaseManagement() {
             <Button 
               variant="destructive"
               onClick={() => {
-                // Delete logic would go here
+
                 setShowDeleteDialog(false);
               }}
             >Xóa</Button>

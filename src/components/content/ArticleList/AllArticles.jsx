@@ -29,34 +29,32 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  // Fetch articles from FastAPI based on permissions
   useEffect(() => {
     const fetchArticles = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Check if user is Admin or Content Manager Leader
+
         const isAdmin = hasPermission("Admin");
         const isLeader = isContentManagerLeader();
         
         let data;
         
         if (isAdmin || isLeader) {
-          // Admin or Content Manager Leader: Get all articles
+
           data = await fastAPIArticles.getAll();
         } else if (hasPermission("Content Manager") && user?.id) {
-          // Regular Content Manager: Get only their own articles
+
           data = await fastAPIArticles.getByUserId(parseInt(user.id));
         } else {
-          // No permission
+
           setError('You do not have permission to view articles.');
           return;
         }
         
         setArticles(data);
       } catch (err) {
-        // Don't show error if it's an authentication error (redirect will handle it)
+
         if (isAuthError(err)) {
           return;
         }
@@ -71,7 +69,6 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
     }
   }, [user, hasPermission, isContentManagerLeader]);
 
-  // Fetch majors from FastAPI
   useEffect(() => {
     const fetchMajors = async () => {
       try {
@@ -79,7 +76,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         const data = await majorsAPI.getAll();
         setMajors(data);
       } catch (err) {
-        // Don't set error state for majors, just log it
+
       } finally {
         setMajorsLoading(false);
       }
@@ -102,30 +99,27 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
     [articles, q, statusFilter, categoryFilter]
   );
 
-  // Pagination
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginatedArticles = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filtered, currentPage]);
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [q, statusFilter, categoryFilter]);
 
-  // Fetch detailed article information
   const fetchArticleDetails = async (articleId) => {
     setArticleDetailsLoading(true);
     setArticleDetailsError(null);
     
     try {
-      // Use the FastAPI client which automatically includes Bearer token
+
       const articleDetails = await fastAPIArticles.getById(articleId);
       
       setSelectedArticle(articleDetails);
     } catch (err) {
-      // Don't show error if it's an authentication error (redirect will handle it)
+
       if (isAuthError(err)) {
         return;
       }
@@ -135,9 +129,8 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
     }
   };
 
-  // Handle article click
   const handleArticleClick = (article, event) => {
-    // Prevent opening modal if clicking on checkbox, dropdown, or buttons
+
     if (event) {
       const target = event.target;
       if (
@@ -153,43 +146,36 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
     fetchArticleDetails(article.article_id);
   };
 
-  // Close modal
   const closeModal = () => {
     setSelectedArticle(null);
     setArticleDetailsError(null);
   };
 
-  // Handler for closing dropdowns
   const handleCloseDropdowns = () => {
     setShowStatusDropdown(false);
     setShowCategoryDropdown(false);
   };
 
-  // Handler for status filter change
   const handleStatusFilterChange = (status) => {
     setStatusFilter(status);
     setShowStatusDropdown(false);
   };
 
-  // Handler for category filter change
   const handleCategoryFilterChange = (category) => {
     setCategoryFilter(category);
     setShowCategoryDropdown(false);
   };
 
-  // Handler for toggling status dropdown
   const handleToggleStatusDropdown = () => {
     setShowStatusDropdown(!showStatusDropdown);
     setShowCategoryDropdown(false);
   };
 
-  // Handler for toggling category dropdown
   const handleToggleCategoryDropdown = () => {
     setShowCategoryDropdown(!showCategoryDropdown);
     setShowStatusDropdown(false);
   };
 
-  // Refresh articles list
   const refreshArticles = async () => {
     try {
       const isAdmin = hasPermission("Admin");
@@ -204,18 +190,18 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
       }
       setArticles(data);
     } catch (err) {
-      // Don't show error if it's an authentication error (redirect will handle it)
+
       if (isAuthError(err)) {
         return;
       }
-      // Optionally set error state here if needed
+
       console.error('Failed to refresh articles:', err);
     }
   };
 
   return (
     <div className="p-6">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="text-xl font-semibold">
@@ -246,7 +232,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         )}
       </div>
 
-      {/* Toolbar */}
+      {}
       <ArticleToolbar
         searchQuery={q}
         onSearchChange={setQ}
@@ -263,7 +249,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         onClickOutside={handleCloseDropdowns}
       />
 
-      {/* Table */}
+      {}
       <ArticleTable
         articles={paginatedArticles}
         loading={loading}
@@ -275,14 +261,14 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         onDelete={setDeleteConfirmArticle}
       />
 
-      {/* Pagination */}
+      {}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />
 
-      {/* Article Details Modal */}
+      {}
       <ArticleDetailsModal
         article={selectedArticle}
         loading={articleDetailsLoading}
@@ -291,7 +277,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         onRetry={() => selectedArticle && fetchArticleDetails(selectedArticle.article_id)}
       />
 
-      {/* Edit Article Modal */}
+      {}
       {editingArticle && (
         <EditArticleModal
           article={editingArticle}
@@ -303,7 +289,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
               await refreshArticles();
               setEditingArticle(null);
             } catch (err) {
-              // Don't show error if it's an authentication error (redirect will handle it)
+
               if (isAuthError(err)) {
                 return;
               }
@@ -313,7 +299,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
         />
       )}
 
-      {/* Delete Confirmation Modal */}
+      {}
       {deleteConfirmArticle && (
         <DeleteConfirmModal
           article={deleteConfirmArticle}
@@ -324,7 +310,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
               await refreshArticles();
               setDeleteConfirmArticle(null);
             } catch (err) {
-              // Don't show error if it's an authentication error (redirect will handle it)
+
               if (isAuthError(err)) {
                 return;
               }

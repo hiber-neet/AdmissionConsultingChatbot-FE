@@ -84,6 +84,26 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         }
       });
 
+      eventSource.addEventListener('chat_ended', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setLastEvent({ ...data, timestamp: new Date().toISOString() });
+          handleEvent(data);
+        } catch (error) {
+          // Handle parsing error silently
+        }
+      });
+
+      eventSource.addEventListener('accepted', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setLastEvent({ ...data, timestamp: new Date().toISOString() });
+          handleEvent(data);
+        } catch (error) {
+          // Handle parsing error silently
+        }
+      });
+
       eventSource.addEventListener('ping', (event) => {
         // Heartbeat event - no action needed
       });
@@ -125,6 +145,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       
       // Dispatch custom event for components to listen
       window.dispatchEvent(new CustomEvent('queueUpdate', { detail: data }));
+    } else if (data.event === 'chat_ended') {
+      // Session ended event
+      // Dispatch custom event for LiveChatView to listen
+      window.dispatchEvent(new CustomEvent('chatEnded', { detail: data }));
+    } else if (data.event === 'accepted') {
+      // Request accepted event (queue item removed)
+      // Dispatch custom event for RequestQueuePage to listen
+      window.dispatchEvent(new CustomEvent('queueAccepted', { detail: data }));
     }
   };
 

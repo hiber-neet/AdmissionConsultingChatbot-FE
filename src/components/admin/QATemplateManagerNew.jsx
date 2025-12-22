@@ -11,7 +11,6 @@ const QATemplateManagerNew = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  // Form state with Q&A pairs structure
   const [formData, setFormData] = useState({
     template_name: '',
     description: '',
@@ -24,7 +23,6 @@ const QATemplateManagerNew = () => {
     ]
   });
 
-  // Fetch templates on mount
   useEffect(() => {
     fetchTemplates();
   }, []);
@@ -35,7 +33,7 @@ const QATemplateManagerNew = () => {
       const data = await templateAPI.getTemplates();
       setTemplates(data);
     } catch (error) {
-      // Check if it's a permission error
+
       if (error.message && error.message.includes('permission')) {
         toast.error('Bạn không có quyền xem mẫu câu hỏi trả lời. Vui lòng liên hệ quản trị viên để được cấp quyền Admin hoặc Consultant.');
       } else {
@@ -47,7 +45,7 @@ const QATemplateManagerNew = () => {
   };
 
   const handleCreateOrUpdate = async () => {
-    // Validation
+
     if (!formData.template_name.trim()) {
       toast.error('Vui lòng nhập tên mẫu');
       return;
@@ -58,7 +56,6 @@ const QATemplateManagerNew = () => {
       return;
     }
 
-    // Validate each Q&A pair
     for (let i = 0; i < formData.qa_pairs.length; i++) {
       const qa = formData.qa_pairs[i];
       if (!qa.question.trim()) {
@@ -146,21 +143,19 @@ const QATemplateManagerNew = () => {
     template.template_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Pagination calculations
   const totalPages = Math.ceil(filteredTemplates.length / ITEMS_PER_PAGE);
   const paginatedTemplates = filteredTemplates.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Reset page when search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
 
   return (
     <div className="p-6">
-      {/* Header */}
+      {}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Quản Lý Mẫu Câu Hỏi Trả Lời</h2>
         <button
@@ -174,7 +169,7 @@ const QATemplateManagerNew = () => {
         </button>
       </div>
 
-      {/* Search */}
+      {}
       <div className="mb-6">
         <input
           type="text"
@@ -185,7 +180,7 @@ const QATemplateManagerNew = () => {
         />
       </div>
 
-      {/* Templates List */}
+      {}
       {loading ? (
         <div className="text-center py-8">Đang tải mẫu...</div>
       ) : (
@@ -213,7 +208,7 @@ const QATemplateManagerNew = () => {
                 </div>
               </div>
               
-              {/* Q&A Preview */}
+              {}
               {template.qa_pairs && template.qa_pairs.length > 0 && (
                 <div className="mt-3 space-y-2">
                   {template.qa_pairs.slice(0, 2).map((qa, idx) => (
@@ -237,7 +232,7 @@ const QATemplateManagerNew = () => {
           )}
           </div>
 
-          {/* Pagination */}
+          {}
           <Pagination 
             currentPage={currentPage}
             totalPages={totalPages}
@@ -246,11 +241,11 @@ const QATemplateManagerNew = () => {
         </>
       )}
 
-      {/* Create/Edit Dialog */}
+      {}
       {isDialogOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Dialog Header */}
+            {}
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold">Tạo Mẫu</h3>
               <button
@@ -261,7 +256,7 @@ const QATemplateManagerNew = () => {
               </button>
             </div>
 
-            {/* Template Name */}
+            {}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Tên Mẫu *
@@ -275,7 +270,7 @@ const QATemplateManagerNew = () => {
               />
             </div>
 
-            {/* Description */}
+            {}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Mô Tả (Không bắt buộc)
@@ -289,7 +284,7 @@ const QATemplateManagerNew = () => {
               />
             </div>
 
-            {/* Q&A Pairs */}
+            {}
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-medium text-gray-700">
@@ -326,7 +321,7 @@ const QATemplateManagerNew = () => {
                     </div>
                   </div>
 
-                  {/* Question */}
+                  {}
                   <div className="mb-3">
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Câu Hỏi *
@@ -340,7 +335,7 @@ const QATemplateManagerNew = () => {
                     />
                   </div>
 
-                  {/* Answer */}
+                  {}
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Câu Trả Lời *
@@ -357,7 +352,7 @@ const QATemplateManagerNew = () => {
               ))}
             </div>
 
-            {/* Buttons */}
+            {}
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setIsDialogOpen(false)}

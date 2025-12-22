@@ -22,29 +22,18 @@ export default function ArticleEditor({ initialData }) {
   const [message, setMessage] = useState(null);
   const [createdArticle, setCreatedArticle] = useState(null);
 
-  // Fetch majors on component mount
   useEffect(() => {
     const fetchMajors = async () => {
       try {
         setLoading(true);
-        
-        // Fetch majors from the real API
+
         const majorsData = await fastAPIMajors.getAll();
         
         setMajors(majorsData);
         
       } catch (error) {
-        setMessage({ type: 'error', text: 'Không thể tải dữ liệu ngành. Sử dụng dữ liệu dự phòng.' });
-        
-        // Fallback to mock data if API fails
-        const mockMajors = [
-          { major_id: 1, major_name: "Computer Science" },
-          { major_id: 2, major_name: "Business Administration" },
-          { major_id: 3, major_name: "Engineering" },
-          { major_id: 4, major_name: "Psychology" },
-        ];
-
-        setMajors(mockMajors);
+        setMessage({ type: 'error', text: 'Không thể tải dữ liệu ngành. Vui lòng thử lại sau.' });
+        setMajors([]);
       } finally {
         setLoading(false);
       }
@@ -53,7 +42,6 @@ export default function ArticleEditor({ initialData }) {
     fetchMajors();
   }, []);
 
-  // Fetch specializations when major is selected
   useEffect(() => {
     const fetchSpecializations = async () => {
       if (!majorId) {
@@ -63,32 +51,18 @@ export default function ArticleEditor({ initialData }) {
 
       try {
         setLoadingSpecializations(true);
-        
-        // Fetch specializations for the selected major
+
         const specializationsData = await fastAPISpecializations.getByMajor(majorId);
         
         setFilteredSpecializations(specializationsData);
-        
-        // Reset specialization selection if current one is not valid for new major
+
         if (specializationId && !specializationsData.some(spec => spec.specialization_id === specializationId)) {
           setSpecializationId(0);
         }
         
       } catch (error) {
-        setMessage({ type: 'error', text: `Không thể tải chuyên ngành cho ngành đã chọn.` });
-        
-        // Fallback to mock data filtered by major
-        const mockSpecializations = [
-          { specialization_id: 1, specialization_name: "Software Engineering", major_id: 1 },
-          { specialization_id: 2, specialization_name: "Information Technology", major_id: 1 },
-          { specialization_id: 3, specialization_name: "Data Science", major_id: 1 },
-          { specialization_id: 4, specialization_name: "Artificial Intelligence", major_id: 1 },
-          { specialization_id: 5, specialization_name: "Financial Management", major_id: 2 },
-          { specialization_id: 6, specialization_name: "Marketing", major_id: 2 },
-        ];
-        
-        const filtered = mockSpecializations.filter(spec => spec.major_id === majorId);
-        setFilteredSpecializations(filtered);
+        setMessage({ type: 'error', text: `Không thể tải chuyên ngành cho ngành đã chọn. Vui lòng thử lại sau.` });
+        setFilteredSpecializations([]);
       } finally {
         setLoadingSpecializations(false);
       }
@@ -97,7 +71,6 @@ export default function ArticleEditor({ initialData }) {
     fetchSpecializations();
   }, [majorId, specializationId]);
 
-  // Clear messages after 5 seconds
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => setMessage(null), 5000);
@@ -105,25 +78,22 @@ export default function ArticleEditor({ initialData }) {
     }
   }, [message]);
 
-  // Handle image file selection
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
+
       if (!file.type.startsWith('image/')) {
         setMessage({ type: 'error', text: 'Vui lòng chọn file ảnh hợp lệ' });
         return;
       }
-      
-      // Validate file size (max 5MB)
+
       if (file.size > 5 * 1024 * 1024) {
         setMessage({ type: 'error', text: 'Kích thước ảnh không được vượt quá 5MB' });
         return;
       }
       
       setImageFile(file);
-      
-      // Create preview
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -132,7 +102,6 @@ export default function ArticleEditor({ initialData }) {
     }
   };
 
-  // Remove selected image
   const handleRemoveImage = () => {
     setImageFile(null);
     setImagePreview(null);
@@ -169,13 +138,11 @@ export default function ArticleEditor({ initialData }) {
       setMessage(null);
       setCreatedArticle(null);
 
-      // Build FormData because the API expects multipart/form-data for file upload
       const formData = new FormData();
       formData.append('title', title.trim());
       formData.append('description', description.trim());
       formData.append('url', url.trim());
-      
-      // Append the image file (required by backend)
+
       if (imageFile) {
         formData.append('image', imageFile);
       }
@@ -191,8 +158,7 @@ export default function ArticleEditor({ initialData }) {
       
       setMessage({ type: 'success', text: `Bài viết "${response.title}" đã được thêm thành công!` });
       setCreatedArticle(response);
-      
-      // Reset form
+
       setTitle('');
       setDescription('');
       setUrl('');
@@ -212,7 +178,7 @@ export default function ArticleEditor({ initialData }) {
 
   return (
     <div className="p-6">
-      {/* Message Display */}
+      {}
       {message && (
         <div className={`mb-4 p-3 rounded-md ${
           message.type === 'success' 
@@ -223,7 +189,7 @@ export default function ArticleEditor({ initialData }) {
         </div>
       )}
 
-      {/* Created Article Display */}
+      {}
       {createdArticle && (
         <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
           <h3 className="text-lg font-semibold text-green-800">Thành Công!</h3>
@@ -231,7 +197,7 @@ export default function ArticleEditor({ initialData }) {
         </div>
       )}
 
-      {/* Top bar */}
+      {}
       <div className="bg-white border rounded-xl p-3 mb-4 flex items-center gap-3">
         <input
           value={title}
@@ -249,7 +215,7 @@ export default function ArticleEditor({ initialData }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
-        {/* Editor - Updated */}
+        {}
         <div className="bg-white border rounded-xl p-4 min-h-[60vh]">
           <textarea
             value={description}
@@ -259,7 +225,7 @@ export default function ArticleEditor({ initialData }) {
           />
         </div>
 
-        {/* Side panel */}
+        {}
         <div className="bg-white border rounded-xl p-4 space-y-4">
           <div>
             <div className="text-sm text-gray-500 mb-1">URL</div>

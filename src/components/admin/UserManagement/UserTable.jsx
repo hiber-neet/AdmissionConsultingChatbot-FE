@@ -6,7 +6,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Card } from '../../ui/system_users/card';
 import PropTypes from 'prop-types';
 
-// Helper function to get role label (Vietnamese)
 const getRoleLabel = (role) => {
   const labelMap = {
     SYSTEM_ADMIN: 'Quản Trị Viên',
@@ -18,13 +17,11 @@ const getRoleLabel = (role) => {
     STUDENT: 'Sinh Viên',
     PARENT: 'Phụ Huynh',
   };
-  
-  // If role is in the map, use it; otherwise convert underscores to spaces and title case
+
   if (labelMap[role]) {
     return labelMap[role];
   }
-  
-  // Convert SOME_ROLE to "Some Role"
+
   return role
     ? role.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')
     : 'Không xác định';
@@ -95,7 +92,7 @@ export function UserTable({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {/* Only show Edit for staff members, not customers */}
+                      {}
                       {!isCustomerSection && onEdit && (
                         <DropdownMenuItem onClick={() => onEdit(user)} disabled={loading}>
                           <Edit className="h-4 w-4 mr-2" />Chỉnh Sửa</DropdownMenuItem>

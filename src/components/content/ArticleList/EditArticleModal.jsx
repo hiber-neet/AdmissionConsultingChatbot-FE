@@ -1,7 +1,6 @@
 import { X, Upload } from "lucide-react";
 import { useState, useEffect } from "react";
 
-
 export default function EditArticleModal({ 
   article, 
   majors, 
@@ -21,7 +20,6 @@ export default function EditArticleModal({
   const [specializations, setSpecializations] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch specializations when major changes
   useEffect(() => {
     const fetchSpecs = async () => {
       if (formData.major_id) {
@@ -38,25 +36,22 @@ export default function EditArticleModal({
     fetchSpecs();
   }, [formData.major_id]);
 
-  // Handle image file selection
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
+
       if (!file.type.startsWith('image/')) {
         alert('Vui lòng chọn file ảnh hợp lệ');
         return;
       }
-      
-      // Validate file size (max 5MB)
+
       if (file.size > 5 * 1024 * 1024) {
         alert('Kích thước ảnh không được vượt quá 5MB');
         return;
       }
       
       setImageFile(file);
-      
-      // Create preview
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -65,17 +60,16 @@ export default function EditArticleModal({
     }
   };
 
-  // Remove selected image
   const handleRemoveImage = () => {
     setImageFile(null);
-    setImagePreview(article.link_image || null); // Reset to original image
+    setImagePreview(article.link_image || null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // If there's a new image file, send as FormData
+
       if (imageFile) {
         const formDataToSend = new FormData();
         formDataToSend.append('title', formData.title);
@@ -88,7 +82,7 @@ export default function EditArticleModal({
         
         await onSave(formDataToSend);
       } else {
-        // Otherwise, send as JSON (no image change)
+
         await onSave(formData);
       }
     } finally {
@@ -99,7 +93,7 @@ export default function EditArticleModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden">
-        {/* Modal Header */}
+        {}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">Chỉnh Sửa Bài Viết</h2>
           <button
@@ -110,10 +104,10 @@ export default function EditArticleModal({
           </button>
         </div>
 
-        {/* Modal Content */}
+        {}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           <div className="space-y-4">
-            {/* Title */}
+            {}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Tiêu Đề *
@@ -127,7 +121,7 @@ export default function EditArticleModal({
               />
             </div>
 
-            {/* Description */}
+            {}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Mô Tả *
@@ -141,7 +135,7 @@ export default function EditArticleModal({
               />
             </div>
 
-            {/* URL */}
+            {}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 URL
@@ -154,7 +148,7 @@ export default function EditArticleModal({
               />
             </div>
 
-            {/* Image Upload */}
+            {}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Ảnh Bài Viết
@@ -206,7 +200,6 @@ export default function EditArticleModal({
               )}
             </div>
 
-            {/* Note */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Ghi Chú
@@ -219,7 +212,7 @@ export default function EditArticleModal({
               />
             </div>
 
-            {/* Major */}
+            {}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Ngành
@@ -229,7 +222,7 @@ export default function EditArticleModal({
                 onChange={(e) => setFormData({ 
                   ...formData, 
                   major_id: e.target.value ? parseInt(e.target.value) : 0,
-                  specialization_id: 0 // Reset specialization when major changes
+                  specialization_id: 0
                 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
@@ -242,7 +235,7 @@ export default function EditArticleModal({
               </select>
             </div>
 
-            {/* Specialization */}
+            {}
             {formData.major_id && specializations.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -267,7 +260,7 @@ export default function EditArticleModal({
             )}
           </div>
 
-          {/* Action Buttons */}
+          {}
           <div className="flex gap-3 pt-6 border-t mt-6">
             <button
               type="submit"

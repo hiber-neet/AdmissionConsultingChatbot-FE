@@ -19,37 +19,32 @@ export function TrainingDataManagement() {
   const { user, isConsultantLeader } = useAuth();
   const isLeader = isConsultantLeader();
 
-  // Tab state
   const [activeTab, setActiveTab] = useState<TabType>('questions');
 
-  // Common state
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [createdByMeFilter, setCreatedByMeFilter] = useState(false);
   const [intents, setIntents] = useState<Intent[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Questions state
   const [questions, setQuestions] = useState<TrainingQuestion[]>([]);
   const [selectedQuestion, setSelectedQuestion] = useState<TrainingQuestion | null>(null);
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [showAddQuestionModal, setShowAddQuestionModal] = useState(false);
 
-  // Documents state
   const [documents, setDocuments] = useState<TrainingDocument[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<TrainingDocument | null>(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [showUploadDocumentModal, setShowUploadDocumentModal] = useState(false);
 
-  // Loading states for approve/reject operations (documents only)
   const [approvingDocumentId, setApprovingDocumentId] = useState<number | null>(null);
   const [rejectingDocumentId, setRejectingDocumentId] = useState<number | null>(null);
 
-  // Pagination state
   const [questionsPage, setQuestionsPage] = useState(1);
   const [documentsPage, setDocumentsPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  // Fetch data on mount
   useEffect(() => {
     fetchIntents();
     if (activeTab === 'questions') {
@@ -88,7 +83,7 @@ export function TrainingDataManagement() {
       const data = await knowledgeAPI.getDocuments(
         statusFilter !== 'all' ? statusFilter : undefined
       );
-      // Add missing properties with safe defaults, keep reject_reason from API
+
       setDocuments(data.map(doc => ({ 
         ...doc, 
         file_size: 0, 
@@ -102,7 +97,6 @@ export function TrainingDataManagement() {
     }
   };
 
-  // Question handlers
   const handleSelectQuestion = (question: TrainingQuestion) => {
     setSelectedQuestion(question);
     setShowQuestionModal(true);
@@ -121,10 +115,9 @@ export function TrainingDataManagement() {
     }
   };
 
-  // Document handlers
   const handleSelectDocument = async (document: TrainingDocument) => {
     try {
-      // Fetch full document details including content
+
       const fullDoc = await knowledgeAPI.getDocumentById(document.document_id);
       setSelectedDocument({ 
         ...fullDoc, 
@@ -143,7 +136,7 @@ export function TrainingDataManagement() {
     data: { title: string; intent_id?: number; category?: string }
   ) => {
     try {
-      // Note: API doesn't have update endpoint yet, this is a placeholder
+
       toast.info('Chức năng cập nhật đang được phát triển');
       throw new Error('Update not implemented');
     } catch (error) {
@@ -171,7 +164,7 @@ export function TrainingDataManagement() {
       await knowledgeAPI.approveDocument(documentId);
       toast.success('Duyệt tài liệu thành công');
       await fetchDocuments();
-      // Refresh the selected document
+
       const fullDoc = await knowledgeAPI.getDocumentById(documentId);
       setSelectedDocument({ 
         ...fullDoc, 
@@ -193,7 +186,7 @@ export function TrainingDataManagement() {
       await knowledgeAPI.rejectDocument(documentId, 'Từ chối bởi người quản lý');
       toast.success('Từ chối tài liệu thành công');
       await fetchDocuments();
-      // Refresh the selected document
+
       const fullDoc = await knowledgeAPI.getDocumentById(documentId);
       setSelectedDocument({ 
         ...fullDoc, 
@@ -209,7 +202,6 @@ export function TrainingDataManagement() {
     }
   };
 
-  // Add new question
   const handleAddQuestion = async (data: { question: string; answer: string; intent_id: number }) => {
     try {
       await knowledgeAPI.uploadTrainingQuestion(data);
@@ -221,7 +213,6 @@ export function TrainingDataManagement() {
     }
   };
 
-  // Upload new document
   const handleUploadDocument = async (formData: FormData, intentId: number) => {
     try {
       await knowledgeAPI.uploadDocument(formData, intentId);
@@ -233,19 +224,17 @@ export function TrainingDataManagement() {
     }
   };
 
-  // Helper function to sort by date and status
   const sortByDateAndStatus = <T extends { created_at?: string | Date; status?: string }>(items: T[]): T[] => {
     return [...items].sort((a, b) => {
-      // First, try to sort by created_at date (most recent first)
+
       if (a.created_at && b.created_at) {
         const dateA = new Date(a.created_at).getTime();
         const dateB = new Date(b.created_at).getTime();
         if (dateA !== dateB) {
-          return dateB - dateA; // Most recent first
+          return dateB - dateA;
         }
       }
-      
-      // Fallback: sort by status (nhap -> da duyet -> tu choi)
+
       const statusOrder: { [key: string]: number } = {
         'nhap': 1,
         'da duyet': 2,
@@ -259,46 +248,54 @@ export function TrainingDataManagement() {
     });
   };
 
-  // Filter and sort data based on search query
   const filteredQuestions = sortByDateAndStatus(
-    questions.filter((q) =>
-      q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      q.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      q.intent_name?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    questions.filter((q) => {
+      const matchesSearch = q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        q.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        q.intent_name?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCategory = categoryFilter === 'all' || q.intent_id?.toString() === categoryFilter;
+      
+      const matchesCreatedByMe = !createdByMeFilter || q.created_by?.toString() === user?.id;
+      
+      return matchesSearch && matchesCategory && matchesCreatedByMe;
+    })
   );
 
   const filteredDocuments = sortByDateAndStatus(
-    documents.filter((d) =>
-      d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.intent_name?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    documents.filter((d) => {
+      const matchesSearch = d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        d.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        d.intent_name?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCategory = categoryFilter === 'all' || d.intent_id?.toString() === categoryFilter;
+      
+      const matchesCreatedByMe = !createdByMeFilter || d.created_by?.toString() === user?.id;
+      
+      return matchesSearch && matchesCategory && matchesCreatedByMe;
+    })
   );
 
-  // Pagination for questions
   const totalQuestionsPages = Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
   const paginatedQuestions = filteredQuestions.slice(
     (questionsPage - 1) * ITEMS_PER_PAGE,
     questionsPage * ITEMS_PER_PAGE
   );
 
-  // Pagination for documents
   const totalDocumentsPages = Math.ceil(filteredDocuments.length / ITEMS_PER_PAGE);
   const paginatedDocuments = filteredDocuments.slice(
     (documentsPage - 1) * ITEMS_PER_PAGE,
     documentsPage * ITEMS_PER_PAGE
   );
 
-  // Reset pages when filters or tab change
   useEffect(() => {
     setQuestionsPage(1);
     setDocumentsPage(1);
-  }, [searchQuery, statusFilter, activeTab]);
+  }, [searchQuery, statusFilter, categoryFilter, createdByMeFilter, activeTab]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dữ Liệu Huấn Luyện</h1>
@@ -315,22 +312,27 @@ export function TrainingDataManagement() {
         </Button>
       </div>
 
-      {/* Tab Switcher */}
+      {}
       <TabSwitcher
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
 
-      {/* Search and Filter */}
+      {}
       <SearchAndFilter
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={setCategoryFilter}
+        createdByMeFilter={createdByMeFilter}
+        onCreatedByMeFilterChange={setCreatedByMeFilter}
+        intents={intents}
         isLeader={isLeader}
       />
 
-      {/* Content Area */}
+      {}
       <div className="bg-white rounded-lg border shadow-sm">
         {loading ? (
           <div className="text-center py-12 text-gray-500">
@@ -338,7 +340,7 @@ export function TrainingDataManagement() {
           </div>
         ) : activeTab === 'questions' ? (
           <>
-            {/* Questions Count Header */}
+            {}
             <div className="px-4 py-3 border-b bg-gray-50">
               <p className="text-sm text-gray-600">
                 Tổng số: <span className="font-semibold text-gray-900">{questions.length}</span> câu hỏi
@@ -366,7 +368,7 @@ export function TrainingDataManagement() {
           </>
         ) : (
           <>
-            {/* Documents Count Header */}
+            {}
             <div className="px-4 py-3 border-b bg-gray-50">
               <p className="text-sm text-gray-600">
                 Tổng số: <span className="font-semibold text-gray-900">{documents.length}</span> tài liệu
@@ -395,7 +397,7 @@ export function TrainingDataManagement() {
         )}
       </div>
 
-      {/* Modals */}
+      {}
       {showQuestionModal && selectedQuestion && (
         <QuestionDetailModal
           question={selectedQuestion}
@@ -426,7 +428,7 @@ export function TrainingDataManagement() {
         />
       )}
 
-      {/* Add/Upload Modals */}
+      {}
       {showAddQuestionModal && (
         <AddQuestionModal
           key="add-question-modal"

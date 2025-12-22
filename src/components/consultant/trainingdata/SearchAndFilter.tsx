@@ -1,11 +1,22 @@
 import { Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/system_users/select';
 
+interface Intent {
+  intent_id: number;
+  intent_name: string;
+  description?: string;
+}
+
 interface SearchAndFilterProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   statusFilter: string;
   onStatusFilterChange: (status: string) => void;
+  categoryFilter: string;
+  onCategoryFilterChange: (category: string) => void;
+  createdByMeFilter: boolean;
+  onCreatedByMeFilterChange: (checked: boolean) => void;
+  intents: Intent[];
   isLeader: boolean;
 }
 
@@ -14,6 +25,11 @@ export function SearchAndFilter({
   onSearchChange,
   statusFilter,
   onStatusFilterChange,
+  categoryFilter,
+  onCategoryFilterChange,
+  createdByMeFilter,
+  onCreatedByMeFilterChange,
+  intents,
   isLeader
 }: SearchAndFilterProps) {
   return (
@@ -29,19 +45,46 @@ export function SearchAndFilter({
         />
       </div>
 
+      {}
       {isLeader && (
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="Lọc theo trạng thái" />
+            <SelectValue placeholder="Trạng thái" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
+            <SelectItem value="all">Tất cả trạng thái</SelectItem>
             <SelectItem value="draft">Nháp</SelectItem>
             <SelectItem value="approved">Đã duyệt</SelectItem>
             <SelectItem value="rejected">Từ chối</SelectItem>
           </SelectContent>
         </Select>
       )}
+
+      {}
+      <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
+        <SelectTrigger className="w-48">
+          <SelectValue placeholder="Danh mục" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Tất cả danh mục</SelectItem>
+          {intents.map((intent) => (
+            <SelectItem key={intent.intent_id} value={intent.intent_id.toString()}>
+              {intent.intent_name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {}
+      <label className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 whitespace-nowrap">
+        <input
+          type="checkbox"
+          checked={createdByMeFilter}
+          onChange={(e) => onCreatedByMeFilterChange(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300 text-[#EB5A0D] focus:ring-[#EB5A0D]"
+        />
+        <span className="text-sm font-medium text-gray-700">Của tôi</span>
+      </label>
     </div>
   );
 }

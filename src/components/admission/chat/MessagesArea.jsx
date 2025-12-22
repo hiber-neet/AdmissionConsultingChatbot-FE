@@ -4,7 +4,6 @@ import { MessageCircle } from 'lucide-react';
 export function MessagesArea({ messages, userId, userName }) {
   const messagesEndRef = useRef(null);
 
-  // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };

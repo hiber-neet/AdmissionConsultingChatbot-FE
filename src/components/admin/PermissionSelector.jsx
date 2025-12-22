@@ -7,7 +7,7 @@ import { Separator } from '../ui/system_users/separator';
 import PropTypes from 'prop-types';
 
 export function PermissionSelector({ role, selectedPermissions, onPermissionsChange, isEditing = false }) {
-  // Available role permissions - each permission grants full access to that role's capabilities
+
   const availableRolePermissions = [
     {
       id: 'SYSTEM_ADMIN',
@@ -52,10 +52,10 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
 
     let newPermissions;
     if (isSelected) {
-      // Remove permission
+
       newPermissions = currentPermissions.filter(p => p !== permissionId);
     } else {
-      // Add permission
+
       newPermissions = [...currentPermissions, permissionId];
     }
 
@@ -105,7 +105,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
 
       <Separator />
 
-      {/* Current user's primary role */}
+      {}
       {role && (
         <div className="bg-gray-50 p-3 rounded-lg">
           <div className="text-sm font-medium text-gray-700 mb-2">Vai Trò Chính</div>
@@ -116,7 +116,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
         </div>
       )}
 
-      {/* Permission Grid */}
+      {}
       <div className="grid gap-3">
         {availableRolePermissions.map((permission) => {
           const isSelected = selectedPermissions?.includes(permission.id);
@@ -162,7 +162,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
         })}
       </div>
 
-      {/* Selected permissions summary */}
+      {}
       {selectedPermissions && selectedPermissions.length > 0 && (
         <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
           <div className="text-sm font-medium text-green-800 mb-2">
@@ -181,7 +181,7 @@ export function PermissionSelector({ role, selectedPermissions, onPermissionsCha
         </div>
       )}
 
-      {/* Warning for no permissions */}
+      {}
       {(!selectedPermissions || selectedPermissions.length === 0) && (
         <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
           <div className="text-sm text-amber-800">

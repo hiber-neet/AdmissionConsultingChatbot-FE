@@ -10,38 +10,34 @@ import { loadPermissions } from '../../../constants/permissions';
 import { rolesAPI } from '../../../services/fastapi';
 import { API_CONFIG } from '../../../config/api.js';
 
-// Dynamic role mappings - will be loaded from API
 let ROLE_ID_TO_NAME = {};
 let ROLE_NAME_TO_FRONTEND = {};
 
-// Permission mapping will be loaded dynamically from API
 let PERMISSION_NAME_TO_ID = {};
 let PERMISSION_ID_TO_NAME = {};
 
-// Function to transform API user data to frontend format
 const transformUserData = (apiUser) => {
-  // Use role_name from API if available, otherwise map from role_id
+
   let roleName;
   if (apiUser.role_name) {
-    // Use dynamic role mapping from API
+
     roleName = ROLE_NAME_TO_FRONTEND[apiUser.role_name] || apiUser.role_name.toUpperCase().replace(/ /g, '_');
   } else if (apiUser.role_id && ROLE_ID_TO_NAME[apiUser.role_id]) {
-    // Map from role_id if role_name is not available
+
     const dbRoleName = ROLE_ID_TO_NAME[apiUser.role_id];
     roleName = ROLE_NAME_TO_FRONTEND[dbRoleName] || dbRoleName.toUpperCase().replace(/ /g, '_');
   } else {
-    // Fallback to CUSTOMER if no role information
+
     roleName = 'CUSTOMER';
   }
-  
-  // Transform permissions from API format to frontend format
+
   let permissions = [];
   
   if (apiUser.permissions && Array.isArray(apiUser.permissions) && apiUser.permissions.length > 0) {
-    // If API returns permission objects with permission_name
+
     permissions = apiUser.permissions.map(perm => {
       if (typeof perm === 'object' && perm.permission_name) {
-        // Normalize permission names
+
         const name = perm.permission_name.toLowerCase();
         if (name === 'admin' || name === 'system_admin') return 'admin';
         if (name === 'consultant') return 'consultant';
@@ -51,20 +47,17 @@ const transformUserData = (apiUser) => {
       } else if (typeof perm === 'object' && perm.permission_id) {
         return PERMISSION_ID_TO_NAME[perm.permission_id] || 'customer';
       } else if (typeof perm === 'string') {
-        // If it's already a permission name, normalize to lowercase
+
         return perm.toLowerCase().replace('system_admin', 'admin');
       } else if (typeof perm === 'number') {
         return PERMISSION_ID_TO_NAME[perm] || 'customer';
       }
-      return null; // We'll filter out nulls
+      return null;
     }).filter(Boolean);
-    
-    // Remove duplicates
+
     permissions = Array.from(new Set(permissions));
   }
-  
-  // Don't add fallback permission for customer-type roles - leave empty array
-  // Only add fallback for staff roles (SYSTEM_ADMIN, CONSULTANT, CONTENT_MANAGER, ADMISSION_OFFICER)
+
   const customerRoles = ['CUSTOMER', 'STUDENT', 'PARENT'];
   if (permissions.length === 0 && !customerRoles.includes(roleName)) {
     permissions = [roleName.toLowerCase().replace('system_admin', 'admin')];
@@ -76,12 +69,12 @@ const transformUserData = (apiUser) => {
     username: apiUser.email?.split('@')[0] || 'unknown',
     email: apiUser.email || '',
     role: roleName,
-    permissions: permissions, // Can be empty array for customers
+    permissions: permissions,
     status: apiUser.status ? 'active' : 'inactive',
     phone_number: apiUser.phone_number || '',
-    lastActive: 'Recently', // API doesn't provide this, so we use a default
-    createdAt: new Date().toISOString().split('T')[0], // API doesn't provide this
-    isBanned: !apiUser.status, // If status is false, user is banned
+    lastActive: 'Recently',
+    createdAt: new Date().toISOString().split('T')[0],
+    isBanned: !apiUser.status,
     banReason: !apiUser.status ? 'Banned by admin' : null,
     consultant_is_leader: apiUser.consultant_is_leader || false,
     content_manager_is_leader: apiUser.content_manager_is_leader || false,
@@ -92,7 +85,7 @@ export function UserManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sectionFilter, setSectionFilter] = useState('all'); // 'all', 'staff', 'customer'
+  const [sectionFilter, setSectionFilter] = useState('all');
   const [staffPage, setStaffPage] = useState(1);
   const [customerPage, setCustomerPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -112,13 +105,11 @@ export function UserManagement() {
 
   const ITEMS_PER_PAGE = 10;
 
-  // Load permissions and roles from API on component mount
   useEffect(() => {
     const initializePermissions = async () => {
       try {
         const permissions = await loadPermissions();
-        
-        // Build dynamic permission mappings
+
         const nameToId = {};
         const idToName = {};
         
@@ -126,12 +117,10 @@ export function UserManagement() {
           const key = p.permission_name.toLowerCase().replace(/\s+/g, '_');
           nameToId[key] = p.permission_id;
           idToName[p.permission_id] = key;
-          
-          // Also add uppercase versions for compatibility
+
           nameToId[p.permission_name.toUpperCase().replace(/\s+/g, '_')] = p.permission_id;
         });
-        
-        // Update global mappings
+
         PERMISSION_NAME_TO_ID = nameToId;
         PERMISSION_ID_TO_NAME = idToName;
       } catch (error) {
@@ -142,19 +131,15 @@ export function UserManagement() {
     const initializeRoles = async () => {
       try {
         const roles = await rolesAPI.getAll();
-        
-        // Build dynamic role mappings
+
         const idToName = {};
         const nameToFrontend = {};
         
         roles.forEach(r => {
           idToName[r.role_id] = r.role_name;
-          
-          // Map database role names to frontend display names
-          // Default mapping: convert to uppercase and replace spaces with underscores
+
           let frontendName = r.role_name.toUpperCase().replace(/\s+/g, '_');
-          
-          // Special mappings
+
           if (r.role_name === 'Admin' || r.role_name === 'System Admin') {
             frontendName = 'SYSTEM_ADMIN';
           } else if (r.role_name === 'Consultant') {
@@ -170,12 +155,10 @@ export function UserManagement() {
           } else if (r.role_name === 'Customer') {
             frontendName = 'CUSTOMER';
           }
-          // Note: Any other role names will use the default uppercase conversion
-          
+
           nameToFrontend[r.role_name] = frontendName;
         });
-        
-        // Update global mappings
+
         ROLE_ID_TO_NAME = idToName;
         ROLE_NAME_TO_FRONTEND = nameToFrontend;
       } catch (error) {
@@ -183,21 +166,18 @@ export function UserManagement() {
       }
     };
 
-    // Run initialization in sequence to avoid race conditions
     const initialize = async () => {
       await Promise.all([initializePermissions(), initializeRoles()]);
-      // Fetch users after roles and permissions are loaded
+
       fetchUsers();
     };
     
     initialize();
   }, []);
 
-  // Fetch users from API
   const fetchUsers = async () => {
     setLoading(true);
-    
-    // Check if we have a valid token first
+
     const token = localStorage.getItem('access_token');
     if (!token) {
       toast.error('Không tìm thấy token xác thực. Vui lòng đăng nhập lại.');
@@ -205,8 +185,7 @@ export function UserManagement() {
       setLoading(false);
       return;
     }
-    
-    // Check if token is expired
+
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const currentTime = Date.now() / 1000;
@@ -227,11 +206,9 @@ export function UserManagement() {
       const token = localStorage.getItem('access_token');
       const tokenType = localStorage.getItem('token_type') || 'bearer';
     const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
-      
-      // Ensure token type is properly capitalized
+
       const authHeader = `Bearer ${token}`;
 
-      // Fetch both staff and customer users in parallel
       const [staffResponse, customersResponse] = await Promise.all([
         fetch(`${baseUrl}/users/staffs`, {
           method: 'GET',
@@ -256,8 +233,7 @@ export function UserManagement() {
         try {
           const parsedError = JSON.parse(errorData);
           errorMessage = parsedError.detail || `HTTP ${staffResponse.status}: ${staffResponse.statusText}`;
-          
-          // Special handling for permission errors
+
           if (staffResponse.status === 403 && parsedError.detail === "Admin permission required") {
             errorMessage = "Access denied: Admin permissions required. Current user role may not have sufficient privileges.";
           }
@@ -271,7 +247,6 @@ export function UserManagement() {
       const staffData = await staffResponse.json();
       const customersData = customersResponse.ok ? await customersResponse.json() : [];
 
-      // Transform and combine both datasets
       const allUsers = [];
       
       if (Array.isArray(staffData)) {
@@ -294,7 +269,6 @@ export function UserManagement() {
     }
   };
 
-  // Ban user API call
   const banUser = async (userId) => {
     try {
       const token = localStorage.getItem('access_token');
@@ -330,8 +304,7 @@ export function UserManagement() {
       }
 
       const data = await response.json();
-      
-      // Update user status in local state
+
       setUsers(users.map(u => 
         u.id === userId 
           ? { ...u, status: 'inactive', banReason: 'Banned by admin' }
@@ -344,7 +317,6 @@ export function UserManagement() {
     }
   };
 
-  // Unban user API call
   const unbanUser = async (userId) => {
     try {
       const token = localStorage.getItem('access_token');
@@ -380,8 +352,7 @@ export function UserManagement() {
       }
 
       const data = await response.json();
-      
-      // Update user status in local state
+
       setUsers(users.map(u => 
         u.id === userId 
           ? { ...u, status: 'active', banReason: null }
@@ -394,7 +365,6 @@ export function UserManagement() {
     }
   };
 
-  // Create new user API call
   const createUser = async (userData) => {
     try {
       const token = localStorage.getItem('access_token');
@@ -435,9 +405,6 @@ export function UserManagement() {
     }
   };
 
-  // Note: fetchUsers is now called from the initialization useEffect
-  // after roles and permissions are loaded to avoid race conditions
-
   const filteredUsers = users.filter((user) => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -445,9 +412,6 @@ export function UserManagement() {
     return matchesSearch;
   });
 
-  // Separate users into staff and customers based on permissions
-  // Staff: Any user with permissions
-  // Customer: Users with role_id === 5 OR no permissions
   const staffUsers = filteredUsers.filter(user => 
     user.permissions && user.permissions.length > 0
   );
@@ -456,7 +420,6 @@ export function UserManagement() {
     user.role_id === 5 || !user.permissions || user.permissions.length === 0
   );
 
-  // Pagination calculations
   const totalStaffPages = Math.ceil(staffUsers.length / ITEMS_PER_PAGE);
   const totalCustomerPages = Math.ceil(customerUsers.length / ITEMS_PER_PAGE);
 
@@ -470,7 +433,6 @@ export function UserManagement() {
     customerPage * ITEMS_PER_PAGE
   );
 
-  // Reset page numbers when filters change
   useEffect(() => {
     setStaffPage(1);
     setCustomerPage(1);
@@ -494,7 +456,7 @@ export function UserManagement() {
   };
 
   const handleCreateOrUpdate = async () => {
-    // Basic required field validation
+
     if (!formData.name || !formData.email || !formData.role) {
       toast.error('Vui lòng điền tất cả các trường bắt buộc (Tên, Email, Vai trò)');
       return;
@@ -508,14 +470,12 @@ export function UserManagement() {
       return;
     }
 
-    // Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       toast.error('Địa chỉ email không hợp lệ');
       return;
     }
 
-    // Phone number validation (Vietnamese format: 10-11 digits, starts with 0)
     if (formData.phone_number) {
       const phoneRegex = /^0\d{9,10}$/;
       if (!phoneRegex.test(formData.phone_number.replace(/[\s-]/g, ''))) {
@@ -524,7 +484,6 @@ export function UserManagement() {
       }
     }
 
-    // Password length validation (minimum 6 characters)
     if (formData.password && formData.password.trim() !== '') {
       if (formData.password.length < 6) {
         toast.error('Mật khẩu phải có ít nhất 6 ký tự');
@@ -536,7 +495,6 @@ export function UserManagement() {
       }
     }
 
-    // Name validation
     if (formData.name.trim().length < 2) {
       toast.error('Tên phải có ít nhất 2 ký tự');
       return;
@@ -549,16 +507,13 @@ export function UserManagement() {
   const baseUrl = API_CONFIG.FASTAPI_BASE_URL;
 
       if (editingUser) {
-        // Update existing user - basic information only
-        // The UserFormDialog handles permission updates internally
-        
+
         const updatePayload = {
           full_name: formData.name,
           email: formData.email,
           phone_number: formData.phone_number || null,
         };
 
-        // Only include password if it's provided
         if (formData.password && formData.password.trim() !== '') {
           updatePayload.password = formData.password;
         }
@@ -585,8 +540,7 @@ export function UserManagement() {
         }
 
         const updatedUserData = await response.json();
-        
-        // Update local state with the response from server
+
         setUsers(users.map(u => 
           u.id === editingUser.id 
             ? {
@@ -601,9 +555,7 @@ export function UserManagement() {
         
         toast.success('Cập nhật thông tin người dùng thành công!');
       } else {
-        // Create new user via API
-        
-        // Map role name to role_id
+
         const roleNameToId = {
           'SYSTEM_ADMIN': 1,
           'CONSULTANT': 2,
@@ -615,11 +567,9 @@ export function UserManagement() {
         if (!roleId) {
           throw new Error(`Invalid role: ${formData.role}`);
         }
-        
-        // Determine permissions based on role
+
         let permissionIds = [];
-        
-        // First, get all available permissions from API
+
         const permissionsResponse = await fetch(`${baseUrl}/users/permissions`, {
           method: 'GET',
           headers: {
@@ -632,10 +582,10 @@ export function UserManagement() {
           const allPermissions = await permissionsResponse.json();
           
           if (formData.role === 'SYSTEM_ADMIN') {
-            // Admin gets ALL permissions
+
             permissionIds = allPermissions.map(p => p.permission_id);
           } else {
-            // For other staff roles, assign matching permission
+
             const roleToPermissionName = {
               'CONSULTANT': 'Consultant',
               'CONTENT_MANAGER': 'ContentManager',
@@ -655,15 +605,14 @@ export function UserManagement() {
             }
           }
         }
-        
-        // Prepare API request body for new user
+
         const requestBody = {
           full_name: formData.name,
           email: formData.email,
           status: true,
           password: formData.password,
           role_id: roleId,
-          permissions: permissionIds, // Automatically assign permissions based on role
+          permissions: permissionIds,
           phone_number: formData.phone_number || '',
           consultant_is_leader: formData.consultant_is_leader || false,
           content_manager_is_leader: formData.content_manager_is_leader || false,
@@ -695,8 +644,7 @@ export function UserManagement() {
         }
 
         const newUser = await response.json();
-        
-        // Determine permissions for local state based on role
+
         let assignedPermissions = [];
         if (formData.role === 'SYSTEM_ADMIN') {
           assignedPermissions = ['admin'];
@@ -711,8 +659,7 @@ export function UserManagement() {
             assignedPermissions = [permission];
           }
         }
-        
-        // Add to local state
+
         setUsers([...users, {
           id: newUser.user_id?.toString() || Date.now().toString(),
           name: newUser.full_name,
@@ -735,9 +682,8 @@ export function UserManagement() {
         toast.success(`Tạo người dùng thành công với quyền ${assignedPermissions.join(', ')}!`);
       }
 
-      // Close dialog and refresh
       setIsDialogOpen(false);
-      await fetchUsers(); // Refresh the user list
+      await fetchUsers();
 
     } catch (error) {
       toast.error(`Không thể ${editingUser ? 'cập nhật' : 'tạo'} người dùng: ${error.message}`);
@@ -764,23 +710,21 @@ export function UserManagement() {
   const handleBanUser = async (userId, isCurrentlyBanned) => {
     try {
       setLoading(true);
-      
-      // Find the user to check their current status
+
       const user = users.find(u => u.id === userId);
       if (!user) return;
-      
-      // Check if user is admin - admins cannot be banned
+
       if (user.permissions && user.permissions.includes('admin')) {
         toast.error('Không thể cấm người dùng quản trị. Người dùng quản trị có đặc quyền đặc biệt.');
         return;
       }
       
       if (user.status === 'active') {
-        // User is active, so we're deactivating (banning) them
+
         await banUser(userId);
         toast.success('Vô hiệu hóa và cấm người dùng thành công');
       } else {
-        // User is inactive, so we're activating (unbanning) them
+
         await unbanUser(userId);
         toast.success('Kích hoạt và bỏ cấm người dùng thành công');
       }
@@ -793,7 +737,6 @@ export function UserManagement() {
     }
   };
 
-  // Pagination component
   const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     if (totalPages <= 1) return null;
 
@@ -839,17 +782,17 @@ export function UserManagement() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {}
       <div className="border-b px-6 py-4 space-y-4">
         <UserManagementHeader onAddUser={handleAddUser} />
 
-        {/* Search and Filter */}
+        {}
         <UserFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />
 
-        {/* Section Filters */}
+        {}
         <div className="flex gap-2">
           <button
             onClick={() => setSectionFilter('all')}
@@ -883,7 +826,7 @@ export function UserManagement() {
           </button>
         </div>
 
-        {/* Loading state */}
+        {}
         {loading && (
           <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
@@ -891,14 +834,14 @@ export function UserManagement() {
           </div>
         )}
 
-        {/* Role Distribution */}
+        {}
         <UserStats users={users} />
       </div>
 
-      {/* User Tables */}
+      {}
       <ScrollArea className="flex-1">
         <div className="p-6 pb-8 space-y-8">
-          {/* Staff Section (includes all staff: admins, consultants, content managers, admission officers) */}
+          {}
           {(sectionFilter === 'all' || sectionFilter === 'staff') && (
             <div>
               <div className="mb-4">
@@ -921,7 +864,7 @@ export function UserManagement() {
             </div>
           )}
 
-          {/* Customer Section */}
+          {}
           {(sectionFilter === 'all' || sectionFilter === 'customer') && (
             <div>
               <div className="mb-4 border-t pt-6">
@@ -946,7 +889,7 @@ export function UserManagement() {
         </div>
       </ScrollArea>
 
-      {/* User Form Dialog */}
+      {}
       <UserFormDialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}

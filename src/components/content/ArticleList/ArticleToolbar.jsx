@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
-// import { Major } from '../../../utils/fastapi-client';
-import { ARTICLE_STATUSES } from '../../../constants/status';
 
+import { ARTICLE_STATUSES } from '../../../constants/status';
 
 export default function ArticleToolbar({
   searchQuery,
@@ -20,7 +19,6 @@ export default function ArticleToolbar({
 }) {
   const dropdownRef = useRef(null);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
