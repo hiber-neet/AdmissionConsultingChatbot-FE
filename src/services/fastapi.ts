@@ -657,7 +657,7 @@ export interface AcademicScore {
 export const academicScoresAPI = {
   // Get academic scores for a specific user
   getUserAcademicScores: (userId: number) => 
-    fastAPIClient.get<AcademicScore>(`/users/${userId}/academic-scores`),
+    fastAPIClient.get<AcademicScore>(`/academic-score/users/${userId}/academic-scores`),
 };
 
 // Template API functions

@@ -149,10 +149,6 @@ export function ManagerProfile() {
               <div>
                 <h3 className="text-xl font-semibold">{profileData.full_name}</h3>
                 <p className="text-muted-foreground">{profileData.email}</p>
-                <Badge variant={getRoleBadgeVariant(getDisplayRole())} className="mt-2">
-                  <Shield className="h-3 w-3 mr-1" />
-                  {getDisplayRole()}
-                </Badge>
               </div>
             </div>
 
@@ -217,13 +213,17 @@ export function ManagerProfile() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Trạng Thái</Label>
-                      <Badge variant={profileData.consultant_profile.status ? "default" : "secondary"} className="text-xs">
+                      <Badge 
+                        className={`text-xs ${profileData.consultant_profile.status ? 'bg-[#EB5A0D] text-white hover:bg-[#d14f0a]' : 'bg-gray-200 text-gray-700'}`}
+                      >
                         {profileData.consultant_profile.status ? "Hoạt động" : "Không hoạt động"}
                       </Badge>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Lãnh Đạo</Label>
-                      <Badge variant={profileData.consultant_profile.is_leader ? "default" : "outline"} className="text-xs">
+                      <Badge 
+                        className={`text-xs ${profileData.consultant_profile.is_leader ? 'bg-[#EB5A0D] text-white hover:bg-[#d14f0a]' : 'bg-gray-200 text-gray-700'}`}
+                      >
                         {profileData.consultant_profile.is_leader ? "👑 Trưởng nhóm" : "👤 Thành viên"}
                       </Badge>
                     </div>
@@ -239,7 +239,9 @@ export function ManagerProfile() {
                   <Label className="text-sm font-medium">Hồ Sơ Quản Lý Nội Dung</Label>
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Lãnh Đạo</Label>
-                    <Badge variant={profileData.content_manager_profile.is_leader ? "default" : "outline"} className="text-xs">
+                    <Badge 
+                      className={`text-xs ${profileData.content_manager_profile.is_leader ? 'bg-[#EB5A0D] text-white hover:bg-[#d14f0a]' : 'bg-gray-200 text-gray-700'}`}
+                    >
                       {profileData.content_manager_profile.is_leader ? "👑 Trưởng nhóm" : "👤 Thành viên"}
                     </Badge>
                   </div>
@@ -252,19 +254,17 @@ export function ManagerProfile() {
                 <Separator className="my-4" />
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Hồ Sơ Nhân Viên Tuyển Sinh</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Đánh Giá</Label>
                       <p className="text-sm">⭐ {profileData.admission_official_profile.rating || 0}</p>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Phiên Tư Vấn</Label>
-                      <p className="text-sm">{profileData.admission_official_profile.current_sessions || 0} / {profileData.admission_official_profile.max_sessions || 10}</p>
-                    </div>
-                    <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Trạng Thái</Label>
-                      <Badge variant={profileData.admission_official_profile.status === "available" ? "default" : "secondary"} className="text-xs">
-                        {profileData.admission_official_profile.status === "available" ? "Sẵn sàng" : profileData.admission_official_profile.status || "N/A"}
+                      <Badge 
+                        className={`text-xs ${profileData.admission_official_profile.status === "available" ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                      >
+                        {profileData.admission_official_profile.status === "available" ? "Sẵn sàng" : "Không sẵn sàng"}
                       </Badge>
                     </div>
                   </div>

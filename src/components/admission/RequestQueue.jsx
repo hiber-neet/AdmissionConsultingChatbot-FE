@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import {
-  Clock,
   User,
   MessageCircle,
   Search,
@@ -44,7 +43,7 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
     return matchesSearch;
   });
 
-  // Pagination
+  // Pagination (no sorting - use filtered results)
   const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
   const paginatedRequests = filteredRequests.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -55,12 +54,6 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
-
-  const getWaitTimeColor = (minutes) => {
-    if (minutes > 15) return 'text-red-600';
-    if (minutes > 10) return 'text-orange-600';
-    return 'text-green-600';
-  };
 
   return (
     <ScrollArea className="h-full">
@@ -112,8 +105,6 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
           ) : (
             <>
               {paginatedRequests.map((request) => {
-              const waitTimeColor = getWaitTimeColor(request.waitTime);
-
               return (
                 <Card
                   key={request.id}
@@ -165,10 +156,6 @@ export function RequestQueue({ requests, onTakeRequest, acceptingRequestId }) {
                                   minute: '2-digit'
                                 })}
                               </span>
-                            </div>
-                            <div className={`flex items-center gap-1 ${waitTimeColor}`}>
-                              <Clock className="h-3 w-3" />
-                              <span>Chờ {request.waitTime} phút</span>
                             </div>
                           </div>
                         </div>

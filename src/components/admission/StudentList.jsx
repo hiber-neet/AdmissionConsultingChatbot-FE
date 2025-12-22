@@ -265,7 +265,7 @@ export function StudentList({ onSelectStudent }) {
         <Card>
           <CardHeader>
             <CardTitle>
-              Danh Sách ({filteredStudents.length})
+              Danh Sách Khách Hàng ({filteredStudents.length})
               {loading && <span className="text-sm font-normal text-muted-foreground ml-2">- Đang tải...</span>}
             </CardTitle>
           </CardHeader>
@@ -289,12 +289,6 @@ export function StudentList({ onSelectStudent }) {
                     className="w-full p-4 hover:bg-accent transition-colors text-left"
                   >
                     <div className="flex items-center gap-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarFallback className="bg-primary text-primary-foreground">
-                          {student.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
-
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium">{student.name}</span>
