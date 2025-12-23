@@ -32,6 +32,9 @@ export function LiveChatView() {
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
 
+  const [wsReloadToken, setWsReloadToken] = useState(0);
+  const forceWsReconnect = () => setWsReloadToken((t) => t + 1);
+
   const handleShowStudentDetail = () => {
     if (customerInfo?.id) {
       setSelectedStudentId(customerInfo.id);
@@ -43,8 +46,10 @@ export function LiveChatView() {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  const { isConnected, sendMessage: wsSendMessage, disconnect } = useWebSocket(selectedSessionId, handleMessageReceived);
-
+  // const { isConnected, sendMessage: wsSendMessage, disconnect } = useWebSocket(selectedSessionId, handleMessageReceived);
+const { isConnected, sendMessage: wsSendMessage, disconnect } =
+  useWebSocket(selectedSessionId, handleMessageReceived, wsReloadToken);
+  
   const loadActiveSessions = async () => {
     if (!user?.id) return;
     
@@ -193,42 +198,63 @@ export function LiveChatView() {
     setupSession();
   }, [selectedSessionId]);
 
-  useEffect(() => {
-    const handleQueueUpdate = (event) => {
-      loadActiveSessions();
-    };
+useEffect(() => {
+  const handleQueueUpdate = (event) => {
+    loadActiveSessions();
+  };
 
-    const handleChatEnded = (event) => {
+  const handleChatEnded = (event) => {
+    const endedSessionId = event.detail?.session_id;
+    if (!endedSessionId) return;
 
-      const endedSessionId = event.detail?.session_id;
-      
-      if (endedSessionId) {
+    setActiveSessions(prev =>
+      prev.filter(session => session.session_id !== endedSessionId)
+    );
 
-        setActiveSessions(prev => prev.filter(session => session.session_id !== endedSessionId));
-
-        if (selectedSessionId === endedSessionId) {
-          const remainingSessions = activeSessions.filter(session => session.session_id !== endedSessionId);
-          if (remainingSessions.length > 0) {
-            setSelectedSessionId(remainingSessions[0].session_id);
-          } else {
-            setSelectedSessionId(null);
-            setMessages([]);
-            setCustomerInfo(null);
-          }
-        }
+    // Nếu phiên hiện tại bị end
+    if (selectedSessionId === endedSessionId) {
+      const remainingSessions = activeSessions.filter(
+        session => session.session_id !== endedSessionId
+      );
+      if (remainingSessions.length > 0) {
+        setSelectedSessionId(remainingSessions[0].session_id);
+      } else {
+        setSelectedSessionId(null);
+        setMessages([]);
+        setCustomerInfo(null);
       }
+    } else if (selectedSessionId) {
 
-      loadActiveSessions();
-    };
+      forceWsReconnect();
+    }
 
-    window.addEventListener('queueUpdate', handleQueueUpdate);
-    window.addEventListener('chatEnded', handleChatEnded);
+    loadActiveSessions();
+  };
 
-    return () => {
-      window.removeEventListener('queueUpdate', handleQueueUpdate);
-      window.removeEventListener('chatEnded', handleChatEnded);
-    };
-  }, [selectedSessionId, activeSessions]);
+  window.addEventListener('queueUpdate', handleQueueUpdate);
+  window.addEventListener('chatEnded', handleChatEnded);
+
+  return () => {
+    window.removeEventListener('queueUpdate', handleQueueUpdate);
+    window.removeEventListener('chatEnded', handleChatEnded);
+  };
+}, [selectedSessionId, activeSessions]);
+
+
+
+// 🔁 Auto retry: nếu đang có session mà WS chưa connect -> 3s thử mở lại 1 lần
+useEffect(() => {
+  if (!selectedSessionId) return;
+  if (isConnected) return;
+
+  const intervalId = setInterval(() => {
+    setWsReloadToken((t) => t + 1);
+  }, 3000); // 3s thử lại 1 lần
+
+  return () => clearInterval(intervalId);
+}, [selectedSessionId, isConnected]);
+
+
 
   if (loading || error) {
     return (

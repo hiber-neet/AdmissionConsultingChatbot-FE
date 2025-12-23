@@ -80,7 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (isTokenExpired(token)) {
-      performLogout();
+      // performLogout();
+      console.warn("Token đã hết hạn");
       return false;
     }
 
@@ -114,10 +115,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Check if token is expired
         if (payload.exp && payload.exp * 1000 < Date.now()) {
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("token_type");
-          setIsLoading(false);
-          return;
+          // localStorage.removeItem("access_token");
+          // localStorage.removeItem("token_type");
+          // setIsLoading(false);
+          // return;
+          console.warn("Token đã hết hạn");
         }
 
         
@@ -549,6 +551,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTimeout(() => {
       window.location.href = redirectUrl;
     }, 100);
+    
     
   };
 

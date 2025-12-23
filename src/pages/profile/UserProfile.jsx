@@ -576,6 +576,113 @@ const [liveMessages, setLiveMessages] = useState([]);
 const [liveInput, setLiveInput] = useState('');
 const [loading, setLoading] = useState(false);
 
+
+useEffect(() => {
+  if (tab !== "consultant" || !user) return;
+
+  const bootstrapLiveChat = async () => {
+    try {
+      //Lấy danh sách phiên live chat của customer
+      const res = await axios.get(
+        `${API_BASE_URL}/live_chat/livechat/customer/${user.id}/sessions`,
+        { headers: authHeaders() }
+      );
+
+      const sessions = res.data?.sessions || res.data || [];
+
+      //Tìm phiên đang hoạt động
+      const active = sessions.find(
+        (s) =>
+          s.status === "active" ||
+          s.status === "chatting" ||
+          s.is_active === true
+      );
+
+      if (!active) {
+        // Không có phiên đang chat / đang chờ -> để trạng thái idle
+        setSessionId(null);
+        setQueueStatus("idle");
+        setLiveMessages([]);
+        return;
+      }
+
+      //Có phiên đang chat -> gắn lại vào FE
+      setSessionId(active.session_id);
+      setQueueStatus("chatting");
+
+      //Load lại toàn bộ tin nhắn của phiên đó
+      const msgRes = await axios.get(
+        `${API_BASE_URL}/live_chat/livechat/session/${active.session_id}/messages`,
+        { headers: authHeaders() }
+      );
+
+      const msgs = msgRes.data || [];
+      const mapped = msgs.map((m) => ({
+        interaction_id: m.interaction_id,
+        sender_id: m.sender_id,
+        message_text: m.message_text,
+        timestamp: m.timestamp,
+      }));
+
+      setLiveMessages(mapped);
+    } catch (err) {
+      console.error("bootstrapLiveChat failed", err);
+
+      setSessionId(null);
+      setQueueStatus("idle");
+      setLiveMessages([]);
+    }
+  };
+
+  bootstrapLiveChat();
+}, [tab, user]);
+
+
+
+
+const customerIdRef = useRef(null);
+useEffect(() => {
+  if (user?.id) {
+    customerIdRef.current = parseInt(user.id);
+  }
+}, [user]);
+
+useEffect(() => {
+
+  if (isAuthenticated) return;
+
+  const customerId = customerIdRef.current;
+  if (!customerId) return;
+
+  if (queueStatus === "in_queue") {
+    (async () => {
+      try {
+        await liveChatAPI.cancelQueueRequest(customerId);
+      } catch (err) {
+        console.error("Cancel queue on logout failed", err);
+      } finally {
+        setQueueStatus("idle");
+        setQueueInfo(null);
+      }
+    })();
+  }
+
+  if (queueStatus === "chatting" && sessionId) {
+    (async () => {
+      try {
+        await liveChatAPI.endSession(sessionId, customerId);
+      } catch (err) {
+        console.error("End livechat on logout failed", err);
+      } finally {
+        disconnect();             
+        setSessionId(null);
+        setLiveMessages([]);
+        setQueueStatus("ended");
+      }
+    })();
+  }
+}, [isAuthenticated]); 
+
 // timeout hàng chờ + popup
 const queueTimeoutRef = useRef(null);
 const [showQueueTimeoutModal, setShowQueueTimeoutModal] = useState(false);
