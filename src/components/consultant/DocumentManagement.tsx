@@ -257,7 +257,7 @@ export function DocumentManagement() {
               <h3 className="text-lg font-medium mb-2">{t('documents.no_documents_found')}</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 {searchQuery 
-                  ? t`${t('documents.no_documents_found')} "${searchQuery}"`
+                  ? `${t('documents.no_documents_found')} "${searchQuery}"`
                   : t('documents.upload_first_document')
                 }
               </p>

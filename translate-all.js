@@ -102,7 +102,7 @@ const TRANSLATIONS = {
   
   // ==== CONSULTANT ====
   "Training Questions": "Câu Hỏi Huấn Luyện",
-  "Leader Review": "Đánh Giá Lãnh Đạo",
+  "Leader Review": "Đánh Giá Giám Sát",
   "Consultant Dashboard": "Bảng Điều Khiển Tư Vấn",
   "Document Management": "Quản Lý Tài Liệu",
   "Q&A Templates": "Mẫu Q&A",

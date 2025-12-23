@@ -623,8 +623,7 @@ export function UserFormDialog({
                   {availableToGrant.length > 0 && (
                     <div className="space-y-3">
                       <Label className="text-sm font-medium text-green-600">
-                        Quyền Có Sẵn (chọn để cấp)
-                        {editingUser && <span className="text-xs text-gray-500"> - Quyền Admin chỉ khả dụng khi tạo mới</span>}:
+                        Quyền Có Sẵn (chọn để cấp):
                       </Label>
                       <div className="grid grid-cols-2 gap-2 p-3 bg-green-50 border border-green-200 rounded">
                         {availableToGrant.map(permission => (

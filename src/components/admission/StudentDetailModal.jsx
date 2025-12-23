@@ -303,23 +303,24 @@ export function StudentDetailModal({ isOpen, onClose, userId }) {
                   {!riasecLoading && riasecResults.length > 0 && (
                     <div className="space-y-5">
                       {[...riasecResults].reverse().map((result, index) => {
-                        const isExpanded = expandedResults[result.result_id] ?? true;
+                        const uniqueKey = `riasec-${index}`;
+                        const isExpanded = expandedResults[uniqueKey] || false;
                         
                         return (
-                          <div key={result.result_id} className="border-2 border-orange-100 rounded-lg overflow-hidden">
+                          <div key={uniqueKey} className="border-2 border-orange-100 rounded-lg overflow-hidden">
                             {}
                             <button
-                              onClick={() => toggleExpand(result.result_id)}
+                              onClick={() => toggleExpand(uniqueKey)}
                               className="w-full bg-orange-50 px-4 py-2.5 border-b-2 border-orange-100 hover:bg-orange-100 transition-colors"
                             >
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-col items-start gap-1">
                                   <h4 className="text-sm font-bold text-gray-900">
                                     Kết quả lần {index + 1}
                                   </h4>
                                   {result.result && (
                                     <span className="text-sm text-gray-700">
-                                      - {result.result}
+                                      {result.result}
                                     </span>
                                   )}
                                 </div>

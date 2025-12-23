@@ -14,8 +14,6 @@ interface SearchAndFilterProps {
   onStatusFilterChange: (status: string) => void;
   categoryFilter: string;
   onCategoryFilterChange: (category: string) => void;
-  createdByMeFilter: boolean;
-  onCreatedByMeFilterChange: (checked: boolean) => void;
   intents: Intent[];
   isLeader: boolean;
 }
@@ -27,8 +25,6 @@ export function SearchAndFilter({
   onStatusFilterChange,
   categoryFilter,
   onCategoryFilterChange,
-  createdByMeFilter,
-  onCreatedByMeFilterChange,
   intents,
   isLeader
 }: SearchAndFilterProps) {
@@ -67,24 +63,13 @@ export function SearchAndFilter({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Tất cả danh mục</SelectItem>
-          {intents.map((intent) => (
+          {intents?.map((intent) => (
             <SelectItem key={intent.intent_id} value={intent.intent_id.toString()}>
               {intent.intent_name}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-
-      {}
-      <label className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 whitespace-nowrap">
-        <input
-          type="checkbox"
-          checked={createdByMeFilter}
-          onChange={(e) => onCreatedByMeFilterChange(e.target.checked)}
-          className="h-4 w-4 rounded border-gray-300 text-[#EB5A0D] focus:ring-[#EB5A0D]"
-        />
-        <span className="text-sm font-medium text-gray-700">Của tôi</span>
-      </label>
     </div>
   );
 }
