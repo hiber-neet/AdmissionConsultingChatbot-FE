@@ -667,20 +667,9 @@ useEffect(() => {
     })();
   }
 
-  if (queueStatus === "chatting" && sessionId) {
-    (async () => {
-      try {
-        await liveChatAPI.endSession(sessionId, customerId);
-      } catch (err) {
-        console.error("End livechat on logout failed", err);
-      } finally {
-        disconnect();             
+          disconnect();             
         setSessionId(null);
         setLiveMessages([]);
-        setQueueStatus("ended");
-      }
-    })();
-  }
 }, [isAuthenticated]); 
 
 // timeout hàng chờ + popup
