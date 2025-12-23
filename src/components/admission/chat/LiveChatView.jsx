@@ -36,9 +36,29 @@ export function LiveChatView() {
   const forceWsReconnect = () => setWsReloadToken((t) => t + 1);
 
   const handleShowStudentDetail = () => {
-    if (customerInfo?.id) {
-      setSelectedStudentId(customerInfo.id);
+    console.log('handleShowStudentDetail called');
+    console.log('customerInfo:', customerInfo);
+    console.log('selectedSessionId:', selectedSessionId);
+    console.log('activeSessions:', activeSessions);
+    
+    // Try to get customer ID from multiple sources
+    let customerId = customerInfo?.id;
+    
+    // If not in customerInfo, try to get from current session
+    if (!customerId && selectedSessionId) {
+      const currentSession = activeSessions.find(s => s.session_id === selectedSessionId);
+      console.log('currentSession:', currentSession);
+      customerId = currentSession?.customer_id;
+    }
+    
+    console.log('Final customerId:', customerId);
+    
+    if (customerId) {
+      setSelectedStudentId(customerId);
       setShowStudentModal(true);
+    } else {
+      console.error('No customer ID found');
+      toast.error('Không thể tải thông tin khách hàng');
     }
   };
 

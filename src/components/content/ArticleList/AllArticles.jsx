@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { fastAPIArticles, majorsAPI } from '../../../services/fastapi';
 import { useAuth } from '../../../contexts/Auth';
 import { isAuthError } from '../../../utils/fastapi-client';
+import { toast } from 'react-toastify';
 import ArticleToolbar from './ArticleToolbar';
 import ArticleTable from './ArticleTable';
 import ArticleDetailsModal from './ArticleDetailsModal';
@@ -286,6 +287,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
           onSave={async (updatedData) => {
             try {
               await fastAPIArticles.update(editingArticle.article_id, updatedData);
+              toast.success('Cập nhật bài viết thành công!');
               await refreshArticles();
               setEditingArticle(null);
             } catch (err) {
@@ -293,7 +295,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
               if (isAuthError(err)) {
                 return;
               }
-              alert('Failed to update article. Please try again.');
+              toast.error('Không thể cập nhật bài viết. Vui lòng thử lại.');
             }
           }}
         />
@@ -307,6 +309,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
           onConfirm={async () => {
             try {
               await fastAPIArticles.delete(deleteConfirmArticle.article_id);
+              toast.success('Xóa bài viết thành công!');
               await refreshArticles();
               setDeleteConfirmArticle(null);
             } catch (err) {
@@ -314,7 +317,7 @@ export default function AllArticles({ onCreate, onNavigateToEditor, onNavigateTo
               if (isAuthError(err)) {
                 return;
               }
-              alert('Failed to delete article. Please try again.');
+              toast.error('Không thể xóa bài viết. Vui lòng thử lại.');
             }
           }}
         />
