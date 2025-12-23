@@ -28,7 +28,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { consultantAnalyticsAPI, ConsultantStatistics, RecentQuestion } from '../../services/fastapi';
+import { consultantAnalyticsAPI, ConsultantStatistics, RecentQuestion, UnansweredQuestion } from '../../services/fastapi';
 import { Pagination } from '../common/Pagination';
 
 interface DashboardOverviewProps {
@@ -40,6 +40,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
 
   const [stats, setStats] = useState<ConsultantStatistics | null>(null);
   const [recentQuestions, setRecentQuestions] = useState<RecentQuestion[]>([]);
+  const [unansweredQuestions, setUnansweredQuestions] = useState<UnansweredQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -51,15 +52,18 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
         setLoading(true);
         setError(null);
 
-        const [statsResponse, questionsResponse] = await Promise.all([
+        const [statsResponse, questionsResponse, unansweredResponse] = await Promise.all([
           consultantAnalyticsAPI.getStatistics(),
-          consultantAnalyticsAPI.getRecentQuestions(5)
+          consultantAnalyticsAPI.getRecentQuestions(5),
+          consultantAnalyticsAPI.getUnansweredQuestions(100)
         ]);
         
         setStats(statsResponse.data);
 
         const questionsData = Array.isArray(questionsResponse) ? questionsResponse : questionsResponse?.data || [];
         setRecentQuestions(questionsData);
+        
+        setUnansweredQuestions(unansweredResponse?.data || []);
       } catch (err: any) {
         setError(err.response?.data?.detail || 'Failed to fetch dashboard data');
       } finally {
@@ -171,7 +175,7 @@ export function DashboardOverview({ onNavigateToTemplates }: DashboardOverviewPr
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl">{stats.overview_stats.unanswered_queries}</div>
+              <div className="text-3xl">{unansweredQuestions.length}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 Cần chú ý
               </p>

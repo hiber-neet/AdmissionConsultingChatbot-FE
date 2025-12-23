@@ -131,8 +131,8 @@ export const articlesAPI = {
       if (data.description !== undefined) formData.append('description', data.description);
       if (data.url !== undefined) formData.append('url', data.url || '');
       if (data.note !== undefined) formData.append('note', data.note || '');
-      if (data.major_id !== undefined) formData.append('major_id', data.major_id.toString());
-      if (data.specialization_id !== undefined) formData.append('specialization_id', data.specialization_id.toString());
+      if (data.major_id !== undefined && data.major_id > 0) formData.append('major_id', data.major_id.toString());
+      if (data.specialization_id !== undefined && data.specialization_id > 0) formData.append('specialization_id', data.specialization_id.toString());
       // Note: image file would need to be handled separately if provided
     }
 

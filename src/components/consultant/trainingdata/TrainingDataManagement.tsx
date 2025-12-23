@@ -24,7 +24,6 @@ export function TrainingDataManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [createdByMeFilter, setCreatedByMeFilter] = useState(false);
   const [intents, setIntents] = useState<Intent[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -256,9 +255,7 @@ export function TrainingDataManagement() {
       
       const matchesCategory = categoryFilter === 'all' || q.intent_id?.toString() === categoryFilter;
       
-      const matchesCreatedByMe = !createdByMeFilter || q.created_by?.toString() === user?.id;
-      
-      return matchesSearch && matchesCategory && matchesCreatedByMe;
+      return matchesSearch && matchesCategory;
     })
   );
 
@@ -270,9 +267,7 @@ export function TrainingDataManagement() {
       
       const matchesCategory = categoryFilter === 'all' || d.intent_id?.toString() === categoryFilter;
       
-      const matchesCreatedByMe = !createdByMeFilter || d.created_by?.toString() === user?.id;
-      
-      return matchesSearch && matchesCategory && matchesCreatedByMe;
+      return matchesSearch && matchesCategory;
     })
   );
 
@@ -291,7 +286,7 @@ export function TrainingDataManagement() {
   useEffect(() => {
     setQuestionsPage(1);
     setDocumentsPage(1);
-  }, [searchQuery, statusFilter, categoryFilter, createdByMeFilter, activeTab]);
+  }, [searchQuery, statusFilter, categoryFilter, activeTab]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -326,8 +321,6 @@ export function TrainingDataManagement() {
         onStatusFilterChange={setStatusFilter}
         categoryFilter={categoryFilter}
         onCategoryFilterChange={setCategoryFilter}
-        createdByMeFilter={createdByMeFilter}
-        onCreatedByMeFilterChange={setCreatedByMeFilter}
         intents={intents}
         isLeader={isLeader}
       />

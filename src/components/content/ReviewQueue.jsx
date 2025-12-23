@@ -5,6 +5,17 @@ import { articlesAPI } from "../../services/fastapi";
 import { isAuthError } from "../../utils/fastapi-client";
 import { Pagination } from "../common/Pagination";
 
+const getStatusInVietnamese = (status) => {
+  const statusMap = {
+    'draft': 'Nháp',
+    'pending': 'Chờ Duyệt',
+    'published': 'Đã Xuất Bản',
+    'rejected': 'Bị Từ Chối',
+    'deleted': 'Đã Xóa'
+  };
+  return statusMap[status] || status;
+};
+
 export default function ReviewQueue() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -172,7 +183,7 @@ export default function ReviewQueue() {
                 </span>
               )}
               <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                {article.status}
+                {getStatusInVietnamese(article.status)}
               </span>
             </div>
 
