@@ -35,13 +35,215 @@ const SidebarItem = ({ active, icon, label, onClick }) => (
   </button>
 );
 
-const GENDERS = [
-  { value: "male", label: "Nam" },
-  { value: "female", label: "Nữ" },
-  { value: "other", label: "Khác" },
-];
 
-const GRADES = ["10", "11", "12", "Đã tốt nghiệp"];
+const LiveChatHistory = ({ user }) => {
+  const [sessions, setSessions] = useState([]);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+
+
+  const handleDeleteSession = async (sessionId) => {
+    if (!window.confirm("Xoá phiên chat này khỏi lịch sử?")) return;
+
+    try {
+      // TÁI SỬ DỤNG API DELETE /chat/session/{id} giống chatbot
+      await axios.delete(`${API_BASE_URL}/chat/session/${sessionId}`, {
+        params: { user_id: user.id },
+        headers: authHeaders(),
+      });
+
+      setSessions((prev) => {
+        const filtered = prev.filter((s) => s.session_id !== sessionId);
+
+        // Nếu đang xem chính phiên vừa xoá -> chọn phiên khác / clear
+        if (selectedSessionId === sessionId) {
+          const nextSelected = filtered[0]?.session_id ?? null;
+          setSelectedSessionId(nextSelected);
+          if (!nextSelected) {
+            setMessages([]);
+          }
+        }
+
+        return filtered;
+      });
+    } catch (err) {
+      console.error("Failed to delete live session", err);
+      toast.error("Không xoá được phiên, vui lòng thử lại.");
+    }
+  };
+
+
+  // Lấy danh sách các phiên live chat của học sinh
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchSessions = async () => {
+      try {
+        setLoadingSessions(true);
+        const res = await axios.get(
+          `${API_BASE_URL}/live_chat/livechat/customer/${user.id}/sessions`,
+          { headers: authHeaders() }
+        );
+
+        const data = res.data?.sessions || res.data || [];
+        setSessions(data);
+
+        if (data.length && !selectedSessionId) {
+          setSelectedSessionId(data[0].session_id);
+        }
+      } catch (err) {
+        setSessions([]);
+      } finally {
+        setLoadingSessions(false);
+      }
+    };
+
+    fetchSessions();
+  }, [user, selectedSessionId]);
+
+  // Lấy tin nhắn của phiên đang chọn
+  useEffect(() => {
+    if (!selectedSessionId) {
+      setMessages([]);
+      return;
+    }
+
+    const fetchMessages = async () => {
+      try {
+        setLoadingMessages(true);
+        const res = await axios.get(
+          `${API_BASE_URL}/live_chat/livechat/session/${selectedSessionId}/messages`,
+          { headers: authHeaders() }
+        );
+
+        const msgs = res.data || [];
+        const mapped = msgs.map((m) => ({
+          interaction_id: m.interaction_id,
+          sender_id: m.sender_id,
+          message_text: m.message_text,
+          timestamp: m.timestamp,
+        }));
+
+        setMessages(mapped);
+      } catch (err) {
+        setMessages([]);
+      } finally {
+        setLoadingMessages(false);
+      }
+    };
+
+    fetchMessages();
+  }, [selectedSessionId]);
+
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 min-h-[600px] flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-800">
+          Lịch sử chat với tư vấn viên
+        </h2>
+        {sessions.length > 0 && (
+          <span className="text-xs text-gray-500">
+            Tổng: {sessions.length} phiên
+          </span>
+        )}
+      </div>
+
+      {loadingSessions && (
+        <p className="text-sm text-gray-500 mb-3">Đang tải danh sách phiên...</p>
+      )}
+
+      <div className="grid grid-cols-12 gap-4 flex-1">
+        {/* Danh sách phiên */}
+        <div className="col-span-12 md:col-span-4 border border-gray-200 rounded-xl bg-white max-h-[460px] overflow-y-auto">
+          {sessions.length === 0 && !loadingSessions ? (
+            <p className="text-xs text-gray-400 p-3">
+              Bạn chưa có cuộc trò chuyện nào với tư vấn viên.
+            </p>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+{sessions.map((s) => (
+<li
+  key={s.session_id}
+  className={`px-3 py-2 text-xs cursor-pointer hover:bg-gray-50 ${
+    s.session_id === selectedSessionId ? "bg-orange-50" : ""
+  }`}
+  onClick={() => setSelectedSessionId(s.session_id)}
+>
+  <div className="flex items-start justify-between gap-2">
+
+    <div className="flex-1">
+      <div className="font-semibold text-sm truncate">
+        {s.last_message_preview || "Cuộc trò chuyện với tư vấn viên"}
+      </div>
+
+      <div className="text-[11px] text-gray-400 mt-0.5">
+        {s.start_time &&
+          new Date(s.start_time).toLocaleDateString("vi-VN")}
+      </div>
+    </div>
+
+    <button
+      type="button"
+      className="text-[11px] text-red-500 flex-shrink-0"
+      onClick={(e) => {
+        e.stopPropagation();         
+        handleDeleteSession(s.session_id);  
+      }}
+    >
+      Xoá
+    </button>
+  </div>
+</li>
+))}
+            </ul>
+          )}
+        </div>
+
+        {/* Nội dung tin nhắn của phiên đã chọn */}
+        <div className="col-span-12 md:col-span-8 border border-gray-200 rounded-xl bg-gray-50 max-h-[460px] overflow-y-auto p-3">
+          {!selectedSessionId ? (
+            <p className="text-xs text-gray-400 text-center mt-4">
+              Hãy chọn một phiên bên trái để xem lại nội dung.
+            </p>
+          ) : loadingMessages ? (
+            <p className="text-xs text-gray-400 text-center mt-4">
+              Đang tải tin nhắn...
+            </p>
+          ) : messages.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center mt-4">
+              Không có tin nhắn trong phiên này.
+            </p>
+          ) : (
+            messages.map((msg) => {
+              const isMyMessage = msg.sender_id === parseInt(user.id);
+              return (
+                <div
+                  key={msg.interaction_id}
+                  className={`flex ${
+                    isMyMessage ? "justify-end" : "justify-start"
+                  } mb-1`}
+                >
+                  <div
+                    className={`px-3 py-1.5 max-w-[70%] rounded-xl text-xs ${
+                      isMyMessage
+                        ? "bg-[#EB5A0D] text-white"
+                        : "bg-white text-gray-800 border border-gray-200"
+                    }`}
+                  >
+                    {msg.message_text}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 const newConv = () => ({
   id: crypto.randomUUID(),
@@ -100,7 +302,7 @@ const [sessionRatings, setSessionRatings] = useState(() => loadRatings());
 useEffect(() => {
   const params = new URLSearchParams(location.search);
   const qpTab = params.get("tab");
-  if (qpTab && ["profile", "chatbot", "consultant", "transcript"].includes(qpTab)) {
+  if (qpTab && ["profile", "chatbot", "consultant", "live_history", "transcript"].includes(qpTab)) {
     setTab(qpTab);
   }
 }, [location.search]);
@@ -382,6 +584,11 @@ const [showQueueTimeoutModal, setShowQueueTimeoutModal] = useState(false);
 const [showLiveRatingModal, setShowLiveRatingModal] = useState(false);
 const [liveRating, setLiveRating] = useState(0);
 
+//Lịch sử chat với tư vấn viên
+const [liveHistorySessions, setLiveHistorySessions] = useState([]);
+const [selectedHistorySessionId, setSelectedHistorySessionId] = useState(null);
+const [historyMessages, setHistoryMessages] = useState([]);
+
 const handleMessageReceived = (newMsg) => {
   if (newMsg.event === "chat_ended") {
     disconnect();
@@ -653,7 +860,6 @@ const handleSkipLiveRating = () => {
 
   // ====== SSE CUSTOMER (queue + accepted + chat_ended) ======
 useEffect(() => {
-  // Lắng nghe cả khi đang ở hàng chờ và đang trò chuyện
   if (
     !user ||
     (queueStatus !== "in_queue" && queueStatus !== "chatting")
@@ -712,6 +918,69 @@ useEffect(() => {
     eventSource.close();
   };
 }, [user, queueStatus, disconnect]);
+
+
+// ====== LỊCH SỬ LIVE CHAT ======
+useEffect(() => {
+  if (tab !== "consultant" || !user) return;
+
+  const fetchLiveSessions = async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE_URL}/live_chat/livechat/customer/${user.id}/sessions`,
+        { headers: authHeaders() }
+      );
+
+      const sessions = res.data?.sessions || res.data || [];
+      setLiveHistorySessions(sessions);
+
+      if (sessions.length && !selectedHistorySessionId) {
+        setSelectedHistorySessionId(sessions[0].session_id);
+      }
+    } catch (err) {
+      console.error("Failed to load live chat history sessions", err);
+      setLiveHistorySessions([]);
+    }
+  };
+
+  fetchLiveSessions();
+}, [tab, user]);
+
+
+
+// ====== lấy tin nhắn của phiên đang chọn ======
+useEffect(() => {
+  if (tab !== "consultant" || !selectedHistorySessionId) {
+    setHistoryMessages([]);
+    return;
+  }
+
+  const fetchHistoryMessages = async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE_URL}/live_chat/livechat/session/${selectedHistorySessionId}/messages`,
+        { headers: authHeaders() }
+      );
+
+      const msgs = res.data || [];
+      const mapped = msgs.map((m) => ({
+        interaction_id: m.interaction_id,
+        sender_id: m.sender_id,
+        message_text: m.message_text,
+        timestamp: m.timestamp,
+      }));
+
+      setHistoryMessages(mapped);
+    } catch (err) {
+       console.error("Failed to load live history messages", err);
+      setHistoryMessages([]);
+    }
+  };
+
+  fetchHistoryMessages();
+}, [tab, selectedHistorySessionId]);
+
+
 
 // Auto hủy hàng chờ sau 3 phút nếu chưa được nối
 useEffect(() => {
@@ -1173,6 +1442,12 @@ if (isAuthenticated && user && !isStudent) {
                 icon="💼"
                 label="Tư vấn"
                 onClick={() => setTab("consultant")}
+              />
+              <SidebarItem
+              active={tab === "live_history"}
+              icon="📜"
+              label="Lịch sử chat"
+              onClick={() => setTab("live_history")}
               />
               <SidebarItem
                 active={tab === "transcript"}
@@ -1730,6 +2005,7 @@ if (isAuthenticated && user && !isStudent) {
           );
         })
       )}
+      
     </div>
 
     {/* INPUT */}
@@ -1849,6 +2125,11 @@ if (isAuthenticated && user && !isStudent) {
 
   </div>
 )}
+
+
+{/* LIVE CHAT HISTORY TAB */}
+{tab === "live_history" && <LiveChatHistory user={user} />}
+
 
             {/* TRANSCRIPT TAB */}
             {tab === "transcript" && (
